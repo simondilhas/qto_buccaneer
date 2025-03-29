@@ -3,7 +3,7 @@ from typing import List, Optional, Any
 from ifcopenshell.entity_instance import entity_instance
 
 
-class IfcProject:
+class IfcLoader:
     def __init__(self, file_path: str):
         """Initialize an IFC project from a file.
 
@@ -49,67 +49,82 @@ class IfcProject:
                     if quantity.Name == prop_name:
                         return getattr(quantity, "NominalValue", None)
 
-        return NoneNominalValue
+        return None
 
-    def get_ifc_elements(
+    def get_elements(
         self,
-        ifc_entity: str,
-        attribute: Optional[str] = None,
-        value: Optional[str] = None
+        key: str,
+        value: Any,
+        ifc_entity: Optional[str] = None
     ) -> List[entity_instance]:
-        """Get IFC elements of a specific type with optional attribute filter.
-        
-        Retrieves elements from the IFC model based on their type and optionally
-        filters them by a specific attribute value.
+        """
+        Retrieve IFC elements where an attribute or property equals a given value.
 
         Args:
-            ifc_entity (str): The IFC entity type to search for (e.g., "IfcSpace", "IfcWall")
-            attribute (str, optional): The attribute name to filter by (e.g., "Name", "Description")
-            value (str, optional): The value to filter for. Only elements where
-                                 attribute == value will be returned
-            
+            key (str): Attribute or property name to match.
+            value (Any): Value to compare against.
+            ifc_entity (str, optional): IFC entity type to filter (e.g., "IfcWall"). If None, searches all elements.
+
         Returns:
-            List[entity_instance]: List of IFC elements matching the criteria
-        
-        Examples:
-            >>> # Get all walls in the model
-            >>> walls = project.get_ifc_elements("IfcWall")
-            >>> # Get all spaces named "Office"
-            >>> offices = project.get_ifc_elements("IfcSpace", "Name", "Office")
+            List[entity_instance]: Matching IFC elements.
         """
-        elements = self.model.by_type(ifc_entity)
-        
-        if attribute and value:
-            elements = [e for e in elements if getattr(e, attribute) == value]
-        
-        return elements
+        elements = self.model.by_type(ifc_entity) if ifc_entity else self.model.by_type("IfcProduct")
+
+        results = []
+
+        for element in elements:
+            # Check direct attribute
+            if hasattr(element, key) and getattr(element, key) == value:
+                results.append(element)
+                continue
+
+            # Check property sets
+            if not hasattr(element, "IsDefinedBy"):
+                continue
+
+            for definition in element.IsDefinedBy:
+                prop_def = getattr(definition, "RelatingPropertyDefinition", None)
+                if not prop_def:
+                    continue
+
+                if prop_def.is_a("IfcPropertySet"):
+                    for prop in getattr(prop_def, "HasProperties", []):
+                        if prop.Name == key and getattr(prop, "NominalValue", None) == value:
+                            results.append(element)
+                            break
+
+                elif prop_def.is_a("IfcElementQuantity"):
+                    for quantity in getattr(prop_def, "Quantities", []):
+                        if quantity.Name == key and getattr(quantity, "NominalValue", None) == value:
+                            results.append(element)
+                            break
+
+        return results
+
+
 
     def get_gfa_elements(
         self,
         ifc_entity: str = "IfcSpace",
-        attribute: str = "Name",
+        key: str = "Name",
         value: str = "GFA"
     ) -> List[entity_instance]:
             """Extract elements based on specified criteria, defaulting to GFA spaces.
             
             Args:
                 ifc_entity (str, optional): The IFC entity type to search for. Defaults to "IfcSpace"
-                attribute (str, optional): The attribute to filter by. Defaults to "Name"
+                key (str): Attribute or property name to match. e.g. "Name", "Description", "GrossFloorArea"
                 value (str, optional): The value to match. Defaults to "GFA"
 
             Returns:
                 List[entity_instance]: List of IFC elements matching the criteria
 
             Examples:
-                >>> # Get default GFA spaces
                 >>> gfa_spaces = project.get_gfa_elements()
-                >>> # Get spaces with custom name
-                >>> custom_spaces = project.get_gfa_elements(value="CustomArea")
-                >>> # Get walls with specific attribute
-                >>> walls = project.get_gfa_elements(ifc_entity="IfcWall", attribute="Description", value="External")
+                >>> print(gfa_spaces)
             """
-            return self.get_ifc_elements(
+            return self.get_elements(
                 ifc_entity=ifc_entity,
-                attribute=attribute,
+                key=key,
                 value=value
             )
