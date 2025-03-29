@@ -23,3 +23,31 @@ print(f"Building Volume: {volume}")
 
 volume_with_substraction = qto.calculate_gross_floor_volume(subtract_filter={"LongName" : "LUF"})
 print(f"Building Volume: {volume_with_substraction}")
+
+external_coverings = qto.calculate_exterior_coverings_area({"PredefinedType": "CLADDING"})
+print(f"External Coverings: {external_coverings} m2")
+
+external_coverings = qto.calculate_exterior_coverings_area({"Pset_CoveringCommon.IsExternal": True})
+print(f"External Coverings: {external_coverings} m2")
+
+#coverings = loader.get_elements({"PredefinedType": "CLADDING"}, ifc_entity="IfcCovering")
+#
+#for c in coverings:
+#    psets = loader.get_property_sets(c)
+#    print(f"\n{c.GlobalId} Properties:")
+#    for pset_name, props in psets.items():
+#        print(f"  {pset_name}")
+#        for key, val in props.items():
+#            print(f"    {key}: {val}")
+
+windows_exterior = qto.calculate_exterior_windows_area()
+print(f"Exterior Windows: {windows_exterior}")
+
+windows_interior = qto.calculate_interior_windows_area()
+print(f"Interior Windows: {windows_interior}")
+
+doors_exterior = qto.calculate_exterior_doors_area()
+print(f"Exterior Doors: {doors_exterior}")
+
+doors_interior = qto.calculate_interior_doors_area()
+print(f"Interior Doors: {doors_interior}")

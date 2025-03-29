@@ -96,56 +96,57 @@ class QtoCalculator:
         self,
         include_filter: Optional[dict] = None,
         subtract_filter: Optional[dict] = None,
-        **kwargs
+        ifc_entity: str = "IfcSpace",
+        pset_name: str = "Qto_SpaceBaseQuantities",
+        prop_name: Optional[str] = None,
     ) -> float:
         """
         Calculates the gross floor area.
         
-        In the abstractBIM IFC standard, Gross Floor Area is defined as the area measured 
-        to the exterior face of exterior walls, including all interior spaces.
-        
         Args:
             include_filter: Optional override for default gross area filter
             subtract_filter: Optional filter for areas to subtract
-            **kwargs: Additional arguments passed to calculate_quantity
-            
+            ifc_entity: IFC class to extract areas from (default: "IfcSpace")
+            pset_name: Property set name (default: "Qto_SpaceBaseQuantities")
+            prop_name: Quantity name in the property set (default: "NetFloorArea")
+        
         Returns:
             float: The gross floor area in m²
-        
-        Example:
-            >>> qto = QtoCalculator(loader)
-            >>> gfa = qto.calculate_gross_floor_area(
-            ...     subtract_filter={"LongName": "Technical"}
-            ... )
-            >>> print(f"Gross Floor Area: {gfa:.2f} m²")
         """
         return self.calculate_quantity(
             quantity_type="area",
             include_filter=include_filter,
             subtract_filter=subtract_filter,
-            **kwargs
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
         )
+
 
     def calculate_gross_floor_volume(
         self,
         include_filter: Optional[dict] = None,
         subtract_filter: Optional[dict] = None,
-        **kwargs
+        ifc_entity: str = "IfcSpace",
+        pset_name: str = "Qto_SpaceBaseQuantities",
+        prop_name: Optional[str] = None,
     ) -> float:
         """
         Calculates the gross floor volume.
-        
+
         In the abstractBIM IFC standard, Gross Volume is calculated based on
         the volume enclosed by the exterior face of exterior walls, including all interior spaces.
-        
+
         Args:
             include_filter: Optional override for default gross volume filter
             subtract_filter: Optional filter for volumes to subtract
-            **kwargs: Additional arguments passed to calculate_quantity
-            
+            ifc_entity: IFC class to extract volumes from (default: "IfcSpace")
+            pset_name: Property set name (default: "Qto_SpaceBaseQuantities")
+            prop_name: Quantity name in the property set (default: "NetVolume")
+
         Returns:
             float: The gross floor volume in m³
-        
+
         Example:
             >>> qto = QtoCalculator(loader)
             >>> volume = qto.calculate_gross_floor_volume(
@@ -157,5 +158,195 @@ class QtoCalculator:
             quantity_type="volume",
             include_filter=include_filter,
             subtract_filter=subtract_filter,
-            **kwargs
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_exterior_coverings_area(
+        self,
+        include_filter: Optional[dict] = {"PredefinedType": "CLADDING",
+                                          "Pset_CoveringCommon.IsExternal": True,},
+        subtract_filter: Optional[dict] = None,
+        ifc_entity: str = "IfcCovering",
+        pset_name: str = "Qto_CoveringBaseQuantities",
+        prop_name: str = "NetArea",
+    ) -> float:
+        """
+        Calculates the total area of exterior coverings.
+
+        In the abstractBIM IFC standard, exterior coverings are defined as coverings
+        where the 'IsExternal' attribute is True.
+
+        Args:
+            include_filter: Optional override for the default filter (IsExternal: True)
+            subtract_filter: Optional filter for coverings to subtract (e.g., temporary insulation)
+            ifc_entity: IFC class to extract areas from (default: "IfcCovering")
+            pset_name: Property set name (default: "Qto_CoveringBaseQuantities")
+            prop_name: Quantity name in the property set (default: "NetArea")
+
+        Returns:
+            float: Total area of exterior coverings in m²
+
+        Example:
+            >>> qto = QtoCalculator(loader)
+            >>> area = qto.calculate_exterior_coverings_area()
+            >>> print(f"Exterior Coverings Area: {area:.2f} m²")
+        """
+
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            subtract_filter=subtract_filter,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_exterior_windows_area(
+        self,
+        include_filter: Optional[dict] = {"Pset_WindowCommon.IsExternal": True},
+        subtract_filter: Optional[dict] = None,
+        ifc_entity: str = "IfcWindow",
+        pset_name: str = "Qto_WindowBaseQuantities",
+        prop_name: str = "Area",
+    ) -> float:
+        """
+        Calculates the total area of exterior windows.
+
+        Windows are considered exterior if the 'IsExternal' property in Pset_WindowCommon is True.
+
+        Args:
+            include_filter: Optional filter for exterior windows (default: IsExternal = True)
+            subtract_filter: Optional filter to subtract some windows (e.g., temporary or construction openings)
+            ifc_entity: IFC class to extract areas from (default: "IfcWindow")
+            pset_name: Quantity set name (default: "Qto_WindowBaseQuantities")
+            prop_name: Quantity name (default: "NetArea")
+
+        Returns:
+            float: Total exterior window area in m²
+
+        Example:
+            >>> qto = QtoCalculator(loader)
+            >>> area = qto.calculate_exterior_windows_area()
+            >>> print(f"Exterior Windows Area: {area:.2f} m²")
+        """
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            subtract_filter=subtract_filter,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+    
+    def calculate_interior_windows_area(
+        self,
+        include_filter: Optional[dict] = {"Pset_WindowCommon.IsExternal": False},
+        subtract_filter: Optional[dict] = None,
+        ifc_entity: str = "IfcWindow",
+        pset_name: str = "Qto_WindowBaseQuantities",
+        prop_name: str = "Area",
+    ) -> float:
+        """
+        Calculates the total area of exterior windows.
+
+        Windows are considered exterior if the 'IsExternal' property in Pset_WindowCommon is True.
+
+        Args:
+            include_filter: Optional filter for exterior windows (default: IsExternal = True)
+            subtract_filter: Optional filter to subtract some windows (e.g., temporary or construction openings)
+            ifc_entity: IFC class to extract areas from (default: "IfcWindow")
+            pset_name: Quantity set name (default: "Qto_WindowBaseQuantities")
+            prop_name: Quantity name (default: "NetArea")
+
+        Returns:
+            float: Total exterior window area in m²
+
+        Example:
+            >>> qto = QtoCalculator(loader)
+            >>> area = qto.calculate_exterior_windows_area()
+            >>> print(f"Exterior Windows Area: {area:.2f} m²")
+        """
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            subtract_filter=subtract_filter,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_exterior_doors_area(
+        self,
+        include_filter: Optional[dict] = {"Pset_DoorCommon.IsExternal": True},
+        subtract_filter: Optional[dict] = None,
+        ifc_entity: str = "IfcDoor",
+        pset_name: str = "Qto_DoorBaseQuantities",
+        prop_name: str = "Area",
+    ) -> float:
+        """
+        Calculates the total area of exterior doors.
+
+        Doors are considered exterior if the 'IsExternal' property in Pset_DoorCommon is True.
+
+        Args:
+            include_filter: Optional filter for exterior doors (default: IsExternal = True)
+            subtract_filter: Optional filter to exclude certain doors (e.g., temporary construction openings)
+            ifc_entity: IFC class to extract areas from (default: "IfcDoor")
+            pset_name: Quantity set name (default: "Qto_DoorBaseQuantities")
+            prop_name: Quantity name (default: "NetArea")
+
+        Returns:
+            float: Total exterior door area in m²
+
+        Example:
+            >>> qto = QtoCalculator(loader)
+            >>> area = qto.calculate_exterior_doors_area()
+            >>> print(f"Exterior Doors Area: {area:.2f} m²")
+        """
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            subtract_filter=subtract_filter,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_interior_doors_area(
+        self,
+        include_filter: Optional[dict] = {"Pset_DoorCommon.IsExternal": False},
+        subtract_filter: Optional[dict] = None,
+        ifc_entity: str = "IfcDoor",
+        pset_name: str = "Qto_DoorBaseQuantities",
+        prop_name: str = "Area",
+    ) -> float:
+        """
+        Calculates the total area of interior doors.
+
+        Doors are considered interior if the 'IsExternal' property in Pset_DoorCommon is False.
+
+        Args:
+            include_filter: Optional filter for interior doors (default: IsExternal = False)
+            subtract_filter: Optional filter to exclude certain doors
+            ifc_entity: IFC class to extract areas from (default: "IfcDoor")
+            pset_name: Quantity set name (default: "Qto_DoorBaseQuantities")
+            prop_name: Quantity name (default: "Area")
+
+        Returns:
+            float: Total interior door area in m²
+
+        Example:
+            >>> qto = QtoCalculator(loader)
+            >>> area = qto.calculate_interior_doors_area()
+            >>> print(f"Interior Doors Area: {area:.2f} m²")
+        """
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            subtract_filter=subtract_filter,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
         )

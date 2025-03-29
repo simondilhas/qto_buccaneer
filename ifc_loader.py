@@ -43,7 +43,6 @@ class IfcLoader:
     def get_property_value(self, element, set_name: str, prop_name: str) -> Optional[Any]:
         """
         Retrieves the value of a property or quantity from a specified Pset or Qset.
-
         Supports both IfcPropertySet and IfcElementQuantity.
 
         Args:
@@ -52,67 +51,59 @@ class IfcLoader:
             prop_name (str): The name of the property or quantity (e.g. "IsExternal", "NetFloorArea").
 
         Returns:
-            The property's NominalValue if found, otherwise None.
-            
-        Example:
-            >>> loader = IfcLoader("office.ifc")
-            >>> wall = loader.model.by_type("IfcWall")[0]  # Get the first wall
-            >>> is_external = loader.get_property_value(wall, "Pset_WallCommon", "IsExternal")
-            >>> print(f"Is external wall: {is_external}")
+            The unwrapped property value if found, otherwise None.
         """
-        # Safety check for invalid element
-        if element is None:
-            return None
-            
-        if not hasattr(element, "IsDefinedBy"):
+        if element is None or not hasattr(element, "IsDefinedBy"):
             return None
 
         for definition in element.IsDefinedBy:
-            # Check if definition has RelatingPropertyDefinition
             if not hasattr(definition, "RelatingPropertyDefinition"):
                 continue
-                
+
             prop_def = definition.RelatingPropertyDefinition
             if prop_def is None:
                 continue
 
             # Process property sets
             if prop_def.is_a("IfcPropertySet") and prop_def.Name == set_name:
-                if not hasattr(prop_def, "HasProperties"):
-                    continue
-                    
-                for prop in prop_def.HasProperties:
+                for prop in getattr(prop_def, "HasProperties", []):
                     if prop.Name == prop_name:
                         if hasattr(prop, "NominalValue"):
-                            return prop.NominalValue
-                        else:
-                            # Handle direct values based on property type
-                            if hasattr(prop, "Name") and hasattr(prop, "Value"):
-                                return prop.Value  # For simple property types
-                            return None
+                            val = prop.NominalValue
+                            if hasattr(val, "wrappedValue"):
+                                return val.wrappedValue
+                            return val
+                        elif hasattr(prop, "Value"):  # For simple props
+                            val = prop.Value
+                            if hasattr(val, "wrappedValue"):
+                                return val.wrappedValue
+                            return val
 
             # Process quantity sets
             elif prop_def.is_a("IfcElementQuantity") and prop_def.Name == set_name:
-                if not hasattr(prop_def, "Quantities"):
-                    continue
-                    
-                for quantity in prop_def.Quantities:
+                for quantity in getattr(prop_def, "Quantities", []):
                     if quantity.Name == prop_name:
-                        # Try to extract the appropriate value based on quantity type
                         if quantity.is_a("IfcQuantityArea"):
-                            return quantity.AreaValue
+                            val = quantity.AreaValue
                         elif quantity.is_a("IfcQuantityVolume"):
-                            return quantity.VolumeValue
+                            val = quantity.VolumeValue
                         elif quantity.is_a("IfcQuantityLength"):
-                            return quantity.LengthValue
+                            val = quantity.LengthValue
                         elif quantity.is_a("IfcQuantityCount"):
-                            return quantity.CountValue
+                            val = quantity.CountValue
                         elif quantity.is_a("IfcQuantityWeight"):
-                            return quantity.WeightValue
+                            val = quantity.WeightValue
                         elif hasattr(quantity, "NominalValue"):
-                            return quantity.NominalValue
-                        
+                            val = quantity.NominalValue
+                        else:
+                            val = None
+
+                        if hasattr(val, "wrappedValue"):
+                            return val.wrappedValue
+                        return val
+
         return None
+
 
     def get_property_sets(self, element) -> Dict[str, Dict[str, Any]]:
         """
@@ -194,66 +185,60 @@ class IfcLoader:
 
         Returns:
             List[entity_instance]: Matching IFC elements
-            
-        Example:
-            >>> loader = IfcLoader("office.ifc")
-            >>> # Get all external walls
-            >>> external_walls = loader.get_elements(
-            ...     filters={"IsExternal": True},
-            ...     ifc_entity="IfcWall"
-            ... )
-            >>> print(f"Found {len(external_walls)} external walls")
         """
         elements = self.model.by_type(ifc_entity) if ifc_entity else self.model.by_type("IfcProduct")
-        
+
         if not filters:
             return elements
-            
-        # Normalize filters to handle various input types
-        normalized_filters = {}
-        for key, value in filters.items():
-            if isinstance(value, list) and len(value) == 1:
-                normalized_filters[key] = value[0]
-            else:
-                normalized_filters[key] = value
+
+        # Normalize filters
+        normalized_filters = {
+            key: value[0] if isinstance(value, list) and len(value) == 1 else value
+            for key, value in filters.items()
+        }
 
         results = []
+
         for element in elements:
             matches_all = True
-            
+
             for key, value in normalized_filters.items():
-                # Check direct attribute
-                if hasattr(element, key):
-                    attr_value = getattr(element, key)
-                    if attr_value != value:
-                        # Special case for string comparison - allow partial matches
-                        if isinstance(attr_value, str) and isinstance(value, str):
-                            if value.lower() not in attr_value.lower():
+                # Property set notation: "Pset_Name.PropertyName"
+                if "." in key:
+                    pset_name, prop_name = key.split(".", 1)
+                    prop_value = self.get_property_value(element, pset_name, prop_name)
+                else:
+                    # Direct attribute
+                    if hasattr(element, key):
+                        attr_value = getattr(element, key)
+                        if attr_value != value:
+                            if isinstance(attr_value, str) and isinstance(value, str):
+                                if value.lower() not in attr_value.lower():
+                                    matches_all = False
+                                    break
+                            else:
                                 matches_all = False
                                 break
-                        else:
-                            matches_all = False
-                            break
-                    continue
+                        continue  # Go to next filter
 
-                # Check property sets
-                # First try in Pset_Common
-                prop_value = self.get_property_value(element, "Pset_Common", key)
-                if prop_value is None:
-                    # If not found, try type-specific property sets
-                    if element.is_a("IfcWall"):
-                        prop_value = self.get_property_value(element, "Pset_WallCommon", key)
-                    elif element.is_a("IfcSpace"):
-                        prop_value = self.get_property_value(element, "Pset_SpaceCommon", key)
-                    # Add more element types as needed
-                    
-                if prop_value != value:
-                    # Special case for string comparison - allow partial matches
-                    if isinstance(prop_value, str) and isinstance(value, str):
-                        if value.lower() not in prop_value.lower():
-                            matches_all = False
-                            break
-                    else:
+                    # Try fallback to Pset_Common
+                    prop_value = self.get_property_value(element, "Pset_Common", key)
+
+                # Normalize and compare property values
+                if isinstance(prop_value, str) and isinstance(value, str):
+                    if value.lower() not in prop_value.lower():
+                        matches_all = False
+                        break
+                elif isinstance(prop_value, bool) and isinstance(value, str):
+                    if str(prop_value).lower() != value.lower():
+                        matches_all = False
+                        break
+                elif isinstance(prop_value, str) and isinstance(value, bool):
+                    if prop_value.lower() != str(value).lower():
+                        matches_all = False
+                        break
+                else:
+                    if prop_value != value:
                         matches_all = False
                         break
 
@@ -261,6 +246,7 @@ class IfcLoader:
                 results.append(element)
 
         return results
+
 
     def get_gfa_elements(
         self,
