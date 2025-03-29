@@ -54,55 +54,46 @@ class IfcLoader:
 
     def get_elements(
         self,
-        key: str,
-        value: Any,
+        filters: dict[str, Any],
         ifc_entity: Optional[str] = None
     ) -> List[entity_instance]:
         """
-        Retrieve IFC elements where an attribute or property equals a given value.
+        Retrieve IFC elements matching multiple filter criteria.
 
         Args:
-            key (str): Attribute or property name to match.
-            value (Any): Value to compare against.
-            ifc_entity (str, optional): IFC entity type to filter (e.g., "IfcWall"). If None, searches all elements.
+            filters: Dictionary of {attribute/property: value} pairs to match
+            ifc_entity: IFC entity type to filter (e.g., "IfcWall")
 
         Returns:
-            List[entity_instance]: Matching IFC elements.
+            List[entity_instance]: Matching IFC elements
         """
         elements = self.model.by_type(ifc_entity) if ifc_entity else self.model.by_type("IfcProduct")
+        
+        if not filters:
+            return elements
 
         results = []
-
         for element in elements:
-            # Check direct attribute
-            if hasattr(element, key) and getattr(element, key) == value:
-                results.append(element)
-                continue
-
-            # Check property sets
-            if not hasattr(element, "IsDefinedBy"):
-                continue
-
-            for definition in element.IsDefinedBy:
-                prop_def = getattr(definition, "RelatingPropertyDefinition", None)
-                if not prop_def:
+            matches_all = True
+            
+            for key, value in filters.items():
+                # Check direct attribute
+                if hasattr(element, key):
+                    if getattr(element, key) != value:
+                        matches_all = False
+                        break
                     continue
 
-                if prop_def.is_a("IfcPropertySet"):
-                    for prop in getattr(prop_def, "HasProperties", []):
-                        if prop.Name == key and getattr(prop, "NominalValue", None) == value:
-                            results.append(element)
-                            break
+                # Check property sets
+                prop_value = self.get_property_value(element, "Pset_Common", key)
+                if prop_value != value:
+                    matches_all = False
+                    break
 
-                elif prop_def.is_a("IfcElementQuantity"):
-                    for quantity in getattr(prop_def, "Quantities", []):
-                        if quantity.Name == key and getattr(quantity, "NominalValue", None) == value:
-                            results.append(element)
-                            break
+            if matches_all:
+                results.append(element)
 
         return results
-
-
 
     def get_gfa_elements(
         self,
