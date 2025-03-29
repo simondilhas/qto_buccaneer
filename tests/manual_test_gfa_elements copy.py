@@ -7,7 +7,7 @@ import ifcopenshell
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ifc_loader import IfcLoader
 
-gfa_elements = IfcLoader("tests/Mustermodell V2_abstractBIM.ifc").get_elements(
+gfa_elements = IfcLoader("tests/Mustermodell V1_abstractBIM.ifc").get_elements(
     key="Name",
     value="GFA"
 )

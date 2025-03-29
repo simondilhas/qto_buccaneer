@@ -43,16 +43,42 @@ class QtoCalculator:
                             pass
         return total
 
-    def calculate_gfa_area(
+    def calculate_gross_floor_area(
         self,
-        value: str = "GFA",
+        value: str = "GrossArea",
         key: str = "Name",
         ifc_entity: str = "IfcSpace",
         pset_name: str = "Qto_SpaceBaseQuantities",
         prop_name: str = "NetFloorArea"
     ) -> Optional[float]:
         """
-        Calculates the total area (NetFloorArea by default) for spaces labeled according to abstractBIM conventions.
+        Automatically calculates the Gross Floor Area from IFC files, with default
+        classifications and parameters aligned to the abstractBIM IFC conventions.
+
+        Args:
+            value (str): The classification or name to filter by. Defaults to "GFA".
+            key (str): The attribute or property to filter on. Defaults to "Name".
+            ifc_entity (str): The IFC entity type to search for. Defaults to "IfcSpace".
+            pset_name (str): The property or quantity set. Defaults to "Qto_SpaceBaseQuantities".
+            prop_name (str): The specific quantity or property name. Defaults to "NetFloorArea".
+
+        Returns:
+            float: The summed area value (0.0 if not found).
+        """
+        elements = self.loader.get_elements(key=key, value=value, ifc_entity=ifc_entity)
+        return self.sum_quantity(elements, qset=pset_name, quantity_name=prop_name)
+    
+    def calculate_gross_floor_volume(
+        self,
+        value: str = "GrossVolume",
+        key: str = "Name",
+        ifc_entity: str = "IfcSpace",
+        pset_name: str = "Qto_SpaceBaseQuantities",
+        prop_name: str = "NetVolume"
+    ) -> Optional[float]:
+        """
+        Automatically calculates the Gross Volume from IFC files, with default
+        classifications and parameters aligned to the abstractBIM IFC conventions.
 
         Args:
             value (str): The classification or name to filter by. Defaults to "GFA".
