@@ -2,6 +2,7 @@ import ifcopenshell
 from typing import List, Optional, Any
 from ifcopenshell.entity_instance import entity_instance
 
+IfcElement = Any 
 
 class IfcLoader:
     def __init__(self, file_path: str):
@@ -129,4 +130,4 @@ class IfcLoader:
                 value=value
             )
 
-    
+
