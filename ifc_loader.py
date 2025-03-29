@@ -109,7 +109,7 @@ class IfcLoader:
         key: str = "Name",
         value: str = "GFA"
     ) -> List[entity_instance]:
-            """Extract elements based on specified criteria, defaulting to GFA spaces.
+            """Extract elements Gross Floor Area Spaces, defaulting to abstractBIM Standard.
             
             Args:
                 ifc_entity (str, optional): The IFC entity type to search for. Defaults to "IfcSpace"
@@ -128,3 +128,5 @@ class IfcLoader:
                 key=key,
                 value=value
             )
+
+    
