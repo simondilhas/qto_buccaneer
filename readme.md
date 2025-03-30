@@ -38,17 +38,17 @@ You can adapt this code to raw IFC files using `ifcopenshell`, but you may need 
 ## 📁 Project Structure
 
 qto-buccaneer/
-├── src/
-│   └── qto_buccaneer/
-│       ├── utils/
-│       │   └── ifc_loader.py     # IFC file loading and element filtering
-│       └── qto_calculator.py     # Quantity calculation methods
-├── examples/
-│   └── example_use_qto_calculator.py    # Usage examples
-├── tests/
-│   └── .                        # Test files
-├── requirements.txt             # Project dependencies
-└── README.md                    # This file
+- src/
+  - qto_buccaneer/
+    - utils/
+      - ifc_loader.py     # IFC file loading and element filtering
+    - qto_calculator.py   # Quantity calculation methods
+- examples/
+  - example_use_qto_calculator.py    # Usage examples
+- tests/
+  - .                    # Test files
+- requirements.txt       # Project dependencies
+- README.md              # This file
 
 ## ⚙️ Installation
 
