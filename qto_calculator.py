@@ -3,6 +3,40 @@ from ifcopenshell.entity_instance import entity_instance as IfcElement
 
 
 class QtoCalculator:
+    """
+    Calculator for quantity takeoffs from IFC models.
+
+    Common Filter Examples:
+    ----------------------
+    1. Filter by properties:
+       - Interior elements: {"Pset_WallCommon.IsExternal": False}
+       - Exterior elements: {"Pset_WallCommon.IsExternal": True}
+       - Specific type: {"PredefinedType": "ROOF"}
+       - By name: {"Name": "Wall1"}
+
+    2. Filter by measurements:
+       - Walls thicker than 15cm: {"Width": (">", 0.15)}
+       - Walls exactly 20cm thick: {"Width": ("=", 0.20)}
+       - Walls up to 30cm thick: {"Width": ("<=", 0.30)}
+
+    3. Filter by multiple names:
+       - Multiple spaces: {"Name": ["Kitchen", "Bathroom", "Living"]}
+       - Exclude spaces: {"Name": ["Void", "Shaft"]}
+
+    4. Combining filters:
+       - Interior walls thicker than 15cm:
+         {
+             "Pset_WallCommon.IsExternal": False,
+             "Width": (">", 0.15)
+         }
+
+    Filter Logic:
+    - "AND": Element must match all conditions (default)
+    - "OR": Element must match any condition
+
+    All measurements should be in meters for length/width/height
+    and square meters for areas.
+    """
     def __init__(self, loader):
         self.loader = loader
 
@@ -516,7 +550,7 @@ class QtoCalculator:
         self,
         include_filter: Optional[dict] = {
             "Pset_WallCommon.IsExternal": False,
-            "Width": (">", 0.15)
+            "Qto_WallBaseQuantities.Width": ("<", 0.15)
         },
         include_filter_logic: Literal["AND", "OR"] = "AND",
         subtract_filter: Optional[dict] = None,
@@ -526,23 +560,36 @@ class QtoCalculator:
         prop_name: str = "NetSideArea",
     ) -> float:
         """
-        Calculates the total structural area of interior walls.
+        Calculates the total area of interior structural walls (walls thicker than 15cm).
         The default values are based on the abstractBIM IFC.
         Assumption is, that walls thicker than 15cm are structural walls.
         This is a simplification and may not be 100% accurate.
 
-        Args:
-            include_filter: Optional filter for interior walls (
-            default: IsExternal = False, Width > 0.15m)
-            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
-            subtract_filter: Optional filter to exclude certain walls
-            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "AND")
-            ifc_entity: IFC class to extract areas from (default: "IfcWallStandardCase")
-            pset_name: Quantity set name (default: "Qto_WallBaseQuantities")
-            prop_name: Quantity name (default: "NetSideArea")
+        Examples:
+            >>> calculator = QtoCalculator(loader)
+            
+            # Get all interior structural walls (default)
+            >>> area = calculator.calculate_walls_interior_structural_area()
+            
+            # Get very thick interior walls (more than 25cm)
+            >>> area = calculator.calculate_walls_interior_structural_area(
+            ...     include_filter={
+            ...         "Pset_WallCommon.IsExternal": False,
+            ...         "Width": (">", 0.25)
+            ...     }
+            ... )
+            
+            # Get specific walls by name
+            >>> area = calculator.calculate_walls_interior_structural_area(
+            ...     include_filter={
+            ...         "Name": ["Load-bearing Wall 1", "Load-bearing Wall 2"]
+            ...     }
+            ... )
 
-        Example:
-            >>> calculator.calculate_walls_interior_structural_area()  # Gets walls with width > 0.15m
+        The default settings will:
+        - Include only interior walls (IsExternal = False)
+        - Include only walls thicker than 15cm
+        - Calculate their net area (excluding openings like doors and windows)
         """
         return self.calculate_quantity(
             quantity_type="area",
