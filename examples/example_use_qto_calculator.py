@@ -4,11 +4,11 @@ import os
 
 # Add parent directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ifc_loader import IfcLoader
-from qto_calculator import QtoCalculator
+from src.qto_buccaneer.ifc_loader import IfcLoader
+from src.qto_buccaneer.qto_calculator import QtoCalculator
 
 # Load IFC
-loader = IfcLoader("tests/Mustermodell V1_abstractBIM.ifc")
+loader = IfcLoader("examples/Mustermodell V1_abstractBIM.ifc")
 qto = QtoCalculator(loader)
 
 
