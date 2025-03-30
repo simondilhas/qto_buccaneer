@@ -174,112 +174,101 @@ class IfcLoader:
     def get_elements(
         self,
         filters: Optional[dict] = None,
-        filter_logic: Literal["AND", "OR"] = "OR",
-        ifc_entity: str = "IfcSpace"
-    ) -> List[IfcElement]:
-        elements = self.model.by_type(ifc_entity)
+        filter_logic: Literal["AND", "OR"] = "AND",
+        ifc_entity: str = None
+    ) -> List[Any]:
+        """Get elements from the IFC file that match the given filters.
         
-        def compare_values(actual_value: Any, filter_value: Any) -> bool:
-            if isinstance(filter_value, tuple) and len(filter_value) == 2:
-                operator, value = filter_value
-                try:
-                    actual_value = float(actual_value)
-                    value = float(value)
-                    return {
-                        ">": actual_value > value,
-                        "<": actual_value < value,
-                        "=": actual_value == value,
-                        "!=": actual_value != value,
-                        "<=": actual_value <= value,
-                        ">=": actual_value >= value
-                    }[operator]
-                except (TypeError, ValueError):
-                    return False
-            elif isinstance(filter_value, list):
-                return actual_value in filter_value
-            
-            return actual_value == filter_value
-
+        Args:
+            filters: Dictionary of property filters
+            filter_logic: How to combine filters ("AND" or "OR")
+            ifc_entity: IFC entity type to filter for (e.g., "IfcSpace", "IfcWall")
+        
+        Returns:
+            List of matching IFC elements
+        """
+        # Get all elements of the specified type
+        if ifc_entity:
+            elements = self.model.by_type(ifc_entity)
+        else:
+            elements = self.model.by_type("IfcProduct")
+        
+        # If no filters, return all elements
+        if not filters:
+            return elements
+        
+        # Filter elements
         filtered_elements = []
         for element in elements:
             matches = []
             
-            for key, filter_value in filters.items():
-                # Check direct attributes
-                if hasattr(element, key):
-                    val = getattr(element, key)
-                    matches.append(compare_values(val, filter_value))
+            for key, value in filters.items():
+                # Handle direct attribute comparison
+                if not "." in key:
+                    element_value = getattr(element, key, None)
+                    matches.append(self._compare_values(element_value, value))
                     continue
-
-                # Check property sets and quantity sets
-                match_found = False
+                
+                # Handle property set values
+                pset_name, prop_name = key.split(".")
+                prop_value = None
+                
+                # Check IfcPropertySet
                 for rel in getattr(element, "IsDefinedBy", []):
-                    if not hasattr(rel, "RelatingPropertyDefinition"):
+                    definition = getattr(rel, "RelatingPropertyDefinition", None)
+                    if not definition:
                         continue
                         
-                    definition = rel.RelatingPropertyDefinition
-
-                    # Handle property/quantity paths
-                    if "." in key:
-                        set_name, prop_name = key.split(".")
-                        if definition.Name != set_name:
-                            continue
-                        
-                        if definition.is_a("IfcPropertySet"):
-                            for prop in definition.HasProperties:
-                                if prop.Name == prop_name:
-                                    val = prop.NominalValue.wrappedValue if hasattr(prop, "NominalValue") else None
-                                    matches.append(compare_values(val, filter_value))
-                                    match_found = True
-                                    break
-                        elif definition.is_a("IfcElementQuantity"):
-                            for quantity in definition.Quantities:
-                                if quantity.Name == prop_name:
-                                    val = None
-                                    if quantity.is_a("IfcQuantityLength"):
-                                        val = quantity.LengthValue
-                                    elif quantity.is_a("IfcQuantityArea"):
-                                        val = quantity.AreaValue
-                                    elif quantity.is_a("IfcQuantityVolume"):
-                                        val = quantity.VolumeValue
-                                    elif quantity.is_a("IfcQuantityCount"):
-                                        val = quantity.CountValue
-                                    if val is not None:
-                                        matches.append(compare_values(val, filter_value))
-                                        match_found = True
-                                    break
-                    else:
-                        # Direct quantity name
-                        if definition.is_a("IfcElementQuantity"):
-                            for quantity in definition.Quantities:
-                                if quantity.Name == key:
-                                    val = None
-                                    if quantity.is_a("IfcQuantityLength"):
-                                        val = quantity.LengthValue
-                                    elif quantity.is_a("IfcQuantityArea"):
-                                        val = quantity.AreaValue
-                                    elif quantity.is_a("IfcQuantityVolume"):
-                                        val = quantity.VolumeValue
-                                    elif quantity.is_a("IfcQuantityCount"):
-                                        val = quantity.CountValue
-                                    if val is not None:
-                                        matches.append(compare_values(val, filter_value))
-                                        match_found = True
-                                    break
+                    if definition.is_a("IfcPropertySet") and definition.Name == pset_name:
+                        for prop in definition.HasProperties:
+                            if prop.Name == prop_name:
+                                prop_value = getattr(prop, "NominalValue", None)
+                                if prop_value:
+                                    prop_value = prop_value.wrappedValue
+                                break
                 
-                    if match_found:
-                        break
-
-                if not match_found:
-                    matches.append(False)
-
+                    # Check IfcElementQuantity
+                    elif definition.is_a("IfcElementQuantity") and definition.Name == pset_name:
+                        for quantity in definition.Quantities:
+                            if quantity.Name == prop_name:
+                                if quantity.is_a("IfcQuantityArea"):
+                                    prop_value = quantity.AreaValue
+                                elif quantity.is_a("IfcQuantityLength"):
+                                    prop_value = quantity.LengthValue
+                                elif quantity.is_a("IfcQuantityVolume"):
+                                    prop_value = quantity.VolumeValue
+                                break
+                
+                matches.append(self._compare_values(prop_value, value))
+            
+            # Add element if it matches according to filter logic
             if filter_logic == "AND" and all(matches):
                 filtered_elements.append(element)
             elif filter_logic == "OR" and any(matches):
                 filtered_elements.append(element)
-
+        
         return filtered_elements
 
+    def _compare_values(self, actual_value: Any, filter_value: Any) -> bool:
+        if isinstance(filter_value, tuple) and len(filter_value) == 2:
+            operator, value = filter_value
+            try:
+                actual_value = float(actual_value)
+                value = float(value)
+                return {
+                    ">": actual_value > value,
+                    "<": actual_value < value,
+                    "=": actual_value == value,
+                    "!=": actual_value != value,
+                    "<=": actual_value <= value,
+                    ">=": actual_value >= value
+                }[operator]
+            except (TypeError, ValueError):
+                return False
+        elif isinstance(filter_value, list):
+            return actual_value in filter_value
+        
+        return actual_value == filter_value
 
     def get_gfa_elements(
         self,

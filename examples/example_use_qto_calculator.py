@@ -1,6 +1,7 @@
 import sys
 import os
 
+
 # Add parent directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ifc_loader import IfcLoader
@@ -72,6 +73,12 @@ print(f"Interior Walls: {walls_interior}")
 walls_interior_structural = qto.calculate_walls_interior_structural_area()
 print(f"Interior Structural Walls: {walls_interior_structural}")
 
+walls_coverings_per_room = qto.create_wall_coverings_by_room()
+print(f"Wall Coverings per Room: {walls_coverings_per_room}")
 
+windows_area_per_room = qto.create_windows_by_room()
+print(f"Windows Area per Room: {windows_area_per_room}")
 
+doors_area_per_room = qto.create_doors_by_room()
+print(f"Doors Area per Room: {doors_area_per_room}")
 

@@ -1,10 +1,13 @@
 from typing import List, Optional, Any, Literal
 from ifcopenshell.entity_instance import entity_instance as IfcElement
+import pandas as pd
 
 
 class QtoCalculator:
     """
     Calculator for quantity takeoffs from IFC models.
+
+    The default values are based on the abstractBIM IFC, but can be overridden.
 
     Common Filter Examples:
     ----------------------
@@ -884,3 +887,160 @@ class QtoCalculator:
             pset_name=pset_name,
             prop_name=prop_name,
         )   
+
+    def _get_elements_by_space(
+        self,
+        ifc_entity: str,
+        grouping_attribute: str = "LongName",
+        room_reference_attribute_guid: str = "ePset_abstractBIM.Spaces",
+        include_filter: Optional[dict] = None,
+        include_filter_logic: Literal["AND", "OR"] = "AND",
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
+        pset_name: str = "Qto_BaseQuantities",
+        prop_name: str = "NetArea",
+    ) -> dict:
+        """Get elements grouped by space with their areas.
+        
+        Args:
+            ifc_entity: Type of element to get (e.g., "IfcCovering", "IfcWindow", "IfcDoor")
+            grouping_attribute: Space attribute to group by (default: "LongName")
+            room_reference_attribute_guid: Property set and property containing space references
+            include_filter: Filter to apply to elements
+            include_filter_logic: How to combine include filters ("AND" or "OR")
+            subtract_filter: Filter for elements to subtract
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR")
+            pset_name: Name of the quantity property set
+            prop_name: Name of the area property
+        
+        Returns:
+            Dictionary mapping space names to total element areas
+        """
+        # Get elements
+        elements = self.loader.get_elements(
+            filters=include_filter,
+            filter_logic=include_filter_logic,
+            ifc_entity=ifc_entity
+        ) or []
+        
+        # Get all spaces
+        spaces = self.loader.get_elements(ifc_entity="IfcSpace") or []
+        space_map = {space.GlobalId: getattr(space, grouping_attribute, space.GlobalId) 
+                     for space in spaces}
+        
+        # Initialize result
+        result = {}
+        
+        # Process each element
+        for element in elements:
+            # Get the area
+            area = 0.0
+            for rel in getattr(element, "IsDefinedBy", []):
+                qto = getattr(rel, "RelatingPropertyDefinition", None)
+                if not qto or not qto.is_a("IfcElementQuantity") or qto.Name != pset_name:
+                    continue
+                for quantity in getattr(qto, "Quantities", []):
+                    if quantity.Name == prop_name and quantity.is_a("IfcQuantityArea"):
+                        area = quantity.AreaValue
+                        break
+            
+            if area == 0.0:
+                continue
+            
+            # Get the space references
+            for rel in getattr(element, "IsDefinedBy", []):
+                pset = getattr(rel, "RelatingPropertyDefinition", None)
+                if not pset or not pset.is_a("IfcPropertySet"):
+                    continue
+                
+                pset_name_ref, prop_name_ref = room_reference_attribute_guid.split(".")
+                if pset.Name != pset_name_ref:
+                    continue
+                
+                for prop in pset.HasProperties:
+                    if prop.Name == prop_name_ref:
+                        space_refs = []
+                        if isinstance(prop.NominalValue.wrappedValue, list):
+                            space_refs.extend(prop.NominalValue.wrappedValue)
+                        else:
+                            space_refs.append(prop.NominalValue.wrappedValue)
+                        
+                        # Add area to each referenced space
+                        for space_ref in space_refs:
+                            room_key = space_map.get(space_ref)
+                            if room_key:
+                                if room_key not in result:
+                                    result[room_key] = 0.0
+                                result[room_key] += area
+    
+        return result
+
+    def create_wall_coverings_by_room(
+        self,
+        grouping_attribute: str = "LongName",
+        include_filter: Optional[dict] = {
+            "PredefinedType": "CLADDING",
+            "Pset_CoveringCommon.IsExternal": False
+        },
+    ) -> dict:
+        """Get wall coverings grouped by room.
+        
+        Args:
+            grouping_attribute: Space attribute to group by (default: "LongName")
+            include_filter: Additional filters for wall coverings
+            
+        Returns:
+            Dictionary mapping room names to total wall covering areas
+        """
+        return self._get_elements_by_space(
+            ifc_entity="IfcCovering",
+            grouping_attribute=grouping_attribute,
+            include_filter=include_filter,
+            pset_name="Qto_CoveringBaseQuantities",
+            prop_name="NetArea"
+        )
+
+    def create_windows_by_room(
+        self,
+        grouping_attribute: str = "GlobalId",
+        include_filter: Optional[dict] = None,
+    ) -> dict:
+        """Get windows grouped by room.
+        
+        Args:
+            grouping_attribute: Space attribute to group by (default: "LongName")
+            include_filter: Additional filters for windows
+            
+        Returns:
+            Dictionary mapping room names to total window areas
+        """
+        return self._get_elements_by_space(
+            ifc_entity="IfcWindow",
+            grouping_attribute=grouping_attribute,
+            include_filter=include_filter,
+            pset_name="Qto_WindowBaseQuantities",
+            prop_name="Area"
+        )
+
+    def create_doors_by_room(
+        self,
+        grouping_attribute: str = "GlobalId",
+        include_filter: Optional[dict] = None,
+    ) -> dict:
+        """Get doors grouped by room.
+        
+        Args:
+            grouping_attribute: Space attribute to group by (default: "LongName")
+            include_filter: Additional filters for doors
+            
+        Returns:
+            Dictionary mapping room names to total door areas
+        """
+        return self._get_elements_by_space(
+            ifc_entity="IfcDoor",
+            grouping_attribute=grouping_attribute,
+            include_filter=include_filter,
+            pset_name="Qto_DoorBaseQuantities",
+            prop_name="Area"
+        )
+        

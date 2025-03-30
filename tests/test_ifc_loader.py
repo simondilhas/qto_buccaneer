@@ -1,5 +1,7 @@
 import os
 import pytest
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ifc_loader import IfcLoader
 
 # Path to your test IFC file (adjust if needed)

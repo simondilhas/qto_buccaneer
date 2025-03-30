@@ -1,0 +1,67 @@
+site_name: QTO Buccaneer
+site_description: Quantity Takeoff tools for data-savvy BIM rebels
+site_author: Your Name
+repo_url: https://github.com/yourusername/qto-buccaneer
+repo_name: qto-buccaneer
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - API Reference:
+    - Overview: api-reference/index.md
+    - Walls: api-reference/walls.md
+    - Openings: api-reference/openings.md
+    - Spaces: api-reference/spaces.md
+    - Slabs: api-reference/slabs.md
+  - Examples:
+    - Overview: examples/index.md
+    - Basic Usage: examples/basic-usage.md
+    - Advanced Filters: examples/advanced-filters.md
+  - About:
+    - License: about/license.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - attr_list
+  - md_in_html
+  - footnotes
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/yourusername/qto-buccaneer 
