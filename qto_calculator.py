@@ -59,19 +59,7 @@ class QtoCalculator:
     ) -> float:
         """
         Generic method to calculate quantities (area or volume) with filters and filter logic.
-
-        Args:
-            quantity_type: Type of quantity to calculate ("area" or "volume")
-            include_filter: Optional filter for elements to include
-            include_filter_logic: Logic to apply for include filters ("AND" or "OR", default: "OR")
-            subtract_filter: Optional filter for elements to subtract
-            subtract_filter_logic: Logic to apply for subtract filters ("AND" or "OR", default: "OR")
-            ifc_entity: IFC class to extract quantities from
-            pset_name: Property set name containing the quantity
-            prop_name: Name of the quantity property
-
-        Returns:
-            float: The calculated quantity (area in m² or volume in m³)
+        Filters can contain numeric comparisons using tuples: {"Width": (">", 0.15)}
         """
         # Default filters and property names based on quantity type
         defaults = {
@@ -526,10 +514,13 @@ class QtoCalculator:
         )
     def calculate_walls_interior_structural_area(
         self,
-        include_filter: Optional[dict] = {"Pset_WallCommon.IsExternal": False},
+        include_filter: Optional[dict] = {
+            "Pset_WallCommon.IsExternal": False,
+            "Width": (">", 0.15)
+        },
         include_filter_logic: Literal["AND", "OR"] = "AND",
-        subtract_filter: Optional[dict] = {"Width": 0.15},
-        subtract_filter_logic: Literal["AND", "OR", ">", "<", "=", "!=", "<=", ">="] = ">",
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "AND",
         ifc_entity: str = "IfcWallStandardCase",
         pset_name: str = "Qto_WallBaseQuantities",
         prop_name: str = "NetSideArea",
@@ -538,18 +529,20 @@ class QtoCalculator:
         Calculates the total structural area of interior walls.
         The default values are based on the abstractBIM IFC.
         Assumption is, that walls thicker than 15cm are structural walls.
+        This is a simplification and may not be 100% accurate.
 
         Args:
-            include_filter: Optional filter for interior walls (default: IsExternal = False)
+            include_filter: Optional filter for interior walls (
+            default: IsExternal = False, Width > 0.15m)
             include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
             subtract_filter: Optional filter to exclude certain walls
-            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "AND")
             ifc_entity: IFC class to extract areas from (default: "IfcWallStandardCase")
             pset_name: Quantity set name (default: "Qto_WallBaseQuantities")
-            prop_name: Quantity name (default: "StructuralArea")
+            prop_name: Quantity name (default: "NetSideArea")
 
-        Returns:
-            float: Total structural area of interior walls in m²
+        Example:
+            >>> calculator.calculate_walls_interior_structural_area()  # Gets walls with width > 0.15m
         """
         return self.calculate_quantity(
             quantity_type="area",

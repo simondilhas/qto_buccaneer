@@ -42,8 +42,6 @@ print(f"Exterior Doors: {doors_exterior}")
 doors_interior = qto.calculate_doors_interior_area()
 print(f"Interior Doors: {doors_interior}")
 
-
-
 space_floor_area = qto.calculate_space_interior_floor_area()
 print(f"Space Floor Area: {space_floor_area}")
 

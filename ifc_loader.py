@@ -177,81 +177,95 @@ class IfcLoader:
         filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcSpace"
     ) -> List[IfcElement]:
-        """
-        Get IFC elements that match the specified filters with AND/OR logic.
-
-        Args:
-            filters: Dictionary of property/attribute names and their values (values can be single values or lists)
-            filter_logic: How to combine multiple filters ("AND" or "OR")
-            ifc_entity: Type of IFC entity to filter
-
-        Returns:
-            List[IfcElement]: List of matching IFC elements
-        """
-        # Get all elements of the specified type
         elements = self.model.by_type(ifc_entity)
-
-        # If no filters, return all elements
-        if not filters:
-            return elements
-
-        def check_value_match(actual_value, filter_value, logic: Literal["AND", "OR"] = "OR"):
-            """Helper function to check if value matches, handling lists with AND/OR logic"""
-            if isinstance(filter_value, list):
-                if logic == "AND":
-                    # For AND logic, actual_value must match all values in the list
-                    return all(actual_value == val for val in filter_value)
-                else:  # OR logic
-                    # For OR logic, actual_value must match any value in the list
-                    return actual_value in filter_value
+        
+        def compare_values(actual_value: Any, filter_value: Any) -> bool:
+            if isinstance(filter_value, tuple) and len(filter_value) == 2:
+                operator, value = filter_value
+                try:
+                    actual_value = float(actual_value)
+                    value = float(value)
+                    return {
+                        ">": actual_value > value,
+                        "<": actual_value < value,
+                        "=": actual_value == value,
+                        "!=": actual_value != value,
+                        "<=": actual_value <= value,
+                        ">=": actual_value >= value
+                    }[operator]
+                except (TypeError, ValueError):
+                    return False
+            elif isinstance(filter_value, list):
+                return actual_value in filter_value
+            
             return actual_value == filter_value
 
-        # Filter elements
         filtered_elements = []
         for element in elements:
             matches = []
             
             for key, filter_value in filters.items():
-                # Check direct attributes first
+                # Check direct attributes
                 if hasattr(element, key):
-                    matches.append(check_value_match(getattr(element, key), filter_value, filter_logic))
+                    val = getattr(element, key)
+                    matches.append(compare_values(val, filter_value))
                     continue
 
-                # Check property sets
+                # Check property sets and quantity sets
                 match_found = False
                 for rel in getattr(element, "IsDefinedBy", []):
                     if not hasattr(rel, "RelatingPropertyDefinition"):
                         continue
                         
-                    pset = rel.RelatingPropertyDefinition
-                    if not pset.is_a("IfcPropertySet"):
-                        continue
+                    definition = rel.RelatingPropertyDefinition
 
-                    # Handle nested property paths (e.g., "Pset_WallCommon.IsExternal")
+                    # Handle property/quantity paths
                     if "." in key:
-                        pset_name, prop_name = key.split(".")
-                        if pset.Name != pset_name:
+                        set_name, prop_name = key.split(".")
+                        if definition.Name != set_name:
                             continue
-                        for prop in pset.HasProperties:
-                            if prop.Name == prop_name:
-                                matches.append(check_value_match(
-                                    prop.NominalValue.wrappedValue, 
-                                    filter_value,
-                                    filter_logic
-                                ))
-                                match_found = True
-                                break
+                        
+                        if definition.is_a("IfcPropertySet"):
+                            for prop in definition.HasProperties:
+                                if prop.Name == prop_name:
+                                    val = prop.NominalValue.wrappedValue if hasattr(prop, "NominalValue") else None
+                                    matches.append(compare_values(val, filter_value))
+                                    match_found = True
+                                    break
+                        elif definition.is_a("IfcElementQuantity"):
+                            for quantity in definition.Quantities:
+                                if quantity.Name == prop_name:
+                                    val = None
+                                    if quantity.is_a("IfcQuantityLength"):
+                                        val = quantity.LengthValue
+                                    elif quantity.is_a("IfcQuantityArea"):
+                                        val = quantity.AreaValue
+                                    elif quantity.is_a("IfcQuantityVolume"):
+                                        val = quantity.VolumeValue
+                                    elif quantity.is_a("IfcQuantityCount"):
+                                        val = quantity.CountValue
+                                    if val is not None:
+                                        matches.append(compare_values(val, filter_value))
+                                        match_found = True
+                                    break
                     else:
-                        # Direct property name match
-                        for prop in pset.HasProperties:
-                            if prop.Name == key:
-                                matches.append(check_value_match(
-                                    prop.NominalValue.wrappedValue, 
-                                    filter_value,
-                                    filter_logic
-                                ))
-                                match_found = True
-                                break
+                        # Direct quantity name
+                        if definition.is_a("IfcElementQuantity"):
+                            for quantity in definition.Quantities:
+                                if quantity.Name == key:
+                                    val = None
+                                    if quantity.is_a("IfcQuantityLength"):
+                                        val = quantity.LengthValue
+                                    elif quantity.is_a("IfcQuantityArea"):
+                                        val = quantity.AreaValue
+                                    elif quantity.is_a("IfcQuantityVolume"):
+                                        val = quantity.VolumeValue
+                                    elif quantity.is_a("IfcQuantityCount"):
+                                        val = quantity.CountValue
+                                    if val is not None:
+                                        matches.append(compare_values(val, filter_value))
+                                        match_found = True
+                                    break
                 
                     if match_found:
                         break
@@ -259,13 +273,10 @@ class IfcLoader:
                 if not match_found:
                     matches.append(False)
 
-            # Apply filter logic
-            if filter_logic == "AND":
-                if all(matches):  # All conditions must be True
-                    filtered_elements.append(element)
-            else:  # OR logic
-                if any(matches):  # At least one condition must be True
-                    filtered_elements.append(element)
+            if filter_logic == "AND" and all(matches):
+                filtered_elements.append(element)
+            elif filter_logic == "OR" and any(matches):
+                filtered_elements.append(element)
 
         return filtered_elements
 
