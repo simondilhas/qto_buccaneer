@@ -119,38 +119,3 @@ Ahoy fellow BIM pirates! We're excited about every form of contribution, whether
 
 Let's figure it out together! Drop a line to simon.dilhas@abstract.build and let's make quantity takeoffs better for everyone.
 
-API Documentation
-===============
-
-QTO Calculator
--------------
-
-.. automodule:: src.qto_buccaneer.qto_calculator
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-IFC Loader
-----------
-
-.. automodule:: src.qto_buccaneer.utils.ifc_loader
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Welcome to QTO Buccaneer's documentation!
-=======================================
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   readme
-   api
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
