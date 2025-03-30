@@ -24,10 +24,10 @@ print(f"Building Volume: {volume}")
 volume_with_substraction = qto.calculate_gross_floor_volume(subtract_filter={"LongName" : "LUF"})
 print(f"Building Volume: {volume_with_substraction}")
 
-external_coverings = qto.calculate_exterior_coverings_area({"PredefinedType": "CLADDING"})
+external_coverings = qto.calculate_coverings_exterior_area()
 print(f"External Coverings: {external_coverings} m2")
 
-external_coverings = qto.calculate_exterior_coverings_area({"Pset_CoveringCommon.IsExternal": True})
+external_coverings = qto.calculate_coverings_exterior_area({"Pset_CoveringCommon.IsExternal": True})
 print(f"External Coverings: {external_coverings} m2")
 
 #coverings = loader.get_elements({"PredefinedType": "CLADDING"}, ifc_entity="IfcCovering")
@@ -40,14 +40,24 @@ print(f"External Coverings: {external_coverings} m2")
 #        for key, val in props.items():
 #            print(f"    {key}: {val}")
 
-windows_exterior = qto.calculate_exterior_windows_area()
+windows_exterior = qto.calculate_windows_exterior_area()
 print(f"Exterior Windows: {windows_exterior}")
 
-windows_interior = qto.calculate_interior_windows_area()
+windows_interior = qto.calculate_windows_interior_area()
 print(f"Interior Windows: {windows_interior}")
 
-doors_exterior = qto.calculate_exterior_doors_area()
+doors_exterior = qto.calculate_doors_exterior_area()
 print(f"Exterior Doors: {doors_exterior}")
 
-doors_interior = qto.calculate_interior_doors_area()
+doors_interior = qto.calculate_doors_interior_area()
 print(f"Interior Doors: {doors_interior}")
+
+walls_exterior = qto.calculate_walls_exterior_net_side_area()
+print(f"Exterior Walls: {walls_exterior}")
+
+walls_interior = qto.calculate_walls_interior_net_side_area()
+print(f"Interior Walls: {walls_interior}")
+
+space_floor_area = qto.calculate_space_floor_area()
+print(f"Space Floor Area: {space_floor_area}")
+

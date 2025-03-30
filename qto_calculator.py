@@ -163,7 +163,7 @@ class QtoCalculator:
             prop_name=prop_name,
         )
 
-    def calculate_exterior_coverings_area(
+    def calculate_coverings_exterior_area(
         self,
         include_filter: Optional[dict] = {"PredefinedType": "CLADDING",
                                           "Pset_CoveringCommon.IsExternal": True,},
@@ -203,7 +203,7 @@ class QtoCalculator:
             prop_name=prop_name,
         )
 
-    def calculate_exterior_windows_area(
+    def calculate_windows_exterior_area(
         self,
         include_filter: Optional[dict] = {"Pset_WindowCommon.IsExternal": True},
         subtract_filter: Optional[dict] = None,
@@ -240,7 +240,7 @@ class QtoCalculator:
             prop_name=prop_name,
         )
     
-    def calculate_interior_windows_area(
+    def calculate_windows_interior_area(
         self,
         include_filter: Optional[dict] = {"Pset_WindowCommon.IsExternal": False},
         subtract_filter: Optional[dict] = None,
@@ -277,7 +277,7 @@ class QtoCalculator:
             prop_name=prop_name,
         )
 
-    def calculate_exterior_doors_area(
+    def calculate_doors_exterior_area(
         self,
         include_filter: Optional[dict] = {"Pset_DoorCommon.IsExternal": True},
         subtract_filter: Optional[dict] = None,
@@ -314,7 +314,7 @@ class QtoCalculator:
             prop_name=prop_name,
         )
 
-    def calculate_interior_doors_area(
+    def calculate_doors_interior_area(
         self,
         include_filter: Optional[dict] = {"Pset_DoorCommon.IsExternal": False},
         subtract_filter: Optional[dict] = None,
@@ -344,6 +344,127 @@ class QtoCalculator:
         """
         return self.calculate_quantity(
             quantity_type="area",
+            include_filter=include_filter,
+            subtract_filter=subtract_filter,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_walls_exterior_net_side_area(
+        self,
+        include_filter: Optional[dict] = {"Pset_WallCommon.IsExternal": True},
+        subtract_filter: Optional[dict] = None,
+        ifc_entity: str = "IfcWallStandardCase",
+        pset_name: str = "Qto_WallBaseQuantities",
+        prop_name: str = "NetSideArea",
+    ) -> float:
+        """
+        Calculates the total net side area of exterior walls.
+
+        Walls are considered exterior if the 'IsExternal' property in Pset_WallCommon is True.
+        The net side area excludes openings like windows and doors.
+
+        Args:
+            include_filter: Optional filter for exterior walls (default: IsExternal = True)
+            subtract_filter: Optional filter to exclude certain walls
+            ifc_entity: IFC class to extract areas from (default: "IfcWallStandardCase")
+            pset_name: Quantity set name (default: "Qto_WallBaseQuantities")
+            prop_name: Quantity name (default: "NetSideArea")
+
+        Returns:
+            float: Total exterior wall net side area in m²
+
+        Example:
+            >>> qto = QtoCalculator(loader)
+            >>> area = qto.calculate_exterior_walls_net_side_area()
+            >>> print(f"Exterior Walls Net Side Area: {area:.2f} m²")
+        """
+        return self.calculate_quantity(
+            quantity_type="area",   
+            include_filter=include_filter,
+            subtract_filter=subtract_filter,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_walls_interior_net_side_area( 
+        self,
+        include_filter: Optional[dict] = {"Pset_WallCommon.IsExternal": False},
+        subtract_filter: Optional[dict] = None,
+        ifc_entity: str = "IfcWallStandardCase",
+        pset_name: str = "Qto_WallBaseQuantities",
+        prop_name: str = "NetSideArea",
+    ) -> float:
+        """
+        Calculates the total net side area of interior walls.
+
+        Walls are considered interior if the 'IsExternal' property in Pset_WallCommon is False.
+        The net side area excludes openings like doors and windows.
+
+        Args:
+            include_filter: Optional filter for interior walls (default: IsExternal = False)
+            subtract_filter: Optional filter to exclude certain walls
+            ifc_entity: IFC class to extract areas from (default: "IfcWallStandardCase")
+            pset_name: Quantity set name (default: "Qto_WallBaseQuantities")
+            prop_name: Quantity name (default: "NetSideArea")
+
+        Returns:
+            float: Total interior wall net side area in m²
+
+        Example:
+            >>> qto = QtoCalculator(loader)
+            >>> area = qto.calculate_walls_interior_net_side_area()
+            >>> print(f"Interior Walls Net Side Area: {area:.2f} m²")
+        """
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            subtract_filter=subtract_filter,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_space_floor_area(
+        self,
+        include_filter: Optional[dict] = None,
+        subtract_filter: Optional[dict] = None,
+        ifc_entity: str = "IfcSpace",
+        pset_name: str = "Qto_SpaceBaseQuantities",
+        prop_name: str = "NetFloorArea",
+    ) -> float:
+        """
+        Calculates the total floor area of spaces.
+        """
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            subtract_filter=subtract_filter,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_space_volume(
+        self,
+        ifc_entity: str = "IfcSpace",
+        include_filter: Optional[dict] = None,
+        include_filter_logic: Literal["AND", "OR"] = "OR",
+        subtract_filter: Optional[dict] = {
+            "Name": "GrossVolume",
+            "Name": "GrossVolume",
+        },
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
+        pset_name: str = "Qto_SpaceBaseQuantities",
+        prop_name: str = "GrossVolume",
+    ) -> float:
+        """
+        Calculates the total volume of spaces.
+        """
+        return self.calculate_quantity(
+            quantity_type="volume",
             include_filter=include_filter,
             subtract_filter=subtract_filter,
             ifc_entity=ifc_entity,
