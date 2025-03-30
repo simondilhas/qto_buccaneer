@@ -552,6 +552,15 @@ class QtoCalculator:
             float: Total structural area of interior walls in m²
         """
         return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            include_filter_logic=include_filter_logic,
+            subtract_filter=subtract_filter,
+            subtract_filter_logic=subtract_filter_logic,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
 
     def calculate_space_interior_floor_area(
         self,

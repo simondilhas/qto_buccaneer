@@ -42,11 +42,7 @@ print(f"Exterior Doors: {doors_exterior}")
 doors_interior = qto.calculate_doors_interior_area()
 print(f"Interior Doors: {doors_interior}")
 
-walls_exterior = qto.calculate_walls_exterior_net_side_area()
-print(f"Exterior Walls: {walls_exterior}")
 
-walls_interior = qto.calculate_walls_interior_net_side_area()
-print(f"Interior Walls: {walls_interior}")
 
 space_floor_area = qto.calculate_space_interior_floor_area()
 print(f"Space Floor Area: {space_floor_area}")
@@ -68,6 +64,15 @@ print(f"Roof Area: {roof_area}")
 
 base_slab_area = qto.calculate_base_slab_area()
 print(f"Base Slab Area: {base_slab_area}")
+
+walls_exterior = qto.calculate_walls_exterior_net_side_area()
+print(f"Exterior Walls: {walls_exterior}")
+
+walls_interior = qto.calculate_walls_interior_net_side_area()
+print(f"Interior Walls: {walls_interior}")
+
+walls_interior_structural = qto.calculate_walls_interior_structural_area()
+print(f"Interior Structural Walls: {walls_interior_structural}")
 
 
 
