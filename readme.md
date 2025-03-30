@@ -82,8 +82,8 @@ We're charting a course for more features! Here's what's on the horizon:
 
 1. **Data Enrichment & Classifications** 
    - Adding support for various classification systems
-   - Enhanced data enrichment capabilities
-   - More sophisticated calculation rules
+   - Enriching the IFC with additional data
+   - More sophisticated calculation rules based on these enriched files
 
 2. **Predefined Visualization**
    - Ready-to-use graphs and charts
@@ -102,8 +102,8 @@ We're charting a course for more features! Here's what's on the horizon:
 
 5. **Library Development**
    - Package distribution via PyPI
+   - More tests
    - Comprehensive documentation
-   - Extended API support
 
 Want to help with any of these? Check out our [Contributing](#-contributing) section!
 

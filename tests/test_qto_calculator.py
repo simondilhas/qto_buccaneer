@@ -66,4 +66,89 @@ def test_room_based_calculations(qto):
     assert qto.create_windows_by_room() == expected_windows
 
     expected_doors = {'2lk8ATQRL3YhM35IFLYXiz': 2.1}
-    assert qto.create_doors_by_room() == expected_doors 
+    assert qto.create_doors_by_room() == expected_doors
+
+# Filter logic tests
+def test_filter_logic(qto):
+    # Test AND logic
+    area_and = qto.calculate_space_interior_floor_area(
+        include_filter={"PredefinedType": "GFA", "Name": "NetFloorArea"},
+        include_filter_logic="AND"
+    )
+    
+    # Test OR logic
+    area_or = qto.calculate_space_interior_floor_area(
+        include_filter={"PredefinedType": "INTERNAL", "Name": "NetFloorArea"},
+        include_filter_logic="OR"
+    )
+    
+    assert area_and < area_or
+
+def test_multiple_filters(qto):
+    # Test with both include and subtract filters
+    area = qto.calculate_gross_floor_area(
+        include_filter={"PredefinedType": "GFA"},
+        subtract_filter={"LongName": ["LUF", "Void"]}
+    )
+    assert pytest.approx(area) == 194.41235
+
+
+def test_invalid_filters(qto):
+    # Test with non-existent property
+    area = qto.calculate_gross_floor_area(
+        include_filter={"NonExistentProperty": "Value"}
+    )
+    assert pytest.approx(area) == 0
+
+# Specific calculation tests
+def test_wall_thickness_filtering(qto):
+    # Test filtering walls by thickness
+    thick_walls = qto.calculate_walls_interior_structural_area(
+        include_filter={
+            "Pset_WallCommon.IsExternal": False,
+            "Qto_WallBaseQuantities.Width": (">", 0.2)
+        }
+    )
+    thin_walls = qto.calculate_walls_interior_structural_area(
+        include_filter={
+            "Pset_WallCommon.IsExternal": False,
+            "Qto_WallBaseQuantities.Width": ("<", 0.2)
+        }
+    )
+    assert thick_walls != thin_walls
+
+
+# Performance test (optional)
+@pytest.mark.skip(reason="Performance test, run manually")
+def test_performance_large_calculation(qto):
+    import time
+    start = time.time()
+    
+    # Run multiple calculationsdef test_quantity_sum_helper(qto):
+    # Test the internal sum_quantity method
+    spaces = qto.loader.get_elements(ifc_entity="IfcSpace")
+    total = qto.sum_quantity(
+        spaces, 
+        "Qto_SpaceBaseQuantities",
+        "NetFloorArea"
+    )
+    assert pytest.approx(total) > 0
+
+    qto.calculate_gross_floor_area()
+    qto.calculate_gross_floor_volume()
+    qto.calculate_walls_exterior_net_side_area()
+    qto.create_wall_coverings_by_room()
+    
+    duration = time.time() - start
+    assert duration < 5.0  # Should complete within 5 seconds
+
+# Comparison tests
+def test_area_relationships(qto):
+    # Test logical relationships between different areas
+    gross_area = qto.calculate_gross_floor_area()
+    net_area = qto.calculate_space_interior_floor_area()
+    assert gross_area > net_area
+
+    exterior_walls = qto.calculate_walls_exterior_net_side_area()
+    interior_walls = qto.calculate_walls_interior_net_side_area()
+    assert exterior_walls > interior_walls 
