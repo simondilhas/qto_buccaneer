@@ -4,7 +4,7 @@ import os
 
 # Add parent directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.qto_buccaneer.ifc_loader import IfcLoader
+from src.qto_buccaneer.utils.ifc_loader import IfcLoader
 from src.qto_buccaneer.qto_calculator import QtoCalculator
 
 # Load IFC
