@@ -50,13 +50,28 @@ class QtoCalculator:
         self,
         quantity_type: Literal["area", "volume"],
         include_filter: Optional[dict] = None,
+        include_filter_logic: Literal["AND", "OR"] = "OR",
         subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcSpace",
         pset_name: str = "Qto_SpaceBaseQuantities",
         prop_name: Optional[str] = None
     ) -> float:
         """
-        Generic method to calculate quantities (area or volume) with filters.
+        Generic method to calculate quantities (area or volume) with filters and filter logic.
+
+        Args:
+            quantity_type: Type of quantity to calculate ("area" or "volume")
+            include_filter: Optional filter for elements to include
+            include_filter_logic: Logic to apply for include filters ("AND" or "OR", default: "OR")
+            subtract_filter: Optional filter for elements to subtract
+            subtract_filter_logic: Logic to apply for subtract filters ("AND" or "OR", default: "OR")
+            ifc_entity: IFC class to extract quantities from
+            pset_name: Property set name containing the quantity
+            prop_name: Name of the quantity property
+
+        Returns:
+            float: The calculated quantity (area in m² or volume in m³)
         """
         # Default filters and property names based on quantity type
         defaults = {
@@ -74,9 +89,10 @@ class QtoCalculator:
         include_filter = include_filter or defaults[quantity_type]["include_filter"]
         prop_name = prop_name or defaults[quantity_type]["prop_name"]
 
-        # Get elements using the current IfcLoader interface
+        # Get elements using the current IfcLoader interface with filter logic
         include_elements = self.loader.get_elements(
             filters=include_filter,
+            filter_logic=include_filter_logic,
             ifc_entity=ifc_entity
         )
         
@@ -84,6 +100,7 @@ class QtoCalculator:
         if subtract_filter:
             subtract_elements = self.loader.get_elements(
                 filters=subtract_filter,
+                filter_logic=subtract_filter_logic,
                 ifc_entity=ifc_entity
             )
 
@@ -195,6 +212,26 @@ class QtoCalculator:
         """
 
         return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            subtract_filter=subtract_filter,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_coverings_interior_area(
+        self,
+        include_filter: Optional[dict] = {"Pset_CoveringCommon.IsExternal": False},
+        subtract_filter: Optional[dict] = None,
+        ifc_entity: str = "IfcCovering",
+        pset_name: str = "Qto_CoveringBaseQuantities",  
+        prop_name: str = "NetArea",
+    ) -> float:
+        """
+        Calculates the total area of interior coverings.
+        """
+        return self.calculate_quantity( 
             quantity_type="area",
             include_filter=include_filter,
             subtract_filter=subtract_filter,
@@ -427,46 +464,75 @@ class QtoCalculator:
             prop_name=prop_name,
         )
 
-    def calculate_space_floor_area(
+    def calculate_space_interior_floor_area(
         self,
-        include_filter: Optional[dict] = None,
-        subtract_filter: Optional[dict] = None,
+        include_filter: Optional[dict] = {"PredefinedType": "INTERNAL"},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
+        subtract_filter: Optional[dict] = {
+            "Name": ["LUF", "Void"]
+        },
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcSpace",
         pset_name: str = "Qto_SpaceBaseQuantities",
         prop_name: str = "NetFloorArea",
     ) -> float:
         """
-        Calculates the total floor area of spaces.
+        Calculates the total floor area of interior spaces.
+
+        Args:
+            include_filter: Optional filter for spaces to include (default: internal spaces)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
+            subtract_filter: Optional filter for spaces to subtract (e.g., LUF spaces)
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
+            ifc_entity: IFC class to extract areas from (default: "IfcSpace")
+            pset_name: Property set name (default: "Qto_SpaceBaseQuantities")
+            prop_name: Quantity name (default: "NetFloorArea")
+
+        Returns:
+            float: Total interior floor area in m²
         """
         return self.calculate_quantity(
             quantity_type="area",
             include_filter=include_filter,
+            include_filter_logic=include_filter_logic,
             subtract_filter=subtract_filter,
+            subtract_filter_logic=subtract_filter_logic,
             ifc_entity=ifc_entity,
             pset_name=pset_name,
             prop_name=prop_name,
         )
 
-    def calculate_space_volume(
+    def calculate_space_interior_volume(
         self,
         ifc_entity: str = "IfcSpace",
-        include_filter: Optional[dict] = None,
+        include_filter: Optional[dict] = {"PredefinedType": "INTERNAL"},
         include_filter_logic: Literal["AND", "OR"] = "OR",
-        subtract_filter: Optional[dict] = {
-            "Name": "GrossVolume",
-            "Name": "GrossVolume",
-        },
-        subtract_filter_logic: Literal["AND", "OR"] = "OR",
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "AND",
         pset_name: str = "Qto_SpaceBaseQuantities",
         prop_name: str = "GrossVolume",
     ) -> float:
         """
         Calculates the total volume of spaces.
+
+        Args:
+            ifc_entity: IFC class to extract volumes from (default: "IfcSpace")
+            include_filter: Optional filter for spaces to include
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "OR")
+            subtract_filter: Optional filter for spaces to subtract
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "AND")
+            pset_name: Property set name (default: "Qto_SpaceBaseQuantities")
+            prop_name: Quantity name (default: "GrossVolume")
+
+        Returns:
+            float: Total space volume in m³
         """
         return self.calculate_quantity(
             quantity_type="volume",
             include_filter=include_filter,
+            include_filter_logic=include_filter_logic,
             subtract_filter=subtract_filter,
+            subtract_filter_logic=subtract_filter_logic,
             ifc_entity=ifc_entity,
             pset_name=pset_name,
             prop_name=prop_name,

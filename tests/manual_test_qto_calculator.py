@@ -27,18 +27,8 @@ print(f"Building Volume: {volume_with_substraction}")
 external_coverings = qto.calculate_coverings_exterior_area()
 print(f"External Coverings: {external_coverings} m2")
 
-external_coverings = qto.calculate_coverings_exterior_area({"Pset_CoveringCommon.IsExternal": True})
-print(f"External Coverings: {external_coverings} m2")
-
-#coverings = loader.get_elements({"PredefinedType": "CLADDING"}, ifc_entity="IfcCovering")
-#
-#for c in coverings:
-#    psets = loader.get_property_sets(c)
-#    print(f"\n{c.GlobalId} Properties:")
-#    for pset_name, props in psets.items():
-#        print(f"  {pset_name}")
-#        for key, val in props.items():
-#            print(f"    {key}: {val}")
+internal_coverings = qto.calculate_coverings_interior_area()
+print(f"Internal Coverings: {internal_coverings} m2")
 
 windows_exterior = qto.calculate_windows_exterior_area()
 print(f"Exterior Windows: {windows_exterior}")
@@ -58,6 +48,9 @@ print(f"Exterior Walls: {walls_exterior}")
 walls_interior = qto.calculate_walls_interior_net_side_area()
 print(f"Interior Walls: {walls_interior}")
 
-space_floor_area = qto.calculate_space_floor_area()
+space_floor_area = qto.calculate_space_interior_floor_area()
 print(f"Space Floor Area: {space_floor_area}")
+
+space_volume = qto.calculate_space_interior_volume()
+print(f"Space Volume: {space_volume}")
 

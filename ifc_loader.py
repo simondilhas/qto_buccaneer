@@ -1,6 +1,6 @@
 import ifcopenshell
 import os
-from typing import List, Optional, Any, Dict, Union
+from typing import List, Optional, Any, Dict, Union, Literal
 from ifcopenshell.entity_instance import entity_instance
 
 IfcElement = Any
@@ -173,79 +173,101 @@ class IfcLoader:
 
     def get_elements(
         self,
-        filters: Optional[Dict[str, Any]] = None,
-        ifc_entity: Optional[str] = None
-    ) -> List[entity_instance]:
+        filters: Optional[dict] = None,
+        filter_logic: Literal["AND", "OR"] = "OR",
+        ifc_entity: str = "IfcSpace"
+    ) -> List[IfcElement]:
         """
-        Retrieve IFC elements matching multiple filter criteria.
+        Get IFC elements that match the specified filters with AND/OR logic.
 
         Args:
-            filters: Dictionary of {attribute/property: value} pairs to match
-            ifc_entity: IFC entity type to filter (e.g., "IfcWall")
+            filters: Dictionary of property/attribute names and their values (values can be single values or lists)
+            filter_logic: How to combine multiple filters ("AND" or "OR")
+            ifc_entity: Type of IFC entity to filter
 
         Returns:
-            List[entity_instance]: Matching IFC elements
+            List[IfcElement]: List of matching IFC elements
         """
-        elements = self.model.by_type(ifc_entity) if ifc_entity else self.model.by_type("IfcProduct")
+        # Get all elements of the specified type
+        elements = self.model.by_type(ifc_entity)
 
+        # If no filters, return all elements
         if not filters:
             return elements
 
-        # Normalize filters
-        normalized_filters = {
-            key: value[0] if isinstance(value, list) and len(value) == 1 else value
-            for key, value in filters.items()
-        }
+        def check_value_match(actual_value, filter_value, logic: Literal["AND", "OR"] = "OR"):
+            """Helper function to check if value matches, handling lists with AND/OR logic"""
+            if isinstance(filter_value, list):
+                if logic == "AND":
+                    # For AND logic, actual_value must match all values in the list
+                    return all(actual_value == val for val in filter_value)
+                else:  # OR logic
+                    # For OR logic, actual_value must match any value in the list
+                    return actual_value in filter_value
+            return actual_value == filter_value
 
-        results = []
-
+        # Filter elements
+        filtered_elements = []
         for element in elements:
-            matches_all = True
+            matches = []
+            
+            for key, filter_value in filters.items():
+                # Check direct attributes first
+                if hasattr(element, key):
+                    matches.append(check_value_match(getattr(element, key), filter_value, filter_logic))
+                    continue
 
-            for key, value in normalized_filters.items():
-                # Property set notation: "Pset_Name.PropertyName"
-                if "." in key:
-                    pset_name, prop_name = key.split(".", 1)
-                    prop_value = self.get_property_value(element, pset_name, prop_name)
-                else:
-                    # Direct attribute
-                    if hasattr(element, key):
-                        attr_value = getattr(element, key)
-                        if attr_value != value:
-                            if isinstance(attr_value, str) and isinstance(value, str):
-                                if value.lower() not in attr_value.lower():
-                                    matches_all = False
-                                    break
-                            else:
-                                matches_all = False
+                # Check property sets
+                match_found = False
+                for rel in getattr(element, "IsDefinedBy", []):
+                    if not hasattr(rel, "RelatingPropertyDefinition"):
+                        continue
+                        
+                    pset = rel.RelatingPropertyDefinition
+                    if not pset.is_a("IfcPropertySet"):
+                        continue
+
+                    # Handle nested property paths (e.g., "Pset_WallCommon.IsExternal")
+                    if "." in key:
+                        pset_name, prop_name = key.split(".")
+                        if pset.Name != pset_name:
+                            continue
+                        for prop in pset.HasProperties:
+                            if prop.Name == prop_name:
+                                matches.append(check_value_match(
+                                    prop.NominalValue.wrappedValue, 
+                                    filter_value,
+                                    filter_logic
+                                ))
+                                match_found = True
                                 break
-                        continue  # Go to next filter
-
-                    # Try fallback to Pset_Common
-                    prop_value = self.get_property_value(element, "Pset_Common", key)
-
-                # Normalize and compare property values
-                if isinstance(prop_value, str) and isinstance(value, str):
-                    if value.lower() not in prop_value.lower():
-                        matches_all = False
-                        break
-                elif isinstance(prop_value, bool) and isinstance(value, str):
-                    if str(prop_value).lower() != value.lower():
-                        matches_all = False
-                        break
-                elif isinstance(prop_value, str) and isinstance(value, bool):
-                    if prop_value.lower() != str(value).lower():
-                        matches_all = False
-                        break
-                else:
-                    if prop_value != value:
-                        matches_all = False
+                    else:
+                        # Direct property name match
+                        for prop in pset.HasProperties:
+                            if prop.Name == key:
+                                matches.append(check_value_match(
+                                    prop.NominalValue.wrappedValue, 
+                                    filter_value,
+                                    filter_logic
+                                ))
+                                match_found = True
+                                break
+                
+                    if match_found:
                         break
 
-            if matches_all:
-                results.append(element)
+                if not match_found:
+                    matches.append(False)
 
-        return results
+            # Apply filter logic
+            if filter_logic == "AND":
+                if all(matches):  # All conditions must be True
+                    filtered_elements.append(element)
+            else:  # OR logic
+                if any(matches):  # At least one condition must be True
+                    filtered_elements.append(element)
+
+        return filtered_elements
 
 
     def get_gfa_elements(
