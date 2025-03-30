@@ -111,18 +111,23 @@ class QtoCalculator:
 
     def calculate_gross_floor_area(
         self,
-        include_filter: Optional[dict] = None,
+        include_filter: Optional[dict] = None, 
+        include_filter_logic: Literal["AND", "OR"] = "AND",
         subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcSpace",
         pset_name: str = "Qto_SpaceBaseQuantities",
         prop_name: Optional[str] = None,
     ) -> float:
         """
         Calculates the gross floor area.
-        
+        The default values are based on the abstractBIM IFC.
+
         Args:
             include_filter: Optional override for default gross area filter
-            subtract_filter: Optional filter for areas to subtract
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
+            subtract_filter: Optional filter for areas to subtract 
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
             ifc_entity: IFC class to extract areas from (default: "IfcSpace")
             pset_name: Property set name (default: "Qto_SpaceBaseQuantities")
             prop_name: Quantity name in the property set (default: "NetFloorArea")
@@ -143,20 +148,25 @@ class QtoCalculator:
     def calculate_gross_floor_volume(
         self,
         include_filter: Optional[dict] = None,
+        include_filter_logic: Literal["AND", "OR"] = "AND",
         subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcSpace",
         pset_name: str = "Qto_SpaceBaseQuantities",
         prop_name: Optional[str] = None,
     ) -> float:
         """
         Calculates the gross floor volume.
+        The default values are based on the abstractBIM IFC.
 
         In the abstractBIM IFC standard, Gross Volume is calculated based on
         the volume enclosed by the exterior face of exterior walls, including all interior spaces.
 
         Args:
             include_filter: Optional override for default gross volume filter
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
             subtract_filter: Optional filter for volumes to subtract
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
             ifc_entity: IFC class to extract volumes from (default: "IfcSpace")
             pset_name: Property set name (default: "Qto_SpaceBaseQuantities")
             prop_name: Quantity name in the property set (default: "NetVolume")
@@ -184,20 +194,24 @@ class QtoCalculator:
         self,
         include_filter: Optional[dict] = {"PredefinedType": "CLADDING",
                                           "Pset_CoveringCommon.IsExternal": True,},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
         subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcCovering",
         pset_name: str = "Qto_CoveringBaseQuantities",
         prop_name: str = "NetArea",
     ) -> float:
         """
         Calculates the total area of exterior coverings.
-
+        The default values are based on the abstractBIM IFC.
         In the abstractBIM IFC standard, exterior coverings are defined as coverings
         where the 'IsExternal' attribute is True.
 
         Args:
             include_filter: Optional override for the default filter (IsExternal: True)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
             subtract_filter: Optional filter for coverings to subtract (e.g., temporary insulation)
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
             ifc_entity: IFC class to extract areas from (default: "IfcCovering")
             pset_name: Property set name (default: "Qto_CoveringBaseQuantities")
             prop_name: Quantity name in the property set (default: "NetArea")
@@ -223,13 +237,32 @@ class QtoCalculator:
     def calculate_coverings_interior_area(
         self,
         include_filter: Optional[dict] = {"Pset_CoveringCommon.IsExternal": False},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
         subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcCovering",
         pset_name: str = "Qto_CoveringBaseQuantities",  
         prop_name: str = "NetArea",
     ) -> float:
         """
         Calculates the total area of interior coverings.
+        The default values are based on the abstractBIM IFC.
+
+        Args:
+            include_filter: Optional filter for interior coverings (default: IsExternal = False)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
+            subtract_filter: Optional filter for coverings to subtract (e.g., temporary insulation)
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
+            ifc_entity: IFC class to extract areas from (default: "IfcCovering")
+            pset_name: Property set name (default: "Qto_CoveringBaseQuantities")
+            prop_name: Quantity name in the property set (default: "NetArea")
+
+        Returns:
+            float: Total area of interior coverings in m²
+
+        Example:
+            >>> qto = QtoCalculator(loader)
+            >>> area = qto.calculate_interior_coverings_area()
         """
         return self.calculate_quantity( 
             quantity_type="area",
@@ -243,19 +276,24 @@ class QtoCalculator:
     def calculate_windows_exterior_area(
         self,
         include_filter: Optional[dict] = {"Pset_WindowCommon.IsExternal": True},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
         subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcWindow",
         pset_name: str = "Qto_WindowBaseQuantities",
         prop_name: str = "Area",
     ) -> float:
         """
         Calculates the total area of exterior windows.
+        The default values are based on the abstractBIM IFC.
 
         Windows are considered exterior if the 'IsExternal' property in Pset_WindowCommon is True.
 
         Args:
             include_filter: Optional filter for exterior windows (default: IsExternal = True)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
             subtract_filter: Optional filter to subtract some windows (e.g., temporary or construction openings)
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
             ifc_entity: IFC class to extract areas from (default: "IfcWindow")
             pset_name: Quantity set name (default: "Qto_WindowBaseQuantities")
             prop_name: Quantity name (default: "NetArea")
@@ -280,19 +318,24 @@ class QtoCalculator:
     def calculate_windows_interior_area(
         self,
         include_filter: Optional[dict] = {"Pset_WindowCommon.IsExternal": False},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
         subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcWindow",
         pset_name: str = "Qto_WindowBaseQuantities",
         prop_name: str = "Area",
     ) -> float:
         """
         Calculates the total area of exterior windows.
+        The default values are based on the abstractBIM IFC.
 
         Windows are considered exterior if the 'IsExternal' property in Pset_WindowCommon is True.
 
         Args:
             include_filter: Optional filter for exterior windows (default: IsExternal = True)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
             subtract_filter: Optional filter to subtract some windows (e.g., temporary or construction openings)
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
             ifc_entity: IFC class to extract areas from (default: "IfcWindow")
             pset_name: Quantity set name (default: "Qto_WindowBaseQuantities")
             prop_name: Quantity name (default: "NetArea")
@@ -317,19 +360,24 @@ class QtoCalculator:
     def calculate_doors_exterior_area(
         self,
         include_filter: Optional[dict] = {"Pset_DoorCommon.IsExternal": True},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
         subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcDoor",
         pset_name: str = "Qto_DoorBaseQuantities",
         prop_name: str = "Area",
     ) -> float:
         """
         Calculates the total area of exterior doors.
+        The default values are based on the abstractBIM IFC.
 
         Doors are considered exterior if the 'IsExternal' property in Pset_DoorCommon is True.
 
         Args:
             include_filter: Optional filter for exterior doors (default: IsExternal = True)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
             subtract_filter: Optional filter to exclude certain doors (e.g., temporary construction openings)
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
             ifc_entity: IFC class to extract areas from (default: "IfcDoor")
             pset_name: Quantity set name (default: "Qto_DoorBaseQuantities")
             prop_name: Quantity name (default: "NetArea")
@@ -354,19 +402,23 @@ class QtoCalculator:
     def calculate_doors_interior_area(
         self,
         include_filter: Optional[dict] = {"Pset_DoorCommon.IsExternal": False},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
         subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcDoor",
         pset_name: str = "Qto_DoorBaseQuantities",
         prop_name: str = "Area",
     ) -> float:
         """
         Calculates the total area of interior doors.
-
+        The default values are based on the abstractBIM IFC.
         Doors are considered interior if the 'IsExternal' property in Pset_DoorCommon is False.
 
         Args:
             include_filter: Optional filter for interior doors (default: IsExternal = False)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
             subtract_filter: Optional filter to exclude certain doors
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
             ifc_entity: IFC class to extract areas from (default: "IfcDoor")
             pset_name: Quantity set name (default: "Qto_DoorBaseQuantities")
             prop_name: Quantity name (default: "Area")
@@ -391,20 +443,25 @@ class QtoCalculator:
     def calculate_walls_exterior_net_side_area(
         self,
         include_filter: Optional[dict] = {"Pset_WallCommon.IsExternal": True},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
         subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcWallStandardCase",
         pset_name: str = "Qto_WallBaseQuantities",
         prop_name: str = "NetSideArea",
     ) -> float:
         """
         Calculates the total net side area of exterior walls.
+        The default values are based on the abstractBIM IFC.
 
         Walls are considered exterior if the 'IsExternal' property in Pset_WallCommon is True.
         The net side area excludes openings like windows and doors.
 
         Args:
             include_filter: Optional filter for exterior walls (default: IsExternal = True)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
             subtract_filter: Optional filter to exclude certain walls
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
             ifc_entity: IFC class to extract areas from (default: "IfcWallStandardCase")
             pset_name: Quantity set name (default: "Qto_WallBaseQuantities")
             prop_name: Quantity name (default: "NetSideArea")
@@ -429,20 +486,24 @@ class QtoCalculator:
     def calculate_walls_interior_net_side_area( 
         self,
         include_filter: Optional[dict] = {"Pset_WallCommon.IsExternal": False},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
         subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcWallStandardCase",
         pset_name: str = "Qto_WallBaseQuantities",
         prop_name: str = "NetSideArea",
     ) -> float:
         """
         Calculates the total net side area of interior walls.
-
+        The default values are based on the abstractBIM IFC.
         Walls are considered interior if the 'IsExternal' property in Pset_WallCommon is False.
         The net side area excludes openings like doors and windows.
 
         Args:
             include_filter: Optional filter for interior walls (default: IsExternal = False)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
             subtract_filter: Optional filter to exclude certain walls
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
             ifc_entity: IFC class to extract areas from (default: "IfcWallStandardCase")
             pset_name: Quantity set name (default: "Qto_WallBaseQuantities")
             prop_name: Quantity name (default: "NetSideArea")
@@ -463,6 +524,34 @@ class QtoCalculator:
             pset_name=pset_name,
             prop_name=prop_name,
         )
+    def calculate_walls_interior_structural_area(
+        self,
+        include_filter: Optional[dict] = {"Pset_WallCommon.IsExternal": False},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
+        subtract_filter: Optional[dict] = {"Width": 0.15},
+        subtract_filter_logic: Literal["AND", "OR", ">", "<", "=", "!=", "<=", ">="] = ">",
+        ifc_entity: str = "IfcWallStandardCase",
+        pset_name: str = "Qto_WallBaseQuantities",
+        prop_name: str = "NetSideArea",
+    ) -> float:
+        """
+        Calculates the total structural area of interior walls.
+        The default values are based on the abstractBIM IFC.
+        Assumption is, that walls thicker than 15cm are structural walls.
+
+        Args:
+            include_filter: Optional filter for interior walls (default: IsExternal = False)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
+            subtract_filter: Optional filter to exclude certain walls
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
+            ifc_entity: IFC class to extract areas from (default: "IfcWallStandardCase")
+            pset_name: Quantity set name (default: "Qto_WallBaseQuantities")
+            prop_name: Quantity name (default: "StructuralArea")
+
+        Returns:
+            float: Total structural area of interior walls in m²
+        """
+        return self.calculate_quantity(
 
     def calculate_space_interior_floor_area(
         self,
@@ -478,6 +567,7 @@ class QtoCalculator:
     ) -> float:
         """
         Calculates the total floor area of interior spaces.
+        The default values are based on the abstractBIM IFC.
 
         Args:
             include_filter: Optional filter for spaces to include (default: internal spaces)
@@ -510,10 +600,11 @@ class QtoCalculator:
         subtract_filter: Optional[dict] = None,
         subtract_filter_logic: Literal["AND", "OR"] = "AND",
         pset_name: str = "Qto_SpaceBaseQuantities",
-        prop_name: str = "GrossVolume",
+        prop_name: str = "NetVolume",
     ) -> float:
         """
-        Calculates the total volume of spaces.
+        Calculates the total volume of spaces. 
+        The default values are based on the abstractBIM IFC.
 
         Args:
             ifc_entity: IFC class to extract volumes from (default: "IfcSpace")
@@ -537,3 +628,210 @@ class QtoCalculator:
             pset_name=pset_name,
             prop_name=prop_name,
         )
+
+    def calculate_space_exterior_area(
+        self,
+        include_filter: Optional[dict] = {"PredefinedType": "EXTERNAL"},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
+        ifc_entity: str = "IfcSpace",
+        pset_name: str = "Qto_SpaceBaseQuantities",
+        prop_name: str = "NetFloorArea",
+    ) -> float:
+        """
+        Calculates the total exterior area of spaces.
+        The default values are based on the abstractBIM IFC.
+
+        Args:
+            include_filter: Optional filter for spaces to include (default: external spaces)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
+            subtract_filter: Optional filter for spaces to subtract
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")   
+            ifc_entity: IFC class to extract areas from (default: "IfcSpace")
+            pset_name: Property set name (default: "Qto_SpaceBaseQuantities")
+            prop_name: Quantity name (default: "NetFloorArea")
+
+        Returns:
+            float: Total exterior area of spaces in m²
+        """
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            include_filter_logic=include_filter_logic,
+            subtract_filter=subtract_filter,
+            subtract_filter_logic=subtract_filter_logic,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_slab_balcony_area(
+        self,
+        include_filter: Optional[dict] = {"Name": "Slab Balcony"},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
+        ifc_entity: str = "IfcSlab",
+        pset_name: str = "Qto_SlabBaseQuantities",
+        prop_name: str = "NetArea",
+    ) -> float:
+        """
+        Calculates the total exterior area of slabs.
+
+        In the abstractBIM IFC standard, exterior slabs are defined as:
+        - Balconies: Slabs with exterior space above
+        - Cantilevered roofs: Also included as they meet the same criteria
+
+        Args:
+            include_filter: Optional filter for exterior slabs (default: slabs with exterior space above)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
+            subtract_filter: Optional filter to exclude certain slabs
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
+            ifc_entity: IFC class to extract areas from (default: "IfcSlab")
+            pset_name: Quantity set name (default: "Qto_SlabBaseQuantities")
+            prop_name: Quantity name (default: "NetArea")
+
+        Returns:
+            float: Total exterior slab area in m²
+
+        Warning:
+            Cantilevered roofs are included in this calculation as they also have exterior space above.
+
+        Example:
+            >>> qto = QtoCalculator(loader)
+            >>> area = qto.calculate_slabs_exterior_area()
+            >>> print(f"Exterior Slabs Area: {area:.2f} m²")
+        """
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            include_filter_logic=include_filter_logic,
+            subtract_filter=subtract_filter,
+            subtract_filter_logic=subtract_filter_logic,    
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_slab_interior_area(
+        self,
+        include_filter: Optional[dict] = {"PredefinedType": "FLOOR"},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
+        ifc_entity: str = "IfcSlab",
+        pset_name: str = "Qto_SlabBaseQuantities",
+        prop_name: str = "NetArea",
+    ) -> float:
+
+        """
+        Calculates the total interior area of slabs.
+        The default values are based on the abstractBIM IFC.
+
+        Args:
+            include_filter: Optional filter for slabs to include (default: internal slabs)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
+            subtract_filter: Optional filter for slabs to subtract
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
+            ifc_entity: IFC class to extract areas from (default: "IfcSlab")
+            pset_name: Property set name (default: "Qto_SlabBaseQuantities")
+            prop_name: Quantity name (default: "NetArea")
+
+        Returns:
+            float: Total interior area of slabs in m²   
+
+        Example:
+            >>> qto = QtoCalculator(loader)
+            >>> area = qto.calculate_slab_interior_area()
+            >>> print(f"Slab Interior Area: {area:.2f} m²")
+        """
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            include_filter_logic=include_filter_logic,
+            subtract_filter=subtract_filter,
+            subtract_filter_logic=subtract_filter_logic,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,    
+        )   
+
+    def calculate_roof_area(
+        self,
+        include_filter: Optional[dict] = {"PredefinedType": "ROOF"},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
+        ifc_entity: str = "IfcSlab",
+        pset_name: str = "Qto_SlabBaseQuantities",
+        prop_name: str = "NetArea",
+    ) -> float: 
+        """
+        Calculates the total area of roofs.
+        The default values are based on the abstractBIM IFC.
+
+        Args:
+            include_filter: Optional filter for roofs to include (default: roofs)   
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
+            subtract_filter: Optional filter for roofs to subtract
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
+            ifc_entity: IFC class to extract areas from (default: "IfcRoof")
+            pset_name: Property set name (default: "Qto_RoofBaseQuantities")
+            prop_name: Quantity name (default: "NetArea")
+
+        Returns:
+            float: Total roof area in m²
+        """
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            include_filter_logic=include_filter_logic,
+            subtract_filter=subtract_filter,
+            subtract_filter_logic=subtract_filter_logic,
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+    def calculate_base_slab_area(
+        self,
+        include_filter: Optional[dict] = {"PredefinedType": "BASESLAB"},
+        include_filter_logic: Literal["AND", "OR"] = "AND",
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
+        ifc_entity: str = "IfcSlab",
+        pset_name: str = "Qto_SlabBaseQuantities",
+        prop_name: str = "NetArea",
+    ) -> float: 
+        """
+        Calculates the total area of base slabs.
+        The default values are based on the abstractBIM IFC.
+        In the abstractBIM IFC standard, base slabs are defined as:
+        - Base slabs: Slabs with a internal space above
+        - Cantilevered Slabs: Also included as they meet the same criteria (sofar there is no way
+         to differentiate between base and cantilevered slabs) 
+         TODO: Add a filter for spaces that are in contact with the ground (manual data enrichment). 
+
+        Args:
+            include_filter: Optional filter for base slabs to include (default: base slabs)
+            include_filter_logic: How to combine include filters ("AND" or "OR", default: "AND")
+            subtract_filter: Optional filter for base slabs to subtract (e.g., temporary or construction openings)  
+            subtract_filter_logic: How to combine subtract filters ("AND" or "OR", default: "OR")
+            ifc_entity: IFC class to extract areas from (default: "IfcSlab")
+            pset_name: Property set name (default: "Qto_SlabBaseQuantities")
+            prop_name: Quantity name (default: "NetArea")
+
+        Returns:
+            float: Total base slab area in m²
+        """
+        return self.calculate_quantity(
+            quantity_type="area",
+            include_filter=include_filter,
+            include_filter_logic=include_filter_logic,
+            subtract_filter=subtract_filter,
+            subtract_filter_logic=subtract_filter_logic,    
+            ifc_entity=ifc_entity,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )   

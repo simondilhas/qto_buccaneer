@@ -54,3 +54,21 @@ print(f"Space Floor Area: {space_floor_area}")
 space_volume = qto.calculate_space_interior_volume()
 print(f"Space Volume: {space_volume}")
 
+space_exterior_area = qto.calculate_space_exterior_area()
+print(f"Space Exterior Area: {space_exterior_area}")
+
+slab_exterior_area = qto.calculate_slab_balcony_area()
+print(f"Slab Exterior Area: {slab_exterior_area}")
+
+slab_interior_area = qto.calculate_slab_interior_area()
+print(f"Slab Interior Area: {slab_interior_area}")
+
+roof_area = qto.calculate_roof_area()
+print(f"Roof Area: {roof_area}")
+
+base_slab_area = qto.calculate_base_slab_area()
+print(f"Base Slab Area: {base_slab_area}")
+
+
+
+
