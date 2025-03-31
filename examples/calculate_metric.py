@@ -4,19 +4,20 @@ from pathlib import Path
 src_dir = str(Path(__file__).parent.parent / "src")
 sys.path.append(src_dir)
 
-from qto_buccaneer.metrics import calculate_single_value
-from qto_buccaneer.reports import format_console_output, export_to_excel
+from qto_buccaneer.metrics import calculate_single_metric
+from qto_buccaneer.reports import format_console_output
 from qto_buccaneer.utils.config import load_config
+from qto_buccaneer.utils.ifc_loader import IfcLoader
 
 #Specify the metric you want to calculate, if None, all metrics will be calculated
 #METRIC_NAME = "gross_floor_area" 
-METRIC_NAME = "gross_volume"
+#METRIC_NAME = "gross_volume"
 #METRIC_NAME = "space_interior_floor_area"
 #METRIC_NAME = "space_exterior_area"
 #METRIC_NAME = "space_interior_volume"
 #METRIC_NAME = "windows_exterior_area"
 #METRIC_NAME = "windows_interior_area"
-#METRIC_NAME = "space_gross_volume"
+METRIC_NAME = "gross_volume"
 #METRIC_NAME = "windows_exterior_area"
 #METRIC_NAME = "windows_interior_area"
 #METRIC_NAME = "interior_walls_side_area"
@@ -33,7 +34,6 @@ METRIC_NAME = "gross_volume"
 #METRIC_NAME = "walls_interior_loadbearing_net_side_area"
 #METRIC_NAME = "walls_interior_non_loadbearing_net_side_area"
 
-METRIC_NAME = "windows_by_room"
 
 
 def main():
@@ -41,16 +41,33 @@ def main():
     ifc_path = "examples/Mustermodell V1_abstractBIM.ifc"
     config_path = "src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml"
     
+    # Load the configuration file
+    config = load_config(config_path)
+    
     # Add metric name parameter (you can specify which metric to calculate)
     metric_name = METRIC_NAME
     if len(sys.argv) > 1:
         metric_name = sys.argv[1]
 
-    # Modified function call to include metric_name
-    df, room_results = calculate_single_value(ifc_path, config_path, metric_name)
+    # Create loader instance
+    loader = IfcLoader(ifc_path)
     
-    # Print formatted results
-    format_console_output(df, room_results)
+    # Create file info dictionary using loader attributes
+    file_info = {
+        "file_path": loader.file_path,
+        "file_name": Path(loader.file_path).name,
+        "file_type": "IFC",
+        "file_schema": loader.model.schema,
+    }
+    
+    # Calculate single metric with loaded config
+    df = calculate_single_metric(ifc_path, config, metric_name, file_info)
+    
+    # Print formatted results with None for room details
+    if df is not None:
+        format_console_output(df, None)
+    else:
+        print("No results to display")
 
 if __name__ == "__main__":
     main() 
