@@ -37,23 +37,27 @@ def calculate_all_metrics(ifc_path: str, config_path: str) -> Tuple[pd.DataFrame
         **loader.get_project_info()
     }
 
-    # Calculate standard metrics
+    standard_df = calculate_standard_metrics(qto, config.get("metrics", {}), file_info)
+    room_df = calculate_room_metrics(qto, config.get("room_metrics", {}), file_info)
+
+    return standard_df, room_df
+
+def calculate_standard_metrics(qto: QtoCalculator, metrics_config: dict, file_info: dict) -> pd.DataFrame:
+    """Calculate standard (non-room) metrics."""
     standard_results = [
         _process_quantity_calculation(qto, metric_name, metric_config, file_info)
-        for metric_name, metric_config in config.get("metrics", {}).items()
+        for metric_name, metric_config in metrics_config.items()
     ]
-    standard_df = pd.DataFrame(standard_results)
-    
-    # Calculate room-based metrics
+    return pd.DataFrame(standard_results)
+
+def calculate_room_metrics(qto: QtoCalculator, room_metrics_config: dict, file_info: dict) -> pd.DataFrame:
+    """Calculate room-based metrics."""
     room_results = []
-    for metric_name, metric_config in config.get("room_metrics", {}).items():
+    for metric_name, metric_config in room_metrics_config.items():
         result = _calculate_metric_per_room(qto, metric_name, metric_config, file_info)
         if result is not None:
             room_results.extend(result)
-    
-    room_df = pd.DataFrame(room_results)
-
-    return standard_df, room_df
+    return pd.DataFrame(room_results)
 
 def calculate_single_value(ifc_path: str, config_path: str, metric_name: str) -> tuple[pd.DataFrame, dict]:
     """
@@ -67,27 +71,27 @@ def calculate_single_value(ifc_path: str, config_path: str, metric_name: str) ->
     Returns:
         tuple[pd.DataFrame, dict]: DataFrame with value results and dictionary with room-specific results
     """
-    # Load configuration using the same method as calculate_all_metrics
     config = load_config(config_path)
-    
-    if metric_name not in config['metrics']:
-        raise ValueError(f"Metric '{metric_name}' not found in configuration")
-    
-    # Initialize loader and calculator the same way as calculate_all_metrics
     loader = IfcLoader(ifc_path)
     qto = QtoCalculator(loader)
-    
-    # Get file info including project info
     file_info = {
         "filename": Path(ifc_path).name,
         **loader.get_project_info()
     }
-    
-    metric_config = config['metrics'][metric_name]
-    result = _process_quantity_calculation(qto, metric_name, metric_config, file_info)
-    
-    df = pd.DataFrame([result])
-    room_results = getattr(qto, 'room_results', {})
+
+    # Check if metric is a standard metric or room metric
+    if metric_name in config.get('metrics', {}):
+        metric_config = config['metrics'][metric_name]
+        result = _process_quantity_calculation(qto, metric_name, metric_config, file_info)
+        df = pd.DataFrame([result])
+        room_results = {}
+    elif metric_name in config.get('room_metrics', {}):
+        metric_config = config['room_metrics'][metric_name]
+        results = _calculate_metric_per_room(qto, metric_name, metric_config, file_info)
+        df = pd.DataFrame(results) if results else pd.DataFrame()
+        room_results = {row['room_name']: row['value'] for _, row in df.iterrows()} if not df.empty else {}
+    else:
+        raise ValueError(f"Metric '{metric_name}' not found in configuration")
     
     return df, room_results
 
