@@ -55,13 +55,13 @@ def main():
     file_info = {
         "file_path": loader.file_path,
         "file_name": Path(loader.file_path).name,
-        "file_type": "IFC",
         "file_schema": loader.model.schema,
     }
     
     # Calculate single metric with loaded config
     df = calculate_single_metric(ifc_path, config, metric_name, file_info)
     print(df)
+
 
 if __name__ == "__main__":
     main() 

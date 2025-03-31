@@ -32,21 +32,13 @@ def main():
     file_info = {
         "file_path": loader.file_path,
         "file_name": Path(loader.file_path).name,
-        "file_type": "IFC",
         "file_schema": loader.model.schema,
     }
     
     # Calculate single room metric with loaded config
     df= calculate_single_room_metric(ifc_path, config, metric_name, file_info)
     print(df)
-    #
-    ## Print formatted results with room details
-    #if df is not None:
-    #    format_console_output(df)
-    #else:
-    #    print("No results to display")
-#
-    #print(df)
+
 
 if __name__ == "__main__":
     main() 
