@@ -1,14 +1,16 @@
 import ifcopenshell
 
-ifc_file = ifcopenshell.open("tests/help.ifc")
+ifc_file = ifcopenshell.open("examples/Mustermodell V1_abstractBIM.ifc")
 
 spaces = ifc_file.by_type("IfcSpace")
 
+# Create a set to store unique LongNames
+unique_longnames = set()
+
 for space in spaces:
-    print(f"Space: {space.Name}, GlobalId: {space.GlobalId}")
-    for rel in space.IsDefinedBy:
-        qto = getattr(rel, "RelatingPropertyDefinition", None)
-        if qto and qto.is_a("IfcElementQuantity") and qto.Name == "Qto_SpaceBaseQuantities":
-            for quantity in qto.Quantities:
-                if quantity.Name in ["NetFloorArea", "GrossFloorArea"]:
-                    print(f"  {quantity.Name}: {quantity.NominalValue.wrappedValue}")
+    if space.LongName:  # Only add non-None values
+        unique_longnames.add(space.LongName)
+
+# Print unique LongNames
+for longname in unique_longnames:
+    print(f"{longname}")

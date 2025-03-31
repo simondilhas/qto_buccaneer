@@ -2,6 +2,8 @@ import ifcopenshell
 import os
 from typing import List, Optional, Any, Dict, Union, Literal
 from ifcopenshell.entity_instance import entity_instance
+import pandas as pd
+import time
 
 IfcElement = Any
 
@@ -305,3 +307,94 @@ class IfcLoader:
             "project_phase": getattr(project, "Phase", "Unknown"),
             "project_status": getattr(project, "Status", "Unknown")
         }
+
+    def get_space_information(self, ifc_entity: str = "IfcSpace") -> pd.DataFrame:
+        """
+        Get space information from IFC file and return it as a DataFrame.
+        
+        Args:
+            ifc_entity (str): The IFC entity type to query (default: "IfcSpace")
+            
+        Returns:
+            pd.DataFrame: Element information including:
+                - Direct attributes (e.g., Name, GlobalId)
+                - Property set values (columns named as 'PsetName.PropertyName')
+                - Quantity set values (columns named as 'QsetName.QuantityName')
+        """
+        elements = self.model.by_type(ifc_entity)
+        
+        # Initialize empty list to store data
+        data = []
+        
+        for element in elements:
+            # Get basic attributes
+            element_data = {
+                'GlobalId': getattr(element, "GlobalId", None),
+                'Name': getattr(element, "Name", None),
+                'LongName': getattr(element, "LongName", None),
+                'Description': getattr(element, "Description", None),
+                'ObjectType': getattr(element, "ObjectType", None),
+                'IFC_ENTITY_TYPE': element.is_a()  # This gets the IFC entity type
+            }
+            
+            # Get property and quantity sets
+            psets = self.get_property_sets(element)
+            
+            # Add properties and quantities with combined names
+            for set_name, properties in psets.items():
+                for prop_name, value in properties.items():
+                    # Handle wrapped values
+                    if hasattr(value, "wrappedValue"):
+                        value = value.wrappedValue
+                    column_name = f"{set_name}.{prop_name}"
+                    element_data[column_name] = value
+            
+            data.append(element_data)
+        
+        # Create DataFrame
+        df = pd.DataFrame(data)
+        
+        return df
+
+    def get_element_spatial_relationship(self, ifc_entity: Optional[str] = None) -> pd.DataFrame:
+        """
+        Get spatial information for IFC elements.
+        """
+        print("Start")
+        
+        data = {
+            'GlobalId': [],
+            'Building.Story': [],
+            'Story.Elevation': []
+        }
+        
+        try:
+            # First collect all elements connected to stories
+            connected_elements = set()  # Use set to avoid duplicates
+            stories = self.model.by_type("IfcBuildingStorey")
+            print(f"Found {len(stories)} stories")
+            
+            for story in stories:
+                # Get all relationships where this story is the container
+                for rel in self.model.get_inverse(story):
+                    if rel.is_a('IfcRelContainedInSpatialStructure'):
+                        # Add all elements from this relationship
+                        for element in rel.RelatedElements:
+                            # If specific entity type is requested, filter for it
+                            if ifc_entity is None or element.is_a(ifc_entity):
+                                connected_elements.add(element)
+                                data['GlobalId'].append(element.GlobalId)
+                                data['Building.Story'].append(story.Name)
+                                data['Story.Elevation'].append(float(getattr(story, "Elevation", 0.0)))
+            
+            print(f"Found {len(connected_elements)} elements connected to stories")
+            
+            df = pd.DataFrame(data)
+            print(f"DataFrame shape: {df.shape}")
+            return df
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            return pd.DataFrame(columns=list(data.keys()))
+
+   
