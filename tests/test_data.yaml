@@ -1,0 +1,9 @@
+sum_quantity:
+  NetFloorArea: 241.5
+calculate_quantity:
+  default_area: 241.5
+  filtered_area: 120.0
+  subtracted_area: 200.0
+elements_by_space:
+  Room 101: 50.0
+  Room 102: 45.0

@@ -11,7 +11,7 @@ from qto_buccaneer.reports import format_console_output, export_to_excel
 def main():
     # Example usage
     ifc_path = "examples/Mustermodell V1_abstractBIM.ifc"
-    config_path = "src/qto_buccaneer/metrics_config.yaml"
+    config_path = "src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml"
     
     df, room_results = calculate_all_metrics(ifc_path, config_path)
     

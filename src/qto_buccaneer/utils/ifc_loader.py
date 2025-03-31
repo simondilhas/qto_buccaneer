@@ -213,7 +213,7 @@ class IfcLoader:
                 pset_name, prop_name = key.split(".")
                 prop_value = None
                 
-                # Check IfcPropertySet
+                # Check IfcPropertySet and IfcElementQuantity
                 for rel in getattr(element, "IsDefinedBy", []):
                     definition = getattr(rel, "RelatingPropertyDefinition", None)
                     if not definition:
@@ -250,7 +250,27 @@ class IfcLoader:
         return filtered_elements
 
     def _compare_values(self, actual_value: Any, filter_value: Any) -> bool:
-        if isinstance(filter_value, tuple) and len(filter_value) == 2:
+        # Handle string operators like "<=0.15"
+        if isinstance(filter_value, str):
+            operators = [">=", "<=", "!=", "=", ">", "<"]
+            for op in operators:
+                if filter_value.startswith(op):
+                    try:
+                        value = float(filter_value[len(op):])
+                        actual_value = float(actual_value)
+                        return {
+                            ">": actual_value > value,
+                            "<": actual_value < value,
+                            "=": actual_value == value,
+                            "!=": actual_value != value,
+                            "<=": actual_value <= value,
+                            ">=": actual_value >= value
+                        }[op]
+                    except (TypeError, ValueError):
+                        return False
+        
+        # Handle list with operator and value
+        elif isinstance(filter_value, list) and len(filter_value) == 2:
             operator, value = filter_value
             try:
                 actual_value = float(actual_value)
@@ -265,69 +285,11 @@ class IfcLoader:
                 }[operator]
             except (TypeError, ValueError):
                 return False
+        # Handle regular list membership
         elif isinstance(filter_value, list):
             return actual_value in filter_value
         
         return actual_value == filter_value
-
-    def get_gfa_elements(
-        self,
-        ifc_entity: str = "IfcSpace",
-        name_filter: str = "GFA"
-    ) -> List[entity_instance]:
-        """Extract elements for Gross Floor Area Spaces.
-        
-        Args:
-            ifc_entity (str, optional): The IFC entity type to search for. Defaults to "IfcSpace"
-            name_filter (str, optional): The value to match in Name field. Defaults to "GFA"
-
-        Returns:
-            List[entity_instance]: List of IFC elements matching the criteria
-
-        Examples:
-            >>> loader = IfcLoader("building.ifc")
-            >>> gfa_spaces = loader.get_gfa_elements()
-            >>> print(f"Found {len(gfa_spaces)} GFA spaces")
-        """
-        filters = {"Name": name_filter}
-        return self.get_elements(
-            filters=filters,
-            ifc_entity=ifc_entity
-        )
-        
-    def summary(self) -> Dict[str, Any]:
-        """
-        Get a summary of the IFC model.
-        
-        Returns:
-            Dictionary with model summary information
-            
-        Example:
-            >>> loader = IfcLoader("hospital.ifc")
-            >>> info = loader.summary()
-            >>> for key, value in info.items():
-            >>>     print(f"{key}: {value}")
-        """
-        # Count elements by type
-        element_counts = {}
-        for entity_type in ["IfcWall", "IfcWindow", "IfcDoor", "IfcSpace", "IfcSlab"]:
-            count = len(self.model.by_type(entity_type))
-            if count > 0:
-                element_counts[entity_type] = count
-                
-        # Try to get project information
-        project_info = {}
-        for project in self.model.by_type("IfcProject"):
-            project_info["Name"] = getattr(project, "Name", "Unnamed")
-            project_info["Description"] = getattr(project, "Description", "")
-            break
-            
-        return {
-            "File": os.path.basename(self.file_path),
-            "Project": project_info,
-            "Elements": element_counts,
-            "Total Elements": len(self.model.by_type("IfcProduct"))
-        }
 
     def get_project_info(self) -> dict:
         """

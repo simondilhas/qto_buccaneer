@@ -1,154 +1,67 @@
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import pytest
+import yaml
 from src.qto_buccaneer.utils.ifc_loader import IfcLoader
-from src.qto_buccaneer.qto_calculator import QtoCalculator
+from src.qto_buccaneer.utils.qto_calculator import QtoCalculator
+
+# Constants for test data
+TEST_IFC_PATH = "tes_model_1.ifc"
+TEST_DATA_PATH = "tests/test_data.yaml"
+
+@pytest.fixture
+def test_data():
+    """Load expected values from YAML file"""
+    with open(TEST_DATA_PATH, 'r') as f:
+        return yaml.safe_load(f)
 
 @pytest.fixture
 def qto():
-    loader = IfcLoader("examples/Mustermodell V1_abstractBIM.ifc")
+    """Initialize QtoCalculator with test IFC file"""
+    loader = IfcLoader(TEST_IFC_PATH)
     return QtoCalculator(loader)
 
-def test_gross_floor_area(qto):
-    assert pytest.approx(qto.calculate_gross_floor_area()) == 206.03735
-    assert pytest.approx(qto.calculate_gross_floor_area(subtract_filter={"LongName": "LUF"})) == 194.41235
+def test_sum_quantity_basic(qto, test_data):
+    """Test summing a quantity from elements using a known quantity set and name."""
+    elements = qto.loader.get_elements(ifc_entity="IfcSpace")
+    total = qto.sum_quantity(elements, "Qto_SpaceBaseQuantities", "NetFloorArea")
+    expected = test_data["sum_quantity"]["NetFloorArea"]
+    assert pytest.approx(total, 0.01) == expected
 
-def test_building_volume(qto):
-    assert pytest.approx(qto.calculate_gross_floor_volume()) == 710.208555
-    assert pytest.approx(qto.calculate_gross_floor_volume(subtract_filter={"LongName": "LUF"})) == 675.333555
+def test_calculate_quantity_area_default(qto, test_data):
+    """Test default area calculation without filters."""
+    result = qto.calculate_quantity(quantity_type="area")
+    expected = test_data["calculate_quantity"]["default_area"]
+    assert pytest.approx(result, 0.01) == expected
 
-def test_coverings(qto):
-    assert pytest.approx(qto.calculate_coverings_exterior_area()) == 1010.5960740101783
-    assert pytest.approx(qto.calculate_coverings_interior_area()) == 755.3379500000003
-
-def test_windows(qto):
-    assert pytest.approx(qto.calculate_windows_exterior_area()) == 6.110200000000002
-    assert pytest.approx(qto.calculate_windows_interior_area()) == 0.0
-
-def test_doors(qto):
-    assert pytest.approx(qto.calculate_doors_exterior_area()) == 2.1
-    assert pytest.approx(qto.calculate_doors_interior_area()) == 0.0
-
-def test_space_measurements(qto):
-    assert pytest.approx(qto.calculate_space_interior_floor_area()) == 156.094
-    assert pytest.approx(qto.calculate_space_interior_volume()) == 512.4601
-    assert pytest.approx(qto.calculate_space_exterior_area()) == 321.671368
-
-def test_slab_measurements(qto):
-    assert pytest.approx(qto.calculate_slab_balcony_area()) == 32.84735
-    assert pytest.approx(qto.calculate_slab_interior_area()) == 137.554866
-    assert pytest.approx(qto.calculate_roof_area()) == 73.79485
-    assert pytest.approx(qto.calculate_base_slab_area()) == 73.79485
-
-def test_wall_measurements(qto):
-    assert pytest.approx(qto.calculate_walls_exterior_net_side_area()) == 292.40974
-    assert pytest.approx(qto.calculate_walls_interior_net_side_area()) == 94.47306989301853
-    assert pytest.approx(qto.calculate_walls_interior_structural_area()) == 94.47306989301853
-
-def test_room_based_calculations(qto):
-    expected_wall_coverings = {
-        'SGR': 89.19,
-        'GSA': 128.14690000000002,
-        'TRH': 100.0458,
-        'LUF': 32.205,
-        'WCH': 38.94,
-        'WCD': 38.94,
-        'RRG': 38.94
-    }
-    assert qto.create_wall_coverings_by_room() == expected_wall_coverings
-
-    expected_windows = {
-        '021YoEi1HD9eSoSLT0LMfy': 3.0551000000000004,
-        '2ky6TqzMD7gwJbHxE3Kcxy': 3.0551000000000013
-    }
-    assert qto.create_windows_by_room() == expected_windows
-
-    expected_doors = {'2lk8ATQRL3YhM35IFLYXiz': 2.1}
-    assert qto.create_doors_by_room() == expected_doors
-
-# Filter logic tests
-def test_filter_logic(qto):
-    # Test AND logic
-    area_and = qto.calculate_space_interior_floor_area(
-        include_filter={"PredefinedType": "GFA", "Name": "NetFloorArea"},
-        include_filter_logic="AND"
-    )
-    
-    # Test OR logic
-    area_or = qto.calculate_space_interior_floor_area(
-        include_filter={"PredefinedType": "INTERNAL", "Name": "NetFloorArea"},
+def test_calculate_quantity_area_with_filter(qto, test_data):
+    """Test filtered area calculation (e.g. only GrossArea-named spaces)."""
+    include_filter = {"Name": ["GrossArea", "Main Hall"]}
+    result = qto.calculate_quantity(
+        quantity_type="area",
+        include_filter=include_filter,
         include_filter_logic="OR"
     )
-    
-    assert area_and < area_or
+    expected = test_data["calculate_quantity"]["filtered_area"]
+    assert pytest.approx(result, 0.01) == expected
 
-def test_multiple_filters(qto):
-    # Test with both include and subtract filters
-    area = qto.calculate_gross_floor_area(
-        include_filter={"PredefinedType": "GFA"},
-        subtract_filter={"LongName": ["LUF", "Void"]}
+def test_calculate_quantity_area_with_subtraction(qto, test_data):
+    """Test area calculation with subtraction filter (e.g., subtract voids)."""
+    result = qto.calculate_quantity(
+        quantity_type="area",
+        include_filter={"Name": "GrossArea"},
+        subtract_filter={"Name": "Void"}
     )
-    assert pytest.approx(area) == 194.41235
+    expected = test_data["calculate_quantity"]["subtracted_area"]
+    assert pytest.approx(result, 0.01) == expected
 
-
-def test_invalid_filters(qto):
-    # Test with non-existent property
-    area = qto.calculate_gross_floor_area(
-        include_filter={"NonExistentProperty": "Value"}
+def test_get_elements_by_space(qto, test_data):
+    """Test grouped element areas by space."""
+    result = qto._get_elements_by_space(
+        ifc_entity="IfcCovering",
+        grouping_attribute="LongName",
+        room_reference_attribute_guid="ePset_abstractBIM.Spaces",
+        include_filter={"Name": "Floor Covering"}
     )
-    assert pytest.approx(area) == 0
+    expected = test_data["elements_by_space"]
+    for room_name, area in expected.items():
+        assert pytest.approx(result.get(room_name, 0.0), 0.01) == area
 
-# Specific calculation tests
-def test_wall_thickness_filtering(qto):
-    # Test filtering walls by thickness
-    thick_walls = qto.calculate_walls_interior_structural_area(
-        include_filter={
-            "Pset_WallCommon.IsExternal": False,
-            "Qto_WallBaseQuantities.Width": (">", 0.2)
-        }
-    )
-    thin_walls = qto.calculate_walls_interior_structural_area(
-        include_filter={
-            "Pset_WallCommon.IsExternal": False,
-            "Qto_WallBaseQuantities.Width": ("<", 0.2)
-        }
-    )
-    assert thick_walls != thin_walls
-
-
-# Performance test (optional)
-@pytest.mark.skip(reason="Performance test, run manually")
-def test_performance_large_calculation(qto):
-    import time
-    start = time.time()
-    
-    # Run multiple calculationsdef test_quantity_sum_helper(qto):
-    # Test the internal sum_quantity method
-    spaces = qto.loader.get_elements(ifc_entity="IfcSpace")
-    total = qto.sum_quantity(
-        spaces, 
-        "Qto_SpaceBaseQuantities",
-        "NetFloorArea"
-    )
-    assert pytest.approx(total) > 0
-
-    qto.calculate_gross_floor_area()
-    qto.calculate_gross_floor_volume()
-    qto.calculate_walls_exterior_net_side_area()
-    qto.create_wall_coverings_by_room()
-    
-    duration = time.time() - start
-    assert duration < 5.0  # Should complete within 5 seconds
-
-# Comparison tests
-def test_area_relationships(qto):
-    # Test logical relationships between different areas
-    gross_area = qto.calculate_gross_floor_area()
-    net_area = qto.calculate_space_interior_floor_area()
-    assert gross_area > net_area
-
-    exterior_walls = qto.calculate_walls_exterior_net_side_area()
-    interior_walls = qto.calculate_walls_interior_net_side_area()
-    assert exterior_walls > interior_walls 
