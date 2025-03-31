@@ -13,15 +13,6 @@ sys.path.append(src_dir)
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 from qto_buccaneer.utils.qto_calculator import QtoCalculator
 
-def calculate_all_metrics(qto: QtoCalculator, metrics_config: dict, file_info: dict) -> pd.DataFrame:
-    """Calculate standard (non-room) metrics."""
-
-    standard_results = [
-        _process_quantity_calculation(qto, metric_name, metric_config, file_info)
-        for metric_name, metric_config in metrics_config.items()
-    ]
-    return pd.DataFrame(standard_results)
-
 def calculate_single_metric(ifc_path: str, config: dict, metric_name: str, file_info: dict) -> pd.DataFrame:
     """Calculate a single standard metric."""
     

@@ -13,54 +13,6 @@ from qto_buccaneer.utils.ifc_loader import IfcLoader
 from qto_buccaneer.utils.qto_calculator import QtoCalculator
 
 
-def calculate_room_metrics(qto: QtoCalculator, room_metrics_config: dict, file_info: dict) -> pd.DataFrame:
-    """Calculate room-based metrics."""
-    results = []
-    
-    for metric_name, metric_config in room_metrics_config.items():
-        try:
-            grouping_attribute = metric_config.get("grouping_attribute", "LongName")
-            metric_by_group = f"{metric_name}_by_{grouping_attribute.lower()}"
-            
-            room_values = qto._get_elements_by_space(
-                ifc_entity=metric_config["ifc_entity"],
-                grouping_attribute=grouping_attribute,
-                room_reference_attribute_guid=metric_config.get("room_reference_attribute_guid", "ePset_abstractBIM.Spaces"),
-                include_filter=metric_config.get("include_filter"),
-                include_filter_logic=metric_config.get("include_filter_logic", "AND"),
-                subtract_filter=metric_config.get("subtract_filter"),
-                subtract_filter_logic=metric_config.get("subtract_filter_logic", "OR"),
-                pset_name=metric_config.get("pset_name", "Qto_BaseQuantities"),
-                prop_name=metric_config.get("prop_name", "NetArea")
-            )
-            
-            # Create a row for each room/space
-            for room_name, value in room_values.items():
-                results.append({
-                    "metric_name": f"{metric_by_group}_{room_name}",
-                    "value": round(value, 2) if value is not None else None,
-                    "unit": "m³" if metric_config.get("quantity_type") == "volume" else "m²",
-                    "category": metric_config.get("quantity_type", "area"),
-                    "description": metric_config.get("description", ""),
-                    "calculation_time": datetime.now(),
-                    "status": "success",
-                    **file_info
-                })
-                
-        except Exception as e:
-            results.append({
-                "metric_name": metric_by_group,
-                "value": None,
-                "unit": "m³" if metric_config.get("quantity_type") == "volume" else "m²",
-                "category": "unknown",
-                "description": metric_config.get("description", ""),
-                "calculation_time": datetime.now(),
-                "status": f"error: {str(e)}",
-                **file_info
-            })
-    
-    return pd.DataFrame(results)
-
 def calculate_single_room_metric(ifc_path: str, config: dict, metric_name: str, file_info: dict) -> pd.DataFrame:
     """Calculate a single room-based metric."""
     if metric_name not in config.get('room_based_metrics', {}):
