@@ -299,21 +299,33 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
 
 # Room-based metrics
 room_based_metrics: #Dont delete the name "room_based_metrics". List all the metrics calculated per room here e.g. window area by roomtyp
-  windows_by_room:
+  windows_area_by_room:
     description: "Get windows grouped by room"
     ifc_entity: "IfcWindow"
     grouping_attribute: "GlobalId"
     pset_name: "Qto_WindowBaseQuantities"
     prop_name: "Area"
 
-  doors_by_room:
-    description: "Get doors grouped by room"
+  doors_interior_area_by_room:  
+    description: "Get interior doors grouped by room"
     ifc_entity: "IfcDoor"
     grouping_attribute: "GlobalId"
     pset_name: "Qto_DoorBaseQuantities"
     prop_name: "Area"
+    include_filter:
+      Pset_DoorCommon.IsExternal: false
+    include_filter_logic: "AND"
 
-  wall_coverings_by_room:
+  doors_exterior_area_by_room:
+    description: "Get exterior doors grouped by room"
+    ifc_entity: "IfcDoor"
+    grouping_attribute: "GlobalId"
+    pset_name: "Qto_DoorBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_DoorCommon.IsExternal: true
+
+  wall_surface_net_area_by_room:
     description: "Get wall coverings grouped by room"
     ifc_entity: "IfcCovering"
     grouping_attribute: "LongName"

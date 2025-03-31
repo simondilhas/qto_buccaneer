@@ -10,7 +10,11 @@ from qto_buccaneer.utils.ifc_loader import IfcLoader
 from qto_buccaneer.utils.qto_calculator import QtoCalculator
 
 # Specify the room-based metric you want to calculate
-METRIC_NAME = "windows_by_room"  # Example room-based metric
+METRIC_NAME = "windows_area_by_room"  # Example room-based metric
+METRIC_NAME = "doors_interior_area_by_room"
+METRIC_NAME = "doors_exterior_area_by_room"
+METRIC_NAME = "wall_surface_net_area_by_room"
+
 
 def main():
     # Example usage
