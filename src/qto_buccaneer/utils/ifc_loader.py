@@ -358,18 +358,24 @@ class IfcLoader:
 
     def get_element_spatial_relationship(self, ifc_entity: Optional[str] = None) -> pd.DataFrame:
         """
-        Get spatial information for IFC elements.
+        Get spatial information for IFC elements, including both contained elements (through
+        IfcRelContainedInSpatialStructure) and aggregated elements like spaces (through IfcRelAggregates).
+        
+        Args:
+            ifc_entity (Optional[str]): Optional filter for specific IFC entity types
+            
+        Returns:
+            pd.DataFrame: DataFrame containing element GlobalIds and their associated stories/elevations
         """
         print("Start")
         
         data = {
             'GlobalId': [],
-            'Building.Story': [],
-            'Story.Elevation': []
+            'BuildingStory': [],
+            'ElevationOfStory': []
         }
         
         try:
-            # First collect all elements connected to stories
             connected_elements = set()  # Use set to avoid duplicates
             stories = self.model.by_type("IfcBuildingStorey")
             print(f"Found {len(stories)} stories")
@@ -377,15 +383,23 @@ class IfcLoader:
             for story in stories:
                 # Get all relationships where this story is the container
                 for rel in self.model.get_inverse(story):
+                    # Handle contained elements (walls, doors, etc)
                     if rel.is_a('IfcRelContainedInSpatialStructure'):
-                        # Add all elements from this relationship
-                        for element in rel.RelatedElements:
-                            # If specific entity type is requested, filter for it
-                            if ifc_entity is None or element.is_a(ifc_entity):
-                                connected_elements.add(element)
-                                data['GlobalId'].append(element.GlobalId)
-                                data['Building.Story'].append(story.Name)
-                                data['Story.Elevation'].append(float(getattr(story, "Elevation", 0.0)))
+                        elements = rel.RelatedElements
+                    # Handle aggregated elements (typically spaces)
+                    elif rel.is_a('IfcRelAggregates'):
+                        elements = rel.RelatedObjects
+                    else:
+                        continue
+                    
+                    # Process all elements from the relationship
+                    for element in elements:
+                        # If specific entity type is requested, filter for it
+                        if ifc_entity is None or element.is_a(ifc_entity):
+                            connected_elements.add(element)
+                            data['GlobalId'].append(element.GlobalId)
+                            data['BuildingStory'].append(story.Name)
+                            data['ElevationOfStory'].append(float(getattr(story, "Elevation", 0.0)))
             
             print(f"Found {len(connected_elements)} elements connected to stories")
             

@@ -30,7 +30,7 @@ def add_spatial_data_to_ifc(ifc_file: str,
     
     # Only keep necessary columns for enrichment
     #columns_to_keep = ['GlobalId', 'Building.Story', 'Story.Elevation']
-    spatial_df = spatial_df[columns_to_keep]
+    #spatial_df = spatial_df[columns_to_keep]
     print(spatial_df)
     
     print("Starting enrichment")
@@ -47,10 +47,3 @@ def add_spatial_data_to_ifc(ifc_file: str,
         print(f"Enrichment failed: {e}")
         return ifc_file
 
-if __name__ == "__main__":
-    input_file = "examples/Mustermodell V1_abstractBIM.ifc"
-    try:
-        enriched_file = add_spatial_data_to_ifc(input_file)
-        print(f"Created: {enriched_file}")
-    except Exception as e:
-        print(f"Error: {e}") 
