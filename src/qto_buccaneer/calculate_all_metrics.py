@@ -3,7 +3,8 @@ import os
 from pathlib import Path
 import pandas as pd
 from datetime import datetime
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, Literal
+import yaml
 
 # Add parent directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -11,15 +12,7 @@ from qto_buccaneer.utils.ifc_loader import IfcLoader
 from qto_buccaneer.utils.qto_calculator import QtoCalculator
 
 def get_project_info(loader: IfcLoader) -> dict:
-    """
-    Get project information from IFC file.
-    
-    Args:
-        loader: IfcLoader instance
-        
-    Returns:
-        dict: Project information including name, number, phase etc.
-    """
+    """Get project information from IFC file."""
     project = loader.model.by_type("IfcProject")[0]
     return {
         "project_name": getattr(project, "Name", "Unknown"),
@@ -28,22 +21,72 @@ def get_project_info(loader: IfcLoader) -> dict:
         "project_status": getattr(project, "Status", "Unknown")
     }
 
-def calculate_all_metrics(ifc_path: str, config_path: Optional[str] = None) -> Tuple[pd.DataFrame, Dict]:
-    """
-    Calculate all metrics defined in the configuration file.
-    
-    Args:
-        ifc_path: Path to the IFC file
-        config_path: Optional path to custom config file (currently not used)
-    
-    Returns:
-        tuple[pd.DataFrame, dict]: DataFrame with standard metrics and dict with room metrics
-    """
-    # Load IFC
+def load_config(config_path: str) -> dict:
+    """Load metrics configuration from YAML file"""
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
+
+def calculate_metric(qto: QtoCalculator, metric_name: str, metric_config: dict, file_info: dict) -> dict:
+    """Calculate a single metric using configuration"""
+    try:
+        value = qto.calculate_quantity(
+            quantity_type=metric_config["quantity_type"],
+            include_filter=metric_config.get("include_filter"),
+            include_filter_logic=metric_config.get("include_filter_logic", "AND"),
+            subtract_filter=metric_config.get("subtract_filter"),
+            subtract_filter_logic=metric_config.get("subtract_filter_logic", "OR"),
+            ifc_entity=metric_config["ifc_entity"],
+            pset_name=metric_config["pset_name"],
+            prop_name=metric_config["prop_name"]
+        )
+        
+        return {
+            **file_info,
+            "metric_name": metric_name,
+            "value": round(value, 2) if value is not None else None,
+            "unit": "m³" if metric_config["quantity_type"] == "volume" else "m²",
+            "category": metric_config["quantity_type"],
+            "description": metric_config.get("description", ""),
+            "calculation_time": datetime.now(),
+            "status": "success"
+        }
+    except Exception as e:
+        return {
+            **file_info,
+            "metric_name": metric_name,
+            "value": None,
+            "unit": "m³" if metric_config["quantity_type"] == "volume" else "m²",
+            "category": "unknown",
+            "description": metric_config.get("description", ""),
+            "calculation_time": datetime.now(),
+            "status": f"error: {str(e)}"
+        }
+
+def calculate_room_metric(qto: QtoCalculator, metric_name: str, metric_config: dict, file_info: dict) -> dict:
+    """Calculate a single room-based metric using configuration"""
+    try:
+        values = qto.calculate_by_room(
+            ifc_entity=metric_config["ifc_entity"],
+            grouping_attribute=metric_config.get("grouping_attribute", "LongName"),
+            include_filter=metric_config.get("include_filter"),
+            include_filter_logic=metric_config.get("include_filter_logic", "AND"),
+            pset_name=metric_config["pset_name"],
+            prop_name=metric_config["prop_name"]
+        )
+        return {
+            "values": values,
+            "file_info": file_info
+        }
+    except Exception as e:
+        print(f"Error calculating {metric_name}: {e}")
+        return None
+
+def calculate_all_metrics(ifc_path: str, config_path: str) -> Tuple[pd.DataFrame, Dict]:
+    """Calculate all metrics defined in the configuration file."""
+    # Load IFC and config
     loader = IfcLoader(ifc_path)
-    
-    # Initialize calculator with loader
     qto = QtoCalculator(loader)
+    config = load_config(config_path)
 
     # Get file and project info
     file_info = {
@@ -51,76 +94,21 @@ def calculate_all_metrics(ifc_path: str, config_path: Optional[str] = None) -> T
         **get_project_info(loader)
     }
 
-    # Prepare data for DataFrame
-    results = []
-    
-    # Define standard metrics to calculate
-    metrics = {
-        "gross_floor_area": {
-            "method": qto.calculate_gross_floor_area,
-            "quantity_type": "area",
-            "description": "Gross floor area"
-        },
-        "interior_floor_area": {
-            "method": qto.calculate_space_interior_floor_area,
-            "quantity_type": "area",
-            "description": "Interior floor area"
-        },
-        "exterior_wall_area": {
-            "method": qto.calculate_walls_exterior_net_side_area,
-            "quantity_type": "area",
-            "description": "Exterior wall area"
-        },
-        # Add more metrics as needed
-    }
-    
     # Calculate standard metrics
-    for metric_name, metric_config in metrics.items():
-        try:
-            value = metric_config["method"]()
-            
-            results.append({
-                **file_info,  # Include file and project info
-                "metric_name": metric_name,
-                "value": round(value, 2) if value is not None else None,
-                "unit": "m³" if metric_config["quantity_type"] == "volume" else "m²",
-                "category": metric_config["quantity_type"],
-                "description": metric_config["description"],
-                "calculation_time": datetime.now(),
-                "status": "success"
-            })
-        except Exception as e:
-            results.append({
-                **file_info,  # Include file and project info
-                "metric_name": metric_name,
-                "value": None,
-                "unit": "m³" if metric_config["quantity_type"] == "volume" else "m²",
-                "category": "unknown",
-                "description": metric_config["description"],
-                "calculation_time": datetime.now(),
-                "status": f"error: {str(e)}"
-            })
+    results = [
+        calculate_metric(qto, metric_name, metric_config, file_info)
+        for metric_name, metric_config in config.get("metrics", {}).items()
+    ]
 
     # Create DataFrame
     df = pd.DataFrame(results)
     
     # Calculate room-based metrics
-    room_metrics = {
-        "windows_by_room": qto.create_windows_by_room,
-        "doors_by_room": qto.create_doors_by_room,
-        "wall_coverings_by_room": qto.create_wall_coverings_by_room
-    }
-    
     room_results = {}
-    for metric_name, method in room_metrics.items():
-        try:
-            values = method()
-            room_results[metric_name] = {
-                "values": values,
-                "file_info": file_info
-            }
-        except Exception as e:
-            print(f"Error calculating {metric_name}: {e}")
+    for metric_name, metric_config in config.get("room_metrics", {}).items():
+        result = calculate_room_metric(qto, metric_name, metric_config, file_info)
+        if result:
+            room_results[metric_name] = result
 
     return df, room_results
 
