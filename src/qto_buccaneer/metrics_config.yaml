@@ -1,0 +1,346 @@
+# Configuration for project metrics.
+
+# Each metric is defined as a dictionary with the following keys:
+# - description: A short description of the metric.
+# - quantity_type: The type of quantity to calculate. Options include:
+#     - "area"
+#     - "volume"
+#     - "count"
+# - ifc_entity: The IFC entity to calculate the quantity for (e.g. IfcWall, IfcSlab).
+# - pset_name: The name of the Property Set (Pset) to retrieve the property from.
+# - prop_name: The name of the property or attribute within the Pset (Property Set) to use for quantity calculation.
+# - include_filter: A dictionary of conditions to include only specific elements.
+# - include_filter_logic: Logical operator to combine multiple include filters. Options:
+#     - "AND"
+#     - "OR"
+# - subtract_filter: A dictionary of conditions to subtract specific elements from the result.
+# - subtract_filter_logic: Logical operator to combine multiple subtract filters. Options:
+#     - "AND"
+#     - "OR"
+
+# ---------------------------
+# Filter Key Usage Examples:
+# ---------------------------
+
+# Use filters to narrow down the included or subtracted elements. Examples:
+
+# 1. Key-value pair:
+#    - description: "Calculate area of internal walls"
+#    - include_filter: PredefinedType: "INTERNAL"
+
+# 2. Filter with multiple values:
+#    - subtract_filter: Name: ["LUF", "Void"]
+
+# 3. Filter with boolean value:
+#    - subtract_filter: Pset_CoveringCommon.IsExternal: true
+
+# 4. Filter with condition (operator, value):
+#    - subtract_filter: Thickness: ("<", 0.1)
+
+# Combine multiple conditions using include_filter_logic or subtract_filter_logic:
+# Example:
+#     include_filter: PredefinedType: "INTERNAL", Pset_SpaceCommon.IsExternal: true
+#     include_filter_logic: "AND"
+
+# adding new metrics and template:
+# 1. add a new metric to the metrics list by copying this template:
+# metrics:
+#   new_metric:
+#     description: "Description of the metric"
+#     quantity_type: "area" or "volume" or "count"
+#     ifc_entity: "IfcSpace"
+#     pset_name: "Pset_Name" (leave blank for attributes)
+#     prop_name: "Attribute Name or Property Name"
+#     include_filter:
+#       "Key": "Value"
+#       "Key": ["Value1", "Value2"]
+#       ...
+#     include_filter_logic: "AND" or "OR"
+#     subtract_filter:
+#       "Key": ["<"", Number]
+#       "Key": ["Value1", "Value2"]
+#       ...
+#     subtract_filter_logic: "OR"
+
+# Explain the difference between metrics and room-based metrics:
+# - metrics: Calculated based on all spaces or elements in the project.
+# - room-based metrics: Calculated based on spaces grouped by room.
+
+metrics:
+  gross_floor_area:
+    description: "Calculates the gross floor area based on spaces marked as internal"
+    quantity_type: "area"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      PredefinedType: "INTERNAL"
+    subtract_filter:
+      Name: ["LUF", "Void"]
+
+  exterior_windows_area:
+    description: "Calculates the total area of exterior windows"
+    quantity_type: "area"
+    ifc_entity: "IfcWindow"
+    pset_name: "Qto_WindowBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_WindowCommon.IsExternal: true
+
+  interior_walls_area:
+    description: "Calculates the net side area of interior walls"
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: false
+
+  coverings_exterior_area:
+    description: "Calculates the total area of exterior coverings"
+    quantity_type: "area"
+    ifc_entity: "IfcCovering"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "CLADDING"
+      Pset_CoveringCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  coverings_interior_area:
+    description: "Calculates the total area of interior coverings"
+    quantity_type: "area"
+    ifc_entity: "IfcCovering"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      Pset_CoveringCommon.IsExternal: false
+    include_filter_logic: "AND"
+
+  slab_balcony_area:
+    description: |
+      Calculates the total area of balcony slabs.
+      In the abstractBIM IFC standard, balcony slabs are defined as slabs with exterior space above.
+      Note: Cantilevered roofs may also be included as they meet the same criteria.
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      Name: "Slab Balcony"
+    include_filter_logic: "AND"
+
+  slab_interior_area:
+    description: "Calculates the total area of interior slabs"
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "FLOOR"
+    include_filter_logic: "AND"
+
+  roof_area:
+    description: "Calculates the total area of roof slabs"
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "ROOF"
+    include_filter_logic: "AND"
+
+  base_slab_area:
+    description: |
+      Calculates the total area of base slabs.
+      In the abstractBIM IFC standard, base slabs are defined as:
+      - Base slabs: Slabs with an internal space above
+      - Cantilevered Slabs: Also included as they meet the same criteria
+      TODO: Add filter for spaces in contact with ground (manual data enrichment)
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "BASESLAB"
+    include_filter_logic: "AND"
+
+  windows_exterior_area:
+    description: "Calculates the total area of exterior windows"
+    quantity_type: "area"
+    ifc_entity: "IfcWindow"
+    pset_name: "Qto_WindowBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_WindowCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  windows_interior_area:
+    description: "Calculates the total area of interior windows"
+    quantity_type: "area"
+    ifc_entity: "IfcWindow"
+    pset_name: "Qto_WindowBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_WindowCommon.IsExternal: false
+    include_filter_logic: "AND"
+
+  doors_exterior_area:
+    description: "Calculates the total area of exterior doors"
+    quantity_type: "area"
+    ifc_entity: "IfcDoor"
+    pset_name: "Qto_DoorBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_DoorCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  doors_interior_area:
+    description: "Calculates the total area of interior doors"
+    quantity_type: "area"
+    ifc_entity: "IfcDoor"
+    pset_name: "Qto_DoorBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_DoorCommon.IsExternal: false
+    include_filter_logic: "AND"
+
+  # Walls metrics
+  walls_exterior_net_side_area:
+    description: "Calculates the total net side area of exterior walls (excluding openings)"
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  walls_interior_net_side_area:
+    description: "Calculates the total net side area of interior walls (excluding openings)"
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: false
+    include_filter_logic: "AND"
+
+  walls_interior_structural_area:
+    description: |
+      Calculates the total area of interior structural walls.
+      The default values are based on the abstractBIM IFC.
+      Assumption is that walls thicker than 15cm are structural walls.
+      This is a simplification and may not be 100% accurate.
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: false
+      Qto_WallBaseQuantities.Width: [">", 0.15]
+    include_filter_logic: "AND"
+
+  walls_internal_non_load_bearing_area:
+    description: |
+      Calculates the total area of internal non-load bearing walls
+      The default values are based on the abstractBIM IFC.
+      Assumption is that walls thinner than 15cm are non-load bearing walls.
+      This is a simplification and may not be 100% accurate.
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: false
+      Qto_WallBaseQuantities.Width: ["<=", 0.15]
+    include_filter_logic: "AND"
+
+  # Space metrics
+  space_interior_floor_area:
+    description: "Calculates the total floor area of interior spaces"
+    quantity_type: "area"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      PredefinedType: "INTERNAL"
+    include_filter_logic: "AND"
+    subtract_filter:
+      Name: ["LUF", "Void", "Luftraum"]
+    subtract_filter_logic: "OR"
+
+  space_interior_volume:
+    description: "Calculates the total volume of interior spaces"
+    quantity_type: "volume"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetVolume"
+    include_filter:
+      PredefinedType: "INTERNAL"
+    include_filter_logic: "OR"
+
+  space_exterior_area:
+    description: "Calculates the total area of exterior spaces"
+    quantity_type: "area"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      PredefinedType: "EXTERNAL"
+    include_filter_logic: "AND"
+
+  # Volume metrics
+  gross_floor_volume:
+    description: |
+      Calculates the gross floor volume.
+      In the abstractBIM IFC standard, Gross Volume is calculated based on
+      the volume enclosed by the exterior face of exterior walls, including all interior spaces.
+    quantity_type: "volume"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetVolume"
+    include_filter:
+      PredefinedType: "INTERNAL"
+    include_filter_logic: "AND"
+    subtract_filter:
+    subtract_filter_logic: "OR"
+
+  net_room_volume:
+    description: "Calculates the net volume of all rooms, excluding technical spaces and voids"
+    quantity_type: "volume"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetVolume"
+    include_filter:
+      PredefinedType: "INTERNAL"
+    include_filter_logic: "AND"
+    subtract_filter:
+    subtract_filter_logic: "OR"
+
+# Room-based metrics
+room_based_metrics:
+  windows_by_room:
+    description: "Get windows grouped by room"
+    ifc_entity: "IfcWindow"
+    grouping_attribute: "GlobalId"
+    pset_name: "Qto_WindowBaseQuantities"
+    prop_name: "Area"
+
+  doors_by_room:
+    description: "Get doors grouped by room"
+    ifc_entity: "IfcDoor"
+    grouping_attribute: "GlobalId"
+    pset_name: "Qto_DoorBaseQuantities"
+    prop_name: "Area"
+
+  wall_coverings_by_room:
+    description: "Get wall coverings grouped by room"
+    ifc_entity: "IfcCovering"
+    grouping_attribute: "LongName"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "CLADDING"
+      Pset_CoveringCommon.IsExternal: false
+    include_filter_logic: "AND" 
