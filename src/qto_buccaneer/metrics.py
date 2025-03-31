@@ -80,7 +80,7 @@ def _create_error_df(metric_name: str, error_message: str, file_info: dict) -> p
     return pd.DataFrame([{
         "metric_name": metric_name,
         "value": None,
-        "unit": "m²",
+        "unit": "m³" if metric_config["quantity_type"] == "volume" else "m²",
         "category": "unknown",
         "description": "",
         "calculation_time": datetime.now(),

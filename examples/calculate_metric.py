@@ -5,7 +5,6 @@ src_dir = str(Path(__file__).parent.parent / "src")
 sys.path.append(src_dir)
 
 from qto_buccaneer.metrics import calculate_single_metric
-from qto_buccaneer.reports import format_console_output
 from qto_buccaneer.utils.config import load_config
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 
@@ -62,12 +61,7 @@ def main():
     
     # Calculate single metric with loaded config
     df = calculate_single_metric(ifc_path, config, metric_name, file_info)
-    
-    # Print formatted results with None for room details
-    if df is not None:
-        format_console_output(df, None)
-    else:
-        print("No results to display")
+    print(df)
 
 if __name__ == "__main__":
     main() 

@@ -4,14 +4,13 @@ from pathlib import Path
 src_dir = str(Path(__file__).parent.parent / "src")
 sys.path.append(src_dir)
 
-from qto_buccaneer.metrics_by_room import calculate_single_room_metric
-from qto_buccaneer.reports import format_console_output
+from qto_buccaneer.metrics_by_room import calculate_room_metrics, calculate_single_room_metric
 from qto_buccaneer.utils.config import load_config
 from qto_buccaneer.utils.ifc_loader import IfcLoader
+from qto_buccaneer.utils.qto_calculator import QtoCalculator
 
 # Specify the room-based metric you want to calculate
 METRIC_NAME = "windows_by_room"  # Example room-based metric
-# Add other room-based metrics as needed
 
 def main():
     # Example usage
@@ -38,13 +37,16 @@ def main():
     }
     
     # Calculate single room metric with loaded config
-    df, room_results = calculate_single_room_metric(ifc_path, config, metric_name, file_info)
-    
-    # Print formatted results with room details
-    if df is not None:
-        format_console_output(df, room_results)
-    else:
-        print("No results to display")
+    df= calculate_single_room_metric(ifc_path, config, metric_name, file_info)
+    print(df)
+    #
+    ## Print formatted results with room details
+    #if df is not None:
+    #    format_console_output(df)
+    #else:
+    #    print("No results to display")
+#
+    #print(df)
 
 if __name__ == "__main__":
     main() 
