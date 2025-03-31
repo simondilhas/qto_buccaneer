@@ -328,3 +328,18 @@ class IfcLoader:
             "Elements": element_counts,
             "Total Elements": len(self.model.by_type("IfcProduct"))
         }
+
+    def get_project_info(self) -> dict:
+        """
+        Get project information from IFC file.
+        
+        Returns:
+            dict: Project information including name, number, phase etc.
+        """
+        project = self.model.by_type("IfcProject")[0]
+        return {
+            "project_name": getattr(project, "Name", "Unknown"),
+            "project_number": getattr(project, "GlobalId", "Unknown"),
+            "project_phase": getattr(project, "Phase", "Unknown"),
+            "project_status": getattr(project, "Status", "Unknown")
+        }

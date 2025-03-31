@@ -16,11 +16,11 @@ Ahoy! This Python library is your toolkit for exploring, extracting, and calcula
 
 A growing set of scripts and functions to help you:
 
-- Extract Gross Floor Areas  
-- Calculate wall, slab, and facade quantities  
-- Classify elements (e.g. internal vs. external)  
-- Link quantities to cost data  
-- Export results to Excel, CSV, or dashboards  
+- Define the logic how a metric is defined in metrics_config.yaml
+- Calculate Metrics based on yaml
+- Calculate Metrics by room
+- Export metrics to Excel and other reports
+
 
 All using open standards (IFC) and Python tools.
 
@@ -42,10 +42,13 @@ qto-buccaneer/
 ├── src/
 │   └── qto_buccaneer/
 │       ├── utils/
-│       │   └── ifc_loader.py     # IFC file loading and element filtering
-│       └── qto_calculator.py     # Quantity calculation methods
+│       │   ├── ifc_loader.py    # IFC file loading and element filtering
+│       │   └── qto_calculator.py # Core quantity calculation methods
+│       ├── metrics.py           # Main metrics calculation interface
+│       ├── metrics_config.yaml  # Metrics configuration
+│       └── reports.py           # Export utilities
 ├── examples/
-│   └── example_use_qto_calculator.py    # Usage examples
+│   └── calculate_metrics.py     # Basic usage example
 ├── tests/
 │   └── .                        # Test files
 ├── requirements.txt             # Project dependencies
@@ -64,16 +67,18 @@ pip install -r requirements.txt
 ## 🚀 Quick Start
 
 ```python
-from src.qto_buccaneer.ifc_loader import IfcLoader
-from src.qto_buccaneer.qto_calculator import QtoCalculator
+from qto_buccaneer.metrics import calculate_all_metrics
+from qto_buccaneer.utils.reports import export_to_excel
 
-# Load your IFC file
-loader = IfcLoader("path/to/your/model.ifc")
-qto = QtoCalculator(loader)
+# Calculate all metrics using configuration file
+metrics_df, room_metrics_df = calculate_all_metrics(
+    ifc_path="path/to/your/model.ifc",
+    config_path="path/to/your/metrics_config.yaml"
+)
 
-# Calculate quantities with default values optimized for abstractBIM IFC files
-gfa = qto.calculate_gross_floor_area()
-volume = qto.calculate_gross_floor_volume()
+# Export results to Excel
+export_to_excel(metrics_df, "metrics.xlsx")
+export_to_excel(room_metrics_df, "room_metrics.xlsx")
 ```
 
 All calculation functions accept optional parameters to customize the behavior for your specific needs and IFC structure.
@@ -82,6 +87,11 @@ Check the `examples` directory for more detailed usage examples.
 ## 🗺️ Development Pipeline
 
 We're charting a course for more features! Here's what's on the horizon:
+
+0. **Refacturing for config pattern**
+   - Tests$
+   - Documentation
+   - Bugfixes with metrics config
 
 1. **Data Enrichment & Classifications** 
    - Adding support for various classification systems
