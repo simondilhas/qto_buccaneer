@@ -14,6 +14,14 @@
 #       "Key": ["Value1", "Value2"]
 #       ...
 #     subtract_filter_logic: "OR"
+# 
+
+
+
+# TODO: 
+# -to make the rules work, split up the commaseperated values in the ifc into two properties (spaces, walls, doors, windows)
+# and when use the or logic to filter the elements
+
 
 
 enrichment:
