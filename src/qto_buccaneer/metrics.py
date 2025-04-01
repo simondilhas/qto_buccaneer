@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import sys
 from pathlib import Path
@@ -13,7 +13,43 @@ sys.path.append(src_dir)
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 from qto_buccaneer.utils.qto_calculator import QtoCalculator
 
-def calculate_single_metric(ifc_path: str, config: dict, metric_name: str, file_info: dict) -> pd.DataFrame:
+def calculate_all_metrics(config: Dict, filepath: str, file_info: Optional[dict] = None) -> pd.DataFrame:
+    """
+    Calculate all metrics defined in the config for a given IFC file.
+    
+    Args:
+        config: Dictionary containing metrics configuration
+        filepath: Path to the IFC file
+        file_info: Optional dictionary with file information
+        
+    Returns:
+        pd.DataFrame: Combined DataFrame of all metric results
+    """
+    results = []
+    for metric_name in config.get('metrics', {}).keys():
+        metric_df = calculate_single_metric(
+            ifc_path=filepath,
+            config=config,
+            metric_name=metric_name,
+            file_info=file_info
+        )
+        results.append(metric_df)
+
+    # Combine all results into a single DataFrame
+    if results:
+        return pd.concat(results, ignore_index=True)
+    else:
+        # Create base columns list
+        columns = [
+            "metric_name", "value", "unit", "category", 
+            "description", "calculation_time", "status"
+        ]
+        # Add file_info keys if present
+        if file_info:
+            columns.extend(file_info.keys())
+        return pd.DataFrame(columns=columns)
+
+def calculate_single_metric(ifc_path: str, config: dict, metric_name: str, file_info: Optional[dict] = None) -> pd.DataFrame:
     """Calculate a single standard metric."""
     
     if metric_name not in config.get('metrics', {}):
@@ -29,9 +65,15 @@ def calculate_single_metric(ifc_path: str, config: dict, metric_name: str, file_
     except Exception as e:
         return _create_error_df(metric_name, str(e), file_info)
 
-def _process_quantity_calculation(qto: QtoCalculator, metric_name: str, metric_config: dict, file_info: dict) -> dict:
-    """Process a single quantity calculation and format its result."""
-
+def _process_quantity_calculation(qto: QtoCalculator, metric_name: str, metric_config: dict, file_info: Optional[dict] = None) -> dict:
+    """Process a single quantity calculation and format its result.
+    
+    Args:
+        qto: QtoCalculator instance
+        metric_name: Name of the metric to calculate
+        metric_config: Configuration for the metric
+        file_info: Optional dictionary with file information
+    """
     try:
         value = qto.calculate_quantity(
             quantity_type=metric_config["quantity_type"],
@@ -44,7 +86,7 @@ def _process_quantity_calculation(qto: QtoCalculator, metric_name: str, metric_c
             prop_name=metric_config["prop_name"]
         )
         
-        return {
+        result = {
             "metric_name": metric_name,
             "value": round(value, 2) if value is not None else None,
             "unit": "m³" if metric_config["quantity_type"] == "volume" else "m²",
@@ -52,10 +94,16 @@ def _process_quantity_calculation(qto: QtoCalculator, metric_name: str, metric_c
             "description": metric_config.get("description", ""),
             "calculation_time": datetime.now(),
             "status": "success",
-            **file_info,
         }
+        
+        # Add file_info if provided
+        if file_info:
+            result.update(file_info)
+            
+        return result
+        
     except Exception as e:
-        return {
+        result = {
             "metric_name": metric_name,
             "value": None,
             "unit": "m³" if metric_config["quantity_type"] == "volume" else "m²",
@@ -63,21 +111,37 @@ def _process_quantity_calculation(qto: QtoCalculator, metric_name: str, metric_c
             "description": metric_config.get("description", ""),
             "calculation_time": datetime.now(),
             "status": f"error: {str(e)}",
-            **file_info,
         }
+        
+        # Add file_info if provided
+        if file_info:
+            result.update(file_info)
+            
+        return result
 
-def _create_error_df(metric_name: str, error_message: str, file_info: dict) -> pd.DataFrame:
-    """Create a DataFrame for error cases."""
-    return pd.DataFrame([{
+def _create_error_df(metric_name: str, error_message: str, file_info: Optional[dict] = None) -> pd.DataFrame:
+    """Create a DataFrame for error cases.
+    
+    Args:
+        metric_name: Name of the metric that caused the error
+        error_message: Description of the error
+        file_info: Optional dictionary with file information
+    """
+    result = {
         "metric_name": metric_name,
         "value": None,
-        "unit": "m³" if metric_config["quantity_type"] == "volume" else "m²",
+        "unit": "unknown",  # Removed dependency on metric_config
         "category": "unknown",
         "description": "",
         "calculation_time": datetime.now(),
         "status": f"error: {error_message}",
-        **file_info
-    }]) 
+    }
+    
+    # Add file_info if provided
+    if file_info:
+        result.update(file_info)
+        
+    return pd.DataFrame([result])
 
 
 

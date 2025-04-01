@@ -53,7 +53,6 @@ def main():
     
     # Create file info dictionary using loader attributes
     file_info = {
-        "file_path": loader.file_path,
         "file_name": Path(loader.file_path).name,
         "file_schema": loader.model.schema,
     }

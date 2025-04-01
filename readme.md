@@ -3,6 +3,8 @@
 
 Ahoy! This Python library is your toolkit for exploring, extracting, and calculating quantities from IFC models—ideal for anyone in construction, architecture, or BIM who's tired of manual takeoffs and spreadsheet acrobatics.
 
+
+
 ## 📑 Table of Contents
 - [What This Is](#-what-this-is)
 - [Designed for abstractBIM Data](#-designed-for-abstractbim-data)
@@ -16,8 +18,9 @@ Ahoy! This Python library is your toolkit for exploring, extracting, and calcula
 
 A growing set of scripts and functions to help you:
 
-- Define the logic how a metric is defined in metrics_config.yaml
-- Calculate Metrics based on yaml
+- Define the logic how a metric is defined with a config file
+- Enriche and clean up IFC files more userfreindly than with pure ifcopenshell
+- Calculate Metrics based on your definition
 - Calculate Metrics by room
 - Export metrics to Excel and other reports
 
