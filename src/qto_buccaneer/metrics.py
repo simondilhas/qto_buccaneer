@@ -13,7 +13,7 @@ sys.path.append(src_dir)
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 from qto_buccaneer.utils.qto_calculator import QtoCalculator
 
-def calculate_all_metrics(config: Dict, filepath: str, file_info: Optional[dict] = None) -> pd.DataFrame:
+def calculate_all_metrics(config: Dict, ifc_path: str, file_info: Optional[dict] = None) -> pd.DataFrame:
     """
     Calculate all metrics defined in the config for a given IFC file.
     
@@ -28,7 +28,7 @@ def calculate_all_metrics(config: Dict, filepath: str, file_info: Optional[dict]
     results = []
     for metric_name in config.get('metrics', {}).keys():
         metric_df = calculate_single_metric(
-            ifc_path=filepath,
+            ifc_path=ifc_path,
             config=config,
             metric_name=metric_name,
             file_info=file_info
