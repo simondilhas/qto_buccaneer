@@ -19,7 +19,7 @@ Ahoy! This Python library is your toolkit for exploring, extracting, and calcula
 A growing set of scripts and functions to help you:
 
 - Define the logic how a metric is defined with a config file
-- Enriche and clean up IFC files more userfreindly than with pure ifcopenshell
+- Enrich and clean up IFC files more userfreindly than with pure ifcopenshell
 - Calculate Metrics based on your definition
 - Calculate Metrics by room
 - Export metrics to Excel and other reports

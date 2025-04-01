@@ -9,7 +9,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.qto_buccaneer.utils.ifc_loader import IfcLoader
-from src.qto_buccaneer.enriche import enrich_ifc_with_df, enrich_df
+from src.qto_buccaneer.enrich import enrich_ifc_with_df, enrich_df
 
 file = "src/qto_buccaneer/configs/enrichment_space_table.xlsx"
 df_enrichment = pd.read_excel(file)#
