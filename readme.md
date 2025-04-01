@@ -4,36 +4,59 @@
 Ahoy! This Python library is your toolkit for exploring, extracting, and calculating quantities from IFC models—ideal for anyone in construction, architecture, or BIM who's tired of manual takeoffs and spreadsheet acrobatics.
 
 
-
 ## 📑 Table of Contents
 - [What This Is](#-what-this-is)
 - [Designed for abstractBIM Data](#-designed-for-abstractbim-data)
 - [Project Structure](#-project-structure)
 - [Installation](#️-installation)
 - [Quick Start](#-quick-start)
+  - [Configuration](#-configuration)
+  - [Metrics Configuration](#metrics-configuration)
+  - [Room-based Metrics](#room-based-metrics)
+  - [Filter Options](#filter-options)
 - [Development Pipeline](#-development-pipeline)
 - [Contributing](#-contributing)
 
 ## ⚓ What This Is
 
-A growing set of scripts and functions to help you:
+⚓ What This Is
 
-- Define the logic how a metric is defined with a config file
-- Enrich and clean up IFC files more userfreindly than with pure ifcopenshell
-- Calculate Metrics based on your definition
-- Calculate Metrics by room
-- Export metrics to Excel and other reports
+A general-purpose Python library for calculating and managing quantity takeoffs from IFC models using open standards and open-source tools.
 
+With this toolkit, you can:
 
-All using open standards (IFC) and Python tools.
+    Define metric logic using a YAML config file
+
+    Enrich and clean up IFC files—friendlier than raw ifcopenshell
+
+    Calculate project-wide metrics based on your definitions
+
+    Calculate metrics per room or space
+
+    Export results to Excel and other report formats
 
 ## 🧭 Designed for abstractBIM Data
 
-This library is optimized for use with [**abstractBIM**](https://abstractbim.com) IFC files. Why?
+This library works with any well-structured IFC file, but it shines brightest when used with clean, consistent data.
+And that's why it's optimized for abstractBIM Data in the presets. 
 
-Because abstractBIM enforces consistent structure, naming, and geometry—so you can focus on logic and automation, not debugging messy models.
+Because abstractBIM gives you:
 
-You can adapt this code to raw IFC files using `ifcopenshell`, but you may need to roll up your sleeves. We include some examples and fallbacks where possible.
+    Consistent naming
+
+    Predictable geometry
+
+    Clean data structure
+
+Which means less time debugging, more time automating.
+
+    Think of abstractBIM as your treasure map.
+    The calculations here are free—the clean data is the real loot.
+
+Yes, you can still use raw IFC + ifcopenshell, but you’ll want to be comfortable with model quirks. We will added some helpers and examples to ease the pain...
+
+
+
 
 > Want to skip the modeling chaos and get right to the treasure?  
 > Use abstractBIM as your map. The calculations here are free—the clean data is the magic sauce.
@@ -62,30 +85,116 @@ qto-buccaneer/
 ## ⚙️ Installation
 
 ```bash
+# Option 1: Clone and install locally
 git clone https://github.com/simondilhas/qto-buccaneer.git
 cd qto-buccaneer
 pip install -r requirements.txt
+
+# Option 2: Install directly from GitHub
+pip install git+https://github.com/simondilhas/qto-buccaneer.git
 ```
 
 ## 🚀 Quick Start
 
-```python
-from qto_buccaneer.metrics import calculate_all_metrics
-from qto_buccaneer.utils.reports import export_to_excel
+### Installation
 
-# Calculate all metrics using configuration file
-metrics_df, room_metrics_df = calculate_all_metrics(
-    ifc_path="path/to/your/model.ifc",
-    config_path="path/to/your/metrics_config.yaml"
-)
+```bash
+# Option 1: Clone and install locally
+git clone https://github.com/simondilhas/qto-buccaneer.git
+cd qto-buccaneer
+pip install -r requirements.txt
 
-# Export results to Excel
-export_to_excel(metrics_df, "metrics.xlsx")
-export_to_excel(room_metrics_df, "room_metrics.xlsx")
+# Option 2: Install directly from GitHub
+pip install git+https://github.com/simondilhas/qto-buccaneer.git
 ```
 
-All calculation functions accept optional parameters to customize the behavior for your specific needs and IFC structure.
-Check the `examples` directory for more detailed usage examples.
+### Usage Examples
+
+Look bellow or in the folder /examples for more detailed once.
+
+#### Calculate Metrics
+```python
+from qto_buccaneer.metrics import calculate_all_metrics
+import yaml
+
+def main():
+    # Load config
+    with open("path/to/metrics_config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+    
+    # Calculate metrics
+    metrics_df = calculate_all_metrics(
+        config=config,
+        filepath="path/to/your/model.ifc"
+    )
+    
+    # Save results
+    metrics_df.to_excel("results.xlsx")
+
+if __name__ == "__main__":
+    main()
+```
+
+#### Enrich IFC Model
+```python
+import pandas as pd
+from qto_buccaneer.enrich import enrich_ifc_with_df
+
+def main():
+    # Load enrichment data
+    df_enrichment = pd.read_excel("path/to/enrichment_data.xlsx")
+    
+    # Enrich IFC file
+    enriched_ifc_path = enrich_ifc_with_df(
+        ifc_file="path/to/your/model.ifc",
+        df_for_ifc_enrichment=df_enrichment,
+        key="LongName",  # column name to match IFC elements
+        pset_name="Pset_Enrichment"  # optional
+    )
+    
+    print(f"Created enriched IFC file: {enriched_ifc_path}")
+
+if __name__ == "__main__":
+    main()
+
+#### Configuration Files
+
+The package uses YAML configuration files to define metrics and enrichment rules. Here's an example metrics configuration:
+
+```yaml
+metrics:
+  gross_floor_area:
+    description: "The gross floor area excluding voids"
+    quantity_type: "area"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      Name: "GrossArea"
+    subtract_filter:
+      Name: ["LUF", "Void", "Luftraum"]
+
+room_based_metrics:
+  windows_area_by_room:
+    description: "Get windows grouped by room"
+    ifc_entity: "IfcWindow"
+    grouping_attribute: "GlobalId"
+    pset_name: "Qto_WindowBaseQuantities"
+    prop_name: "Area"
+```
+
+Key configuration concepts:
+- `metrics`: Standard metrics that return a single value for the entire project
+- `room_based_metrics`: Metrics calculated per room/space
+- Filters can use:
+  - Simple key-value pairs: `Name: "GrossArea"`
+  - Lists: `Name: ["LUF", "Void"]`
+  - Comparisons: `Width: [">", 0.15]`
+  - Boolean values: `IsExternal: true`
+
+For more examples and detailed configuration options, check the `configs/` directory in the repository.
+
+
 
 ## 🗺️ Development Pipeline
 
@@ -134,3 +243,4 @@ Ahoy fellow BIM pirates! We're excited about every form of contribution, whether
 - Or anything else you think could make this better
 
 Let's figure it out together! Drop a line to simon.dilhas@abstract.build and let's make quantity takeoffs better for everyone.
+

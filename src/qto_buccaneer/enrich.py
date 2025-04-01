@@ -47,13 +47,31 @@ def enrich_ifc_with_df(ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
     else:
         loader = ifc_file
 
+    # If GlobalId is not in the DataFrame, create the mapping
+    if 'GlobalId' not in df_for_ifc_enrichment.columns:
+        print(f"Creating GlobalId mapping using {key}")
+        # Get space information from IFC
+        df_space_info = loader.get_space_information()
+        
+        # Create mapping dictionary
+        key_to_globalid = dict(zip(df_space_info[key], df_space_info['GlobalId']))
+        
+        # Add GlobalId to enrichment DataFrame
+        df_for_ifc_enrichment = df_for_ifc_enrichment.copy()
+        df_for_ifc_enrichment['GlobalId'] = df_for_ifc_enrichment[key].map(key_to_globalid)
+        
+        # Check for missing mappings
+        missing_keys = df_for_ifc_enrichment[df_for_ifc_enrichment['GlobalId'].isna()][key].unique()
+        if len(missing_keys) > 0:
+            print(f"Warning: Could not find GlobalIds for these {key}s: {missing_keys}")
+
     # Create new file path
     if loader.file_path:
         output_path = Path(loader.file_path)
         new_ifc_path = str(output_path.parent / f"{output_path.stem}_enriched{output_path.suffix}")
     else:
-        new_ifc_path = "enriched.ifc"  # Default name if no original path
-        
+        new_ifc_path = "enriched.ifc"
+
     # Copy the model
     loader.model.write(new_ifc_path)
     
