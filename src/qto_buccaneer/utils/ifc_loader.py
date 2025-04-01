@@ -21,26 +21,30 @@ class IfcInvalidFileError(IfcError):
 
 
 class IfcLoader:
-    def __init__(self, file_path: str):
-        """Initialize an IFC project from a file.
+    def __init__(self, model_or_path: Union[str, 'ifcopenshell.file']):
+        """Initialize an IFC project from a file path or model.
 
         Args:
-            file_path (str): Path to the IFC file to be loaded
+            model_or_path: Either a path to an IFC file (str) or an already loaded IFC model
         
         Raises:
-            IfcFileNotFoundError: If the file cannot be found
-            IfcInvalidFileError: If the file is not a valid IFC file
+            IfcFileNotFoundError: If a file path is provided and cannot be found
+            IfcInvalidFileError: If the file path provided is not a valid IFC file
         """
-        self.file_path = file_path
-        
-        # Check if file exists
-        if not os.path.exists(file_path):
-            raise IfcFileNotFoundError(f"IFC file not found: {file_path}")
-        
-        try:
-            self.model = ifcopenshell.open(file_path)
-        except Exception as e:
-            raise IfcInvalidFileError(f"Could not open {file_path} as an IFC file: {str(e)}")
+        if isinstance(model_or_path, str):
+            self.file_path = model_or_path
+            
+            # Check if file exists
+            if not os.path.exists(model_or_path):
+                raise IfcFileNotFoundError(f"IFC file not found: {model_or_path}")
+            
+            try:
+                self.model = ifcopenshell.open(model_or_path)
+            except Exception as e:
+                raise IfcInvalidFileError(f"Could not open {model_or_path} as an IFC file: {str(e)}")
+        else:
+            self.file_path = None
+            self.model = model_or_path
 
     def get_property_value(self, element, set_name: str, prop_name: str) -> Optional[Any]:
         """

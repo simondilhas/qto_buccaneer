@@ -25,33 +25,37 @@ def enrich_df(df_model_data: pd.DataFrame,
         how='left'
     )
 
-def enrich_ifc_with_df(ifc_file: str, 
-               df_for_ifc_enrichment: pd.DataFrame,
-               key: str = "LongName",
-               pset_name: str = "Pset_Enrichment",
-               ifc_entity: Optional[str] = None) -> str:
+def enrich_ifc_with_df(ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
+                       df_for_ifc_enrichment: pd.DataFrame,
+                       key: str = "LongName",
+                       pset_name: str = "Pset_Enrichment") -> str:
     """
-    Enrich IFC elements with data from a DataFrame using a matching key.
+    Enrich IFC elements with data from a DataFrame.
 
     Args:
-        ifc_file: Path to the IFC file
+        ifc_file: Either a file path, IfcLoader instance, or ifcopenshell model
         df_for_ifc_enrichment: DataFrame containing enrichment data
         key: Attribute name to match IFC elements (e.g. "LongName", "GlobalId")
         pset_name: Name for the property set storing enriched data
-        ifc_entity: Type of IFC entity to enrich (if None, enriches all suitable elements)
-
-    Notes:
-        - Matches any IFC entity type with matching key value
-        - GlobalId is the only guaranteed unique key
-        - Overwrites existing property set if same name exists
 
     Returns:
-        Path to the new enriched IFC file
+        str: Path to the enriched IFC file
     """
-    # Create new IFC file
-    output_path = Path(ifc_file)
-    new_ifc_path = str(output_path.parent / f"{output_path.stem}_enriched{output_path.suffix}")
-    shutil.copy2(ifc_file, new_ifc_path)
+    # Create loader if needed
+    if isinstance(ifc_file, (str, ifcopenshell.file)):
+        loader = IfcLoader(ifc_file)
+    else:
+        loader = ifc_file
+
+    # Create new file path
+    if loader.file_path:
+        output_path = Path(loader.file_path)
+        new_ifc_path = str(output_path.parent / f"{output_path.stem}_enriched{output_path.suffix}")
+    else:
+        new_ifc_path = "enriched.ifc"  # Default name if no original path
+        
+    # Copy the model
+    loader.model.write(new_ifc_path)
     
     try:
         # Open new IFC file for modification

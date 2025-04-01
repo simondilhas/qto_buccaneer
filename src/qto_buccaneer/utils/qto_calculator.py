@@ -1,4 +1,4 @@
-from typing import List, Optional, Any, Literal
+from typing import List, Optional, Any, Literal, Union
 from ifcopenshell.entity_instance import entity_instance as IfcElement
 import pandas as pd
 

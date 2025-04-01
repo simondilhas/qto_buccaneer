@@ -15,6 +15,7 @@ from qto_buccaneer.utils.qto_calculator import QtoCalculator
 
 def calculate_single_room_metric(ifc_path: str, config: dict, metric_name: str, file_info: dict) -> pd.DataFrame:
     """Calculate a single room-based metric."""
+    
     if metric_name not in config.get('room_based_metrics', {}):
         return _create_error_df(metric_name, "Metric not found in room-based metrics configuration", file_info)
 
@@ -70,4 +71,4 @@ def _create_error_df(metric_name: str, error_message: str, file_info: dict) -> p
         "calculation_time": datetime.now(),
         "status": f"error: {error_message}",
         **file_info
-    }]) 
+    }])

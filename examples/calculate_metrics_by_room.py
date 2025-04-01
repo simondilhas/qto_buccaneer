@@ -4,7 +4,7 @@ from pathlib import Path
 src_dir = str(Path(__file__).parent.parent / "src")
 sys.path.append(src_dir)
 
-from qto_buccaneer.metrics_by_room import calculate_room_metrics, calculate_single_room_metric
+from qto_buccaneer.metrics_by_room import calculate_single_room_metric
 from qto_buccaneer.utils.config import load_config
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 from qto_buccaneer.utils.qto_calculator import QtoCalculator
