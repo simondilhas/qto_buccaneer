@@ -1,6 +1,4 @@
 """
-QTO Buccaneer - Quantity Takeoff tools for data-savvy BIM rebels
-
 This package provides tools for exploring, extracting, and calculating quantities 
 from IFC models. It's designed for construction, architecture, and BIM professionals 
 who need automated quantity takeoffs.
@@ -19,7 +17,7 @@ With this toolkit, you can:
 - Define metric logic using a YAML config file, instead of having to deal with code
 - Enrich and clean up IFC files—friendlier than raw ifcopenshell
 
-## 🧭 Designed for abstractBIM Data
+## 🧭 Designed for IFC, optimized for abstractBIM Data
 
 This library works with any well-structured IFC file, but it shines brightest when used with clean, consistent data.
 And that's why it's optimized for abstractBIM Data in the presets. 

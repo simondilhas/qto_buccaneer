@@ -6,7 +6,7 @@ Ahoy! This Python library is your toolkit for exploring, extracting, and calcula
 
 ## 📑 Table of Contents
 - [What This Is](#-what-this-is)
-- [Designed for abstractBIM Data](#-designed-for-abstractbim-data)
+- [Designed for IFC, optimized for abstractBIM Data](#-designed-for-abstractbim-data)
 - [Project Structure](#-project-structure)
 - [Installation](#️-installation)
 - [Quick Start](#-quick-start)
@@ -29,7 +29,7 @@ With this toolkit, you can:
 - Define metric logic using a YAML config file, instead of having to deal with code
 - Enrich and clean up IFC files—friendlier than raw ifcopenshell
 
-## 🧭 Designed for abstractBIM Data
+## 🧭 Designed for IFC optimized for abstractBIM IFC Data
 
 This library works with any well-structured IFC file, but it shines brightest when used with clean, consistent data.
 And that's why it's optimized for abstractBIM Data in the presets. 

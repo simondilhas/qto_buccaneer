@@ -30,9 +30,9 @@ jobs:
       - name: Generate documentation
         run: |
           rm -rf docs/*
-          # Generate docs without changing directory
-          pdoc -o docs qto_buccaneer
-          # Create index.html
+          # Generate docs with better HTML formatting
+          pdoc --docformat google --template-dir templates -o docs qto_buccaneer
+          # Create index.html with proper redirect
           echo '<!DOCTYPE html>
           <html>
             <head>
@@ -43,6 +43,39 @@ jobs:
               <p>Redirecting to documentation...</p>
             </body>
           </html>' > docs/index.html
+          
+      # Add custom CSS for better formatting
+      - name: Add custom styling
+        run: |
+          mkdir -p templates
+          echo '
+          /* Custom CSS */
+          .docstring {
+              padding: 1rem;
+              margin: 1rem 0;
+              background: #f8f9fa;
+              border-radius: 4px;
+          }
+          
+          .doc-contents {
+              max-width: 900px;
+              margin: 0 auto;
+              padding: 2rem;
+          }
+          
+          pre {
+              background: #f1f1f1;
+              padding: 1rem;
+              border-radius: 4px;
+              overflow-x: auto;
+          }
+          
+          .signature {
+              background: #e9ecef;
+              padding: 1rem;
+              margin: 1rem 0;
+              border-radius: 4px;
+          }' > templates/default.css
           
       - name: Commit and push
         run: |
