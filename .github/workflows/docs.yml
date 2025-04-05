@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'src/**'
-      - 'docs/**'
-      - '.github/workflows/docs.yml'
 
 jobs:
   build-docs:
@@ -35,7 +31,16 @@ jobs:
         run: |
           rm -rf docs/*
           pdoc -o docs qto_buccaneer
-          echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=qto_buccaneer/"></head></html>' > docs/index.html
+          echo '<!DOCTYPE html>
+          <html>
+            <head>
+              <meta http-equiv="refresh" content="0; url=./qto_buccaneer/">
+              <script>window.location.href = "./qto_buccaneer/";</script>
+            </head>
+            <body>
+              <p>Redirecting to documentation...</p>
+            </body>
+          </html>' > docs/index.html
           
       - name: Commit and push
         run: |
