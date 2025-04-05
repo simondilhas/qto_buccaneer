@@ -27,23 +27,11 @@ jobs:
           pip install pyyaml
           pip install -e .
           
-      - name: Prepare environment
-        run: |
-          # Create necessary directories
-          mkdir -p src/qto_buccaneer/configs
-          # Create a minimal config file for documentation generation
-          echo "metrics:
-            example_metric:
-              description: Example metric
-              quantity_type: area
-              ifc_entity: IfcSpace" > src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml
-          
       - name: Generate documentation
         run: |
           rm -rf docs/*
-          cd docs
-          # Generate docs excluding problematic modules
-          pdoc -o . ../src/qto_buccaneer --exclude validate_config_file
+          # Generate docs without changing directory
+          pdoc -o docs qto_buccaneer
           # Create index.html
           echo '<!DOCTYPE html>
           <html>
@@ -54,7 +42,7 @@ jobs:
             <body>
               <p>Redirecting to documentation...</p>
             </body>
-          </html>' > index.html
+          </html>' > docs/index.html
           
       - name: Commit and push
         run: |
