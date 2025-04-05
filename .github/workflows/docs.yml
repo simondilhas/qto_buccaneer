@@ -30,17 +30,19 @@ jobs:
       - name: Generate documentation
         run: |
           rm -rf docs/*
-          pdoc -o docs qto_buccaneer
+          cd docs
+          pdoc -o . ../src/qto_buccaneer
+          # Create simpler index.html that points directly to the module
           echo '<!DOCTYPE html>
           <html>
             <head>
-              <meta http-equiv="refresh" content="0; url=./qto_buccaneer/">
-              <script>window.location.href = "./qto_buccaneer/";</script>
+              <meta http-equiv="refresh" content="0; url=index.html">
+              <script>window.location.href = "index.html";</script>
             </head>
             <body>
               <p>Redirecting to documentation...</p>
             </body>
-          </html>' > docs/index.html
+          </html>' > index.html
           
       - name: Commit and push
         run: |
