@@ -12,6 +12,8 @@ on:
 jobs:
   build-docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
       
@@ -24,13 +26,23 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pdoc
+          pip install ifcopenshell
+          pip install pandas
+          pip install pyyaml
           pip install -e .
           
-      - name: Generate documentation
+      - name: Generate documentation with debug
         run: |
-          rm -rf docs/*
-          pdoc --html --output-dir docs --force qto_buccaneer
-          echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=qto_buccaneer/"></head></html>' > docs/index.html
+          echo "Current directory:"
+          pwd
+          echo "Python path:"
+          python -c "import sys; print(sys.path)"
+          echo "Installed packages:"
+          pip list
+          echo "Trying to import qto_buccaneer:"
+          python -c "import qto_buccaneer; print('Import successful')"
+          echo "Generating docs:"
+          pdoc --html --output-dir docs --force qto_buccaneer --verbose
           
       - name: Commit and push if changed
         run: |
