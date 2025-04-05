@@ -47,6 +47,7 @@ Yes, you can still use raw IFC + ifcopenshell, but you'll want to be comfortable
 > Want to skip the modeling chaos and get right to the treasure?  
 > Use abstractBIM as your map. The calculations here are free—the clean data is the magic sauce.
 
+
 ## 📁 Project Structure
 
 ```
