@@ -6,9 +6,18 @@ with open('requirements.txt') as f:
 
 setup(
     name="qto_buccaneer",
-    version="0.1",
+    version="0.1.0",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
-    install_requires=requirements,
+    install_requires=[
+        "ifcopenshell",
+        "pandas",
+        "pyyaml",
+    ],
+    extras_require={
+        "docs": [
+            "pdoc3",
+        ],
+    },
     python_requires=">=3.8",  # specify minimum Python version if needed
 ) 

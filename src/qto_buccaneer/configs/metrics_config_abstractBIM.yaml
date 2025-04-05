@@ -66,7 +66,14 @@
 # - metrics: Calculated based on all spaces or elements in the project.
 # - room-based metrics: Calculated based on spaces grouped by room.
 
+# TODO: include or exclude Filter merged to one, and with NOR added -> flatter hirachy
+# TODO: . as seperator can lead to problems in Pset.Attribut
+# TODO: use the IfcOpenshell logic for filtering => more felxibility and more stabel (https://docs.ifcopenshell.org/ifcopenshell-python/selector_syntax.html)
+
 metrics: #Dont delete the name "metrics". List all the standard metrics that return a single value for the entire project here
+
+  
+  
   gross_floor_area:
     description: "The gross floor area from the outside of the exterior walls, including all interior spaces, the area of spaces with Name = LUF is subtracted"
     quantity_type: "area"
@@ -88,7 +95,7 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
     pset_name: "Qto_SpaceBaseQuantities"
     prop_name: "NetVolume"
     include_filter:
-      PredefinedType: "INTERNAL"
+      Name: "GrossVolume"
     include_filter_logic: "AND"
     subtract_filter:
     subtract_filter_logic: "OR"

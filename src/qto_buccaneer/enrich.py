@@ -28,7 +28,8 @@ def enrich_df(df_model_data: pd.DataFrame,
 def enrich_ifc_with_df(ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
                        df_for_ifc_enrichment: pd.DataFrame,
                        key: str = "LongName",
-                       pset_name: str = "Pset_Enrichment") -> str:
+                       pset_name: str = "Pset_Enrichment",
+                       file_postfix: str = "_enriched") -> str:
     """
     Enrich IFC elements with data from a DataFrame.
 
@@ -68,7 +69,7 @@ def enrich_ifc_with_df(ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
     # Create new file path
     if loader.file_path:
         output_path = Path(loader.file_path)
-        new_ifc_path = str(output_path.parent / f"{output_path.stem}_enriched{output_path.suffix}")
+        new_ifc_path = str(output_path.parent / f"{output_path.stem}_{file_postfix}{output_path.suffix}")
     else:
         new_ifc_path = "enriched.ifc"
 

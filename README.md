@@ -25,15 +25,11 @@ A general-purpose Python library for calculating and managing quantity takeoffs 
 
 With this toolkit, you can:
 
-    Define metric logic using a YAML config file
-
-    Enrich and clean up IFC files—friendlier than raw ifcopenshell
-
-    Calculate project-wide metrics based on your definitions
-
-    Calculate metrics per room or space
-
-    Export results to Excel and other report formats
+- Calculate project-wide metrics based on your definitions
+- Calculate metrics per room or space
+- Export results to Excel and other report formats
+- Define metric logic using a YAML config file, instead of having to deal with code
+- Enrich and clean up IFC files—friendlier than raw ifcopenshell
 
 ## 🧭 Designed for abstractBIM Data
 
@@ -42,21 +38,13 @@ And that's why it's optimized for abstractBIM Data in the presets.
 
 Because abstractBIM gives you:
 
-    Consistent naming
-
-    Predictable geometry
-
-    Clean data structure
+- Consistent naming
+- Predictable geometry
+- Clean data structure
 
 Which means less time debugging, more time automating.
 
-    Think of abstractBIM as your treasure map.
-    The calculations here are free—the clean data is the real loot.
-
-Yes, you can still use raw IFC + ifcopenshell, but you’ll want to be comfortable with model quirks. We will added some helpers and examples to ease the pain...
-
-
-
+Yes, you can still use raw IFC + ifcopenshell, but you'll want to be comfortable with model quirks. We will added some helpers and examples to ease the pain...
 
 > Want to skip the modeling chaos and get right to the treasure?  
 > Use abstractBIM as your map. The calculations here are free—the clean data is the magic sauce.
@@ -86,12 +74,13 @@ qto-buccaneer/
 
 ```bash
 # Option 1: Clone and install locally
-git clone https://github.com/simondilhas/qto-buccaneer.git
+git clone https://github.com/simondilhas/qto_buccaneer.git
 cd qto-buccaneer
 pip install -r requirements.txt
 
 # Option 2: Install directly from GitHub
-pip install git+https://github.com/simondilhas/qto-buccaneer.git
+pip install git+https://github.com/simondilhas/qto_buccaneer.git
+
 ```
 
 ## 🚀 Quick Start
