@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>qto_buccaneer.utils.qto_calculator API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>qto_buccaneer.utils.qto_calculator</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="qto_buccaneer.utils.qto_calculator.QtoCalculator"><code class="flex name class">
+<span>class <span class="ident">QtoCalculator</span></span>
+<span>(</span><span>loader)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class QtoCalculator:
+    &#34;&#34;&#34;
+    Calculator for quantity takeoffs from IFC models.
+
+    The default values are based on the abstractBIM IFC, but can be overridden.
+
+    Common Filter Examples:
+    ----------------------
+    1. Filter by properties:
+       - Interior elements: {&#34;Pset_WallCommon.IsExternal&#34;: False}
+       - Exterior elements: {&#34;Pset_WallCommon.IsExternal&#34;: True}
+       - Specific type: {&#34;PredefinedType&#34;: &#34;ROOF&#34;}
+       - By name: {&#34;Name&#34;: &#34;Wall1&#34;}
+
+    2. Filter by measurements:
+       - Walls thicker than 15cm: {&#34;Width&#34;: (&#34;&gt;&#34;, 0.15)}
+       - Walls exactly 20cm thick: {&#34;Width&#34;: (&#34;=&#34;, 0.20)}
+       - Walls up to 30cm thick: {&#34;Width&#34;: (&#34;&lt;=&#34;, 0.30)}
+
+    3. Filter by multiple names:
+       - Multiple spaces: {&#34;Name&#34;: [&#34;Kitchen&#34;, &#34;Bathroom&#34;, &#34;Living&#34;]}
+       - Exclude spaces: {&#34;Name&#34;: [&#34;Void&#34;, &#34;Shaft&#34;]}
+
+    4. Combining filters:
+       - Interior walls thicker than 15cm:
+         {
+             &#34;Pset_WallCommon.IsExternal&#34;: False,
+             &#34;Width&#34;: (&#34;&gt;&#34;, 0.15)
+         }
+
+    Filter Logic:
+    - &#34;AND&#34;: Element must match all conditions (default)
+    - &#34;OR&#34;: Element must match any condition
+
+    All measurements should be in meters for length/width/height
+    and square meters for areas.
+    &#34;&#34;&#34;
+    def __init__(self, loader):
+        self.loader = loader
+
+    def sum_quantity(self, elements, qset: str, quantity_name: str) -&gt; float:
+        &#34;&#34;&#34;
+        Sums up a quantity value from a quantity set for a list of IFC elements.
+
+        Args:
+            elements: List of IFC elements (e.g. spaces).
+            qset (str): Name of the quantity set (e.g. &#34;Qto_SpaceBaseQuantities&#34;).
+            quantity_name (str): Name of the quantity to sum (e.g. &#34;NetFloorArea&#34;).
+
+        Returns:
+            float: The total sum of the found quantities.
+        &#34;&#34;&#34;
+        total = 0.0
+
+        for el in elements:
+            for rel in getattr(el, &#34;IsDefinedBy&#34;, []):
+                qto = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+                if not qto or not qto.is_a(&#34;IfcElementQuantity&#34;) or qto.Name != qset:
+                    continue
+                for quantity in getattr(qto, &#34;Quantities&#34;, []):
+                    if quantity.Name == quantity_name:
+                        try:
+                            if quantity.is_a(&#34;IfcQuantityArea&#34;):
+                                value = quantity.AreaValue
+                            elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
+                                value = quantity.VolumeValue
+                            elif quantity.is_a(&#34;IfcQuantityLength&#34;):
+                                value = quantity.LengthValue
+                            else:
+                                value = None
+
+                            if value is not None:
+                                total += value
+
+                        except AttributeError:
+                            # Log or skip if quantity is malformed
+                            pass
+        return total
+    
+
+    def calculate_quantity(
+        self,
+        quantity_type: Literal[&#34;area&#34;, &#34;volume&#34;],
+        include_filter: Optional[dict] = None,
+        include_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;OR&#34;,
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;OR&#34;,
+        ifc_entity: str = &#34;IfcSpace&#34;,
+        pset_name: str = &#34;Qto_SpaceBaseQuantities&#34;,
+        prop_name: Optional[str] = None
+    ) -&gt; float:
+        &#34;&#34;&#34;
+        Generic method to calculate quantities (area or volume) with filters and filter logic.
+        Filters can contain numeric comparisons using tuples: {&#34;Width&#34;: (&#34;&gt;&#34;, 0.15)}
+        &#34;&#34;&#34;
+        # Default filters and property names based on quantity type
+        defaults = {
+            &#34;area&#34;: {
+                &#34;include_filter&#34;: {&#34;Name&#34;: &#34;GrossArea&#34;},
+                &#34;prop_name&#34;: &#34;NetFloorArea&#34;
+            },
+            &#34;volume&#34;: {
+                &#34;include_filter&#34;: {&#34;Name&#34;: &#34;GrossVolume&#34;},
+                &#34;prop_name&#34;: &#34;NetVolume&#34;
+            }
+        }
+
+        # Use provided values or defaults
+        include_filter = include_filter or defaults[quantity_type][&#34;include_filter&#34;]
+        prop_name = prop_name or defaults[quantity_type][&#34;prop_name&#34;]
+
+        # Get elements using the current IfcLoader interface with filter logic
+        include_elements = self.loader.get_elements(
+            filters=include_filter,
+            filter_logic=include_filter_logic,
+            ifc_entity=ifc_entity
+        )
+        
+        subtract_elements = []
+        if subtract_filter:
+            subtract_elements = self.loader.get_elements(
+                filters=subtract_filter,
+                filter_logic=subtract_filter_logic,
+                ifc_entity=ifc_entity
+            )
+
+        included_total = self.sum_quantity(include_elements, pset_name, prop_name)
+        subtracted_total = self.sum_quantity(subtract_elements, pset_name, prop_name)
+
+        return included_total - subtracted_total
+
+    def _get_elements_by_space(
+        self,
+        ifc_entity: str,
+        grouping_attribute: str = &#34;LongName&#34;,
+        room_reference_attribute_guid: str = &#34;ePset_abstractBIM.Spaces&#34;,
+        include_filter: Optional[dict] = None,
+        include_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;AND&#34;,
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;OR&#34;,
+        pset_name: str = &#34;Qto_BaseQuantities&#34;,
+        prop_name: str = &#34;NetArea&#34;,
+    ) -&gt; dict:
+        &#34;&#34;&#34;Get elements grouped by space with their areas.
+        
+        Args:
+            ifc_entity: Type of element to get (e.g., &#34;IfcCovering&#34;, &#34;IfcWindow&#34;, &#34;IfcDoor&#34;)
+            grouping_attribute: Space attribute to group by (default: &#34;LongName&#34;)
+            room_reference_attribute_guid: Property set and property containing space references
+            include_filter: Filter to apply to elements
+            include_filter_logic: How to combine include filters (&#34;AND&#34; or &#34;OR&#34;)
+            subtract_filter: Filter for elements to subtract
+            subtract_filter_logic: How to combine subtract filters (&#34;AND&#34; or &#34;OR&#34;)
+            pset_name: Name of the quantity property set
+            prop_name: Name of the area property
+        
+        Returns:
+            Dictionary mapping space names to total element areas
+        &#34;&#34;&#34;
+        # Get elements
+        elements = self.loader.get_elements(
+            filters=include_filter,
+            filter_logic=include_filter_logic,
+            ifc_entity=ifc_entity
+        ) or []
+        
+        # Get all spaces
+        spaces = self.loader.get_elements(ifc_entity=&#34;IfcSpace&#34;) or []
+        space_map = {space.GlobalId: getattr(space, grouping_attribute, space.GlobalId) 
+                     for space in spaces}
+        
+        # Initialize result
+        result = {}
+        
+        # Process each element
+        for element in elements:
+            # Get the area
+            area = 0.0
+            for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+                qto = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+                if not qto or not qto.is_a(&#34;IfcElementQuantity&#34;) or qto.Name != pset_name:
+                    continue
+                for quantity in getattr(qto, &#34;Quantities&#34;, []):
+                    if quantity.Name == prop_name and quantity.is_a(&#34;IfcQuantityArea&#34;):
+                        area = quantity.AreaValue
+                        break
+            
+            if area == 0.0:
+                continue
+            
+            # Get the space references
+            for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+                pset = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+                if not pset or not pset.is_a(&#34;IfcPropertySet&#34;):
+                    continue
+                
+                pset_name_ref, prop_name_ref = room_reference_attribute_guid.split(&#34;.&#34;)
+                if pset.Name != pset_name_ref:
+                    continue
+                
+                for prop in pset.HasProperties:
+                    if prop.Name == prop_name_ref:
+                        space_refs = []
+                        if isinstance(prop.NominalValue.wrappedValue, list):
+                            space_refs.extend(prop.NominalValue.wrappedValue)
+                        else:
+                            space_refs.append(prop.NominalValue.wrappedValue)
+                        
+                        # Add area to each referenced space
+                        for space_ref in space_refs:
+                            room_key = space_map.get(space_ref)
+                            if room_key:
+                                if room_key not in result:
+                                    result[room_key] = 0.0
+                                result[room_key] += area
+    
+        return result</code></pre>
+</details>
+<div class="desc"><p>Calculator for quantity takeoffs from IFC models.</p>
+<p>The default values are based on the abstractBIM IFC, but can be overridden.</p>
+<h2 id="common-filter-examples">Common Filter Examples:</h2>
+<ol>
+<li>Filter by properties:</li>
+<li>Interior elements: {"Pset_WallCommon.IsExternal": False}</li>
+<li>Exterior elements: {"Pset_WallCommon.IsExternal": True}</li>
+<li>Specific type: {"PredefinedType": "ROOF"}</li>
+<li>
+<p>By name: {"Name": "Wall1"}</p>
+</li>
+<li>
+<p>Filter by measurements:</p>
+</li>
+<li>Walls thicker than 15cm: {"Width": ("&gt;", 0.15)}</li>
+<li>Walls exactly 20cm thick: {"Width": ("=", 0.20)}</li>
+<li>
+<p>Walls up to 30cm thick: {"Width": ("&lt;=", 0.30)}</p>
+</li>
+<li>
+<p>Filter by multiple names:</p>
+</li>
+<li>Multiple spaces: {"Name": ["Kitchen", "Bathroom", "Living"]}</li>
+<li>
+<p>Exclude spaces: {"Name": ["Void", "Shaft"]}</p>
+</li>
+<li>
+<p>Combining filters:</p>
+</li>
+<li>Interior walls thicker than 15cm:
+{
+"Pset_WallCommon.IsExternal": False,
+"Width": ("&gt;", 0.15)
+}</li>
+</ol>
+<p>Filter Logic:
+- "AND": Element must match all conditions (default)
+- "OR": Element must match any condition</p>
+<p>All measurements should be in meters for length/width/height
+and square meters for areas.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="qto_buccaneer.utils.qto_calculator.QtoCalculator.calculate_quantity"><code class="name flex">
+<span>def <span class="ident">calculate_quantity</span></span>(<span>self,<br>quantity_type: Literal['area', 'volume'],<br>include_filter: dict | None = None,<br>include_filter_logic: Literal['AND', 'OR'] = 'OR',<br>subtract_filter: dict | None = None,<br>subtract_filter_logic: Literal['AND', 'OR'] = 'OR',<br>ifc_entity: str = 'IfcSpace',<br>pset_name: str = 'Qto_SpaceBaseQuantities',<br>prop_name: str | None = None) ‑> float</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_quantity(
+    self,
+    quantity_type: Literal[&#34;area&#34;, &#34;volume&#34;],
+    include_filter: Optional[dict] = None,
+    include_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;OR&#34;,
+    subtract_filter: Optional[dict] = None,
+    subtract_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;OR&#34;,
+    ifc_entity: str = &#34;IfcSpace&#34;,
+    pset_name: str = &#34;Qto_SpaceBaseQuantities&#34;,
+    prop_name: Optional[str] = None
+) -&gt; float:
+    &#34;&#34;&#34;
+    Generic method to calculate quantities (area or volume) with filters and filter logic.
+    Filters can contain numeric comparisons using tuples: {&#34;Width&#34;: (&#34;&gt;&#34;, 0.15)}
+    &#34;&#34;&#34;
+    # Default filters and property names based on quantity type
+    defaults = {
+        &#34;area&#34;: {
+            &#34;include_filter&#34;: {&#34;Name&#34;: &#34;GrossArea&#34;},
+            &#34;prop_name&#34;: &#34;NetFloorArea&#34;
+        },
+        &#34;volume&#34;: {
+            &#34;include_filter&#34;: {&#34;Name&#34;: &#34;GrossVolume&#34;},
+            &#34;prop_name&#34;: &#34;NetVolume&#34;
+        }
+    }
+
+    # Use provided values or defaults
+    include_filter = include_filter or defaults[quantity_type][&#34;include_filter&#34;]
+    prop_name = prop_name or defaults[quantity_type][&#34;prop_name&#34;]
+
+    # Get elements using the current IfcLoader interface with filter logic
+    include_elements = self.loader.get_elements(
+        filters=include_filter,
+        filter_logic=include_filter_logic,
+        ifc_entity=ifc_entity
+    )
+    
+    subtract_elements = []
+    if subtract_filter:
+        subtract_elements = self.loader.get_elements(
+            filters=subtract_filter,
+            filter_logic=subtract_filter_logic,
+            ifc_entity=ifc_entity
+        )
+
+    included_total = self.sum_quantity(include_elements, pset_name, prop_name)
+    subtracted_total = self.sum_quantity(subtract_elements, pset_name, prop_name)
+
+    return included_total - subtracted_total</code></pre>
+</details>
+<div class="desc"><p>Generic method to calculate quantities (area or volume) with filters and filter logic.
+Filters can contain numeric comparisons using tuples: {"Width": ("&gt;", 0.15)}</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.qto_calculator.QtoCalculator.sum_quantity"><code class="name flex">
+<span>def <span class="ident">sum_quantity</span></span>(<span>self, elements, qset: str, quantity_name: str) ‑> float</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sum_quantity(self, elements, qset: str, quantity_name: str) -&gt; float:
+    &#34;&#34;&#34;
+    Sums up a quantity value from a quantity set for a list of IFC elements.
+
+    Args:
+        elements: List of IFC elements (e.g. spaces).
+        qset (str): Name of the quantity set (e.g. &#34;Qto_SpaceBaseQuantities&#34;).
+        quantity_name (str): Name of the quantity to sum (e.g. &#34;NetFloorArea&#34;).
+
+    Returns:
+        float: The total sum of the found quantities.
+    &#34;&#34;&#34;
+    total = 0.0
+
+    for el in elements:
+        for rel in getattr(el, &#34;IsDefinedBy&#34;, []):
+            qto = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+            if not qto or not qto.is_a(&#34;IfcElementQuantity&#34;) or qto.Name != qset:
+                continue
+            for quantity in getattr(qto, &#34;Quantities&#34;, []):
+                if quantity.Name == quantity_name:
+                    try:
+                        if quantity.is_a(&#34;IfcQuantityArea&#34;):
+                            value = quantity.AreaValue
+                        elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
+                            value = quantity.VolumeValue
+                        elif quantity.is_a(&#34;IfcQuantityLength&#34;):
+                            value = quantity.LengthValue
+                        else:
+                            value = None
+
+                        if value is not None:
+                            total += value
+
+                    except AttributeError:
+                        # Log or skip if quantity is malformed
+                        pass
+    return total</code></pre>
+</details>
+<div class="desc"><p>Sums up a quantity value from a quantity set for a list of IFC elements.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>elements</code></strong></dt>
+<dd>List of IFC elements (e.g. spaces).</dd>
+<dt><strong><code>qset</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the quantity set (e.g. "Qto_SpaceBaseQuantities").</dd>
+<dt><strong><code>quantity_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the quantity to sum (e.g. "NetFloorArea").</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>float</code></dt>
+<dd>The total sum of the found quantities.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="qto_buccaneer.utils" href="index.html">qto_buccaneer.utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="qto_buccaneer.utils.qto_calculator.QtoCalculator" href="#qto_buccaneer.utils.qto_calculator.QtoCalculator">QtoCalculator</a></code></h4>
+<ul class="">
+<li><code><a title="qto_buccaneer.utils.qto_calculator.QtoCalculator.calculate_quantity" href="#qto_buccaneer.utils.qto_calculator.QtoCalculator.calculate_quantity">calculate_quantity</a></code></li>
+<li><code><a title="qto_buccaneer.utils.qto_calculator.QtoCalculator.sum_quantity" href="#qto_buccaneer.utils.qto_calculator.QtoCalculator.sum_quantity">sum_quantity</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>
