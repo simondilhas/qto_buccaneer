@@ -19,8 +19,6 @@ Ahoy! This Python library is your toolkit for exploring, extracting, and calcula
 
 ## ⚓ What This Is
 
-⚓ What This Is
-
 A general-purpose Python library for calculating and managing quantity takeoffs from IFC models using open standards and open-source tools.
 
 With this toolkit, you can:
