@@ -112,13 +112,14 @@
 </span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>            <span class="n">ifc_file</span><span class="o">=</span><span class="n">loader</span><span class="p">,</span>  <span class="c1"># Pass the loader directly</span>
 </span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>            <span class="n">df_for_ifc_enrichment</span><span class="o">=</span><span class="n">spatial_df</span><span class="p">,</span>
 </span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;GlobalId&quot;</span><span class="p">,</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>            <span class="n">pset_name</span><span class="o">=</span><span class="n">pset_name</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>        <span class="p">)</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enrichment complete&quot;</span><span class="p">)</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>        <span class="k">return</span> <span class="n">result</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enrichment failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>        <span class="k">return</span> <span class="n">loader</span><span class="o">.</span><span class="n">file_path</span> <span class="ow">or</span> <span class="s2">&quot;enrichment_failed.ifc&quot;</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>            <span class="n">pset_name</span><span class="o">=</span><span class="n">pset_name</span><span class="p">,</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>            <span class="n">file_postfix</span><span class="o">=</span><span class="s2">&quot;sp&quot;</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>        <span class="p">)</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enrichment complete&quot;</span><span class="p">)</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>        <span class="k">return</span> <span class="n">result</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enrichment failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a>        <span class="k">return</span> <span class="n">loader</span><span class="o">.</span><span class="n">file_path</span> <span class="ow">or</span> <span class="s2">&quot;enrichment_failed.ifc&quot;</span>
 </span></pre></div>
 
 
@@ -178,13 +179,14 @@
 </span><span id="add_spatial_data_to_ifc-55"><a href="#add_spatial_data_to_ifc-55"><span class="linenos">55</span></a>            <span class="n">ifc_file</span><span class="o">=</span><span class="n">loader</span><span class="p">,</span>  <span class="c1"># Pass the loader directly</span>
 </span><span id="add_spatial_data_to_ifc-56"><a href="#add_spatial_data_to_ifc-56"><span class="linenos">56</span></a>            <span class="n">df_for_ifc_enrichment</span><span class="o">=</span><span class="n">spatial_df</span><span class="p">,</span>
 </span><span id="add_spatial_data_to_ifc-57"><a href="#add_spatial_data_to_ifc-57"><span class="linenos">57</span></a>            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;GlobalId&quot;</span><span class="p">,</span>
-</span><span id="add_spatial_data_to_ifc-58"><a href="#add_spatial_data_to_ifc-58"><span class="linenos">58</span></a>            <span class="n">pset_name</span><span class="o">=</span><span class="n">pset_name</span>
-</span><span id="add_spatial_data_to_ifc-59"><a href="#add_spatial_data_to_ifc-59"><span class="linenos">59</span></a>        <span class="p">)</span>
-</span><span id="add_spatial_data_to_ifc-60"><a href="#add_spatial_data_to_ifc-60"><span class="linenos">60</span></a>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enrichment complete&quot;</span><span class="p">)</span>
-</span><span id="add_spatial_data_to_ifc-61"><a href="#add_spatial_data_to_ifc-61"><span class="linenos">61</span></a>        <span class="k">return</span> <span class="n">result</span>
-</span><span id="add_spatial_data_to_ifc-62"><a href="#add_spatial_data_to_ifc-62"><span class="linenos">62</span></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="add_spatial_data_to_ifc-63"><a href="#add_spatial_data_to_ifc-63"><span class="linenos">63</span></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enrichment failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="add_spatial_data_to_ifc-64"><a href="#add_spatial_data_to_ifc-64"><span class="linenos">64</span></a>        <span class="k">return</span> <span class="n">loader</span><span class="o">.</span><span class="n">file_path</span> <span class="ow">or</span> <span class="s2">&quot;enrichment_failed.ifc&quot;</span>
+</span><span id="add_spatial_data_to_ifc-58"><a href="#add_spatial_data_to_ifc-58"><span class="linenos">58</span></a>            <span class="n">pset_name</span><span class="o">=</span><span class="n">pset_name</span><span class="p">,</span>
+</span><span id="add_spatial_data_to_ifc-59"><a href="#add_spatial_data_to_ifc-59"><span class="linenos">59</span></a>            <span class="n">file_postfix</span><span class="o">=</span><span class="s2">&quot;sp&quot;</span>
+</span><span id="add_spatial_data_to_ifc-60"><a href="#add_spatial_data_to_ifc-60"><span class="linenos">60</span></a>        <span class="p">)</span>
+</span><span id="add_spatial_data_to_ifc-61"><a href="#add_spatial_data_to_ifc-61"><span class="linenos">61</span></a>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enrichment complete&quot;</span><span class="p">)</span>
+</span><span id="add_spatial_data_to_ifc-62"><a href="#add_spatial_data_to_ifc-62"><span class="linenos">62</span></a>        <span class="k">return</span> <span class="n">result</span>
+</span><span id="add_spatial_data_to_ifc-63"><a href="#add_spatial_data_to_ifc-63"><span class="linenos">63</span></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="add_spatial_data_to_ifc-64"><a href="#add_spatial_data_to_ifc-64"><span class="linenos">64</span></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enrichment failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="add_spatial_data_to_ifc-65"><a href="#add_spatial_data_to_ifc-65"><span class="linenos">65</span></a>        <span class="k">return</span> <span class="n">loader</span><span class="o">.</span><span class="n">file_path</span> <span class="ow">or</span> <span class="s2">&quot;enrichment_failed.ifc&quot;</span>
 </span></pre></div>
 
 
