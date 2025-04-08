@@ -195,6 +195,17 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
       Pset_CoveringCommon.IsExternal: true
     include_filter_logic: "AND"
 
+  soffit_area:
+    description: "The total area of soffits"
+    quantity_type: "area"
+    ifc_entity: "IfcCovering"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "INSULATION"
+      Pset_CoveringCommon.IsExternal: true
+    include_filter_logic: "AND"
+
   coverings_interior_area:
     description: "The total area of interior coverings"
     quantity_type: "area"
@@ -324,6 +335,9 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
       Qto_WallBaseQuantities.Width: ["<=", 0.15]  
     include_filter_logic: "AND"
 
+  
+    
+
 
 # Room-based metrics
 room_based_metrics: #Dont delete the name "room_based_metrics". List all the metrics calculated per room here e.g. window area by roomtyp
@@ -400,6 +414,18 @@ derived_metrics:
   construction_volume_to_gross_volume_ratio:
     description: "Ratio of construction volume to gross volume. Relevance: Indicates how much volume is occupied by structure vs. usable space. Typical use: Structural optimization and material estimation."
     formula: "construction_volume / gross_volume"
+
+  total_envelope_area:
+    description: "The total envelope area. Relevance: Indicates the total area of the building envelope. Typical use: Estimating construction costs and comparing project scales."
+    formula: "facade_vertical_area + windows_exterior_area + doors_exterior_area + roof_area + soffit_area"
+
+  total_envelope_area_to_gross_floor_area_ratio:
+    description: "Ratio of total envelope area to gross floor area. Relevance: Indicates the total area of the building envelope per usable area. Typical use: Estimating construction costs and comparing project scales."
+    formula: "total_envelope_area / gross_floor_area"
+
+  total_envelope_area_to_gross_volume_ratio:
+    description: "Ratio of total envelope area to gross volume. Relevance: Indicates the total area of the building envelope per usable volume. Typical use: Estimating construction costs and comparing project scales."
+    formula: "total_envelope_area / gross_volume"
 
 
 
