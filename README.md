@@ -10,11 +10,16 @@ Ahoy! This Python library is your toolkit for exploring, extracting, and calcula
 - [Project Structure](#-project-structure)
 - [Installation](#️-installation)
 - [Quick Start](#-quick-start)
-  - [Configuration](#-configuration)
-  - [Metrics Configuration](#metrics-configuration)
-  - [Room-based Metrics](#room-based-metrics)
-  - [Filter Options](#filter-options)
-- [Development Pipeline](#-development-pipeline)
+  - [Usage Examples](#usage-examples)
+  - [Calculate Metrics](#calculate-metrics)
+  - [Enrich IFC Model](#enrich-ifc-model)
+  - [Configuration Files](#configuration-files)
+- [Dependencies](#dependencies)
+  - [Core Dependencies](#core-dependencies)
+  - [Python Package Dependencies](#python-package-dependencies)
+  - [Optional Dependencies](#optional-dependencies)
+  - [Version Requirements](#version-requirements)
+- [Development Pipeline](#️-development-pipeline)
 - [Contributing](#-contributing)
 
 ## ⚓ What This Is
@@ -25,8 +30,9 @@ With this toolkit, you can:
 
 - Calculate project-wide metrics based on your definitions
 - Calculate metrics per room or space
+- Benchmark different projects
 - Export results to Excel and other report formats
-- Define metric logic using a YAML config file, instead of having to deal with code
+- Define metric logic using a userfriendly YAML config file, instead of having to deal with code or clicking in projecsoftware tools
 - Enrich and clean up IFC files—friendlier than raw ifcopenshell
 
 ## 🧭 Designed for IFC optimized for abstractBIM IFC Data
@@ -50,37 +56,61 @@ Yes, you can still use raw IFC + ifcopenshell, but you'll want to be comfortable
 
 ## 📁 Project Structure
 
-```
+create a new tree
+```bash
+tree -a --dirsfirst -L 3 -I '.venv|docs|__pycache__|*.pyc|.git|.pytest_cache|.coverage|*.egg-info|__init__.py'
+
 qto-buccaneer/
 ├── src/
 │   └── qto_buccaneer/
-│       ├── utils/
-│       │   ├── ifc_loader.py    # IFC file loading and element filtering
-│       │   └── qto_calculator.py # Core quantity calculation methods
-│       ├── metrics.py           # Main metrics calculation interface
-│       ├── metrics_config.yaml  # Metrics configuration
-│       └── reports.py           # Export utilities
-├── examples/
-│   └── calculate_metrics.py     # Basic usage example
-├── tests/
-│   └── .                        # Test files
-├── requirements.txt             # Project dependencies
-└── README.md                    # This file
+│       ├── configs/                                  # Configuration files
+│       │   ├── enrichment_config_abstractBIM.yaml
+│       │   ├── enrichment_space_table.xlsx
+│       │   ├── metrics_config_abstractBIM.yaml
+│       │   └── report_templat.tex
+│       ├── utils/                                    # Utility functions
+│       │   ├── config_loader.py                      # Configuration loading utilities
+│       │   ├── config.py                             # Configuration management
+│       │   ├── ifc_loader.py                         # IFC file loading and filtering
+│       │   └── qto_calculator.py                     # Core quantity calculation methods
+│       ├── enrich.py                                 # IFC enrichment functionality
+│       ├── metrics.py                                # Main metrics calculation interface
+│       ├── preprocess_ifc.py                         # IFC preprocessing utilities
+│       ├── reports.py                                # Report generation
+│       ├── validate_config_file.py                   # Configuration validation
+│       └── _version.py                               # Version information
+├── examples/                                         # Example scripts and data
+│   ├── data/
+│   ├── calculate_all_metrics.py
+│   ├── calculate_metric_grouped_by.py
+│   ├── calculate_metric.py
+│   ├── calculate_metrics_by_relationship.py
+│   ├── calculate_metrics_by_room.py
+│   ├── calculate_single_derived_metric.py
+│   ├── create_report_excel_project_metrics_overview.py
+│   ├── create_room_program_comparison.py
+│   ├── enriche_ifc_with_spatial_data.py
+│   ├── enrich_ifc_with_df_by_room.py
+│   └── enrich_ifc_with_df.py
+├── templates/                                         # Template files for configuration
+│   ├── enrichment_config_abstractBIM.yaml
+│   ├── enrichment_space_table.xlsx
+│   └── target_room_program.xlsx
+├── tests/                                             # Test files
+│   ├── help.py
+│   ├── test_data.yaml
+│   ├── test_model_1.ifc
+│   └── test_qto_calculator.py
+├── scripts/                                           # Development scripts
+│   ├── generate_docs.py
+│   └── serve_docs.py
+├── requirements.txt                                   # Project dependencies
+├── setup.py                                           # Package installation configuration
+├── LICENSE.md                                         # License information
+└── README.md                                          # Project documentation
 
 ```
 
-## ⚙️ Installation
-
-```bash
-# Option 1: Clone and install locally
-git clone https://github.com/simondilhas/qto_buccaneer.git
-cd qto-buccaneer
-pip install -r requirements.txt
-
-# Option 2: Install directly from GitHub
-pip install git+https://github.com/simondilhas/qto_buccaneer.git
-
-```
 
 ## 🚀 Quick Start
 
@@ -95,6 +125,8 @@ pip install -r requirements.txt
 # Option 2: Install directly from GitHub
 pip install git+https://github.com/simondilhas/qto-buccaneer.git
 ```
+
+
 
 ### Usage Examples
 
@@ -182,7 +214,44 @@ Key configuration concepts:
 
 For more examples and detailed configuration options, check the `configs/` directory in the repository.
 
+## Dependencies
 
+This project relies on several key dependencies:
+
+### Core Dependencies
+- [IfcOpenShell](https://github.com/IfcOpenShell/IfcOpenShell): Open-source library for working with IFC files
+  - License: [GNU Lesser General Public License v3.0](https://www.gnu.org/licenses/lgpl-3.0.html)
+  - Used for: IFC file parsing and geometric operations
+
+### Python Package Dependencies
+- `pandas`: Data manipulation and analysis
+- `numpy`: Numerical computations
+- `pyyaml`: YAML configuration file handling
+- `typing`: Type hints support
+
+### Optional Dependencies
+- `pytest`: For running the test suite
+- `black`: Code formatting
+- `mypy`: Static type checking
+- `sphinx`: Documentation generation
+
+### Version Requirements
+- Python >= 3.8
+- IfcOpenShell >= 0.7.0
+
+### Installation
+
+You can install all required dependencies using:
+```bash
+pip install -r requirements.txt
+```
+
+For development dependencies:
+```bash
+pip install -r requirements-dev.txt
+```
+
+Note: IfcOpenShell might require additional system-level dependencies depending on your operating system. Please refer to the [IfcOpenShell installation guide](https://github.com/IfcOpenShell/IfcOpenShell) for platform-specific instructions.
 
 ## 🗺️ Development Pipeline
 
@@ -219,6 +288,7 @@ We're charting a course for more features! Here's what's on the horizon:
    - Extended API support
 
 Want to help with any of these? Check out our [Contributing](#-contributing) section!
+
 
 ## 🤝 Contributing
 

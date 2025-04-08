@@ -5,17 +5,19 @@ who need automated quantity takeoffs.
 
 Main Components:
 - metrics: Core metrics calculation functionality
-- utils: Helper functions for IFC handling and calculations
+- enrich: Enrich and clean up IFC files—friendlier than raw ifcopenshell
 - reports: Export and reporting utilities
+- utils: Helper functions for IFC handling and quantity calculations
 - configs: Configuration files and settings
 
 With this toolkit, you can:
 
 - Calculate project-wide metrics based on your definitions
 - Calculate metrics per room or space
-- Export results to Excel and other report formats
-- Define metric logic using a YAML config file, instead of having to deal with code
+- Calculate metrics and group them by your own custom definitions
 - Enrich and clean up IFC files—friendlier than raw ifcopenshell
+- Export results to Excel and other report formats
+- Define metric logic using a YAML config file, instead of having to deal with code or clicking through the UI
 
 ## 🧭 Designed for IFC, optimized for abstractBIM Data
 
