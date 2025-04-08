@@ -13,7 +13,7 @@ metrics_to_compare = ['gross_floor_area', 'gross_volume']
 
 comparison_df = export_project_comparison_excel(
     df=df,
-    metrics=metrics_to_compare,
+    #metrics=metrics_to_compare,
     output_path="examples/project_comparison.xlsx"
 )
 

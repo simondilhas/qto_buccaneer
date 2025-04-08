@@ -6,6 +6,7 @@ from jinja2 import Environment, FileSystemLoader
 import subprocess
 from dataclasses import dataclass
 import openpyxl
+from openpyxl.utils import get_column_letter
 
 
 def export_to_excel(df: pd.DataFrame, path: str) -> None:
@@ -130,11 +131,9 @@ def export_project_comparison_excel(
     if comparison_df.empty:
         return
         
-    # Use default config if none provided
     config = layout_config or ExcelLayoutConfig()
     
     with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
-        # Write DataFrame to Excel
         comparison_df.to_excel(writer, index=False, sheet_name='Comparison')
         worksheet = writer.sheets['Comparison']
         
@@ -146,7 +145,8 @@ def export_project_comparison_excel(
                     len(str(col))
                 )
                 adjusted_width = max_length + 2
-                worksheet.column_dimensions[chr(65 + idx)].width = adjusted_width
+                column_letter = get_column_letter(idx + 1)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
         
         # Set row height if specified
         if config.row_height:
