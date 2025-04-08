@@ -15,11 +15,7 @@ setup(
     version=__version__,  # Use the imported version
     package_dir={"": "src"},
     packages=find_packages(where="src"),
-    install_requires=[
-        "ifcopenshell",
-        "pandas",
-        "pyyaml",
-    ],
+    install_requires=requirements,  # Use the requirements from requirements.txt
     extras_require={
         "docs": [
             "pdoc3",
