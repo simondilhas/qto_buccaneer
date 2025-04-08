@@ -55,6 +55,14 @@ def create_project_comparison_df(df: pd.DataFrame, metrics: Optional[list[str]] 
     Returns:
         pd.DataFrame: DataFrame with projects as rows and metrics as columns
     """
+    required_columns = {'file_name', 'metric_name', 'unit', 'value'}
+    missing_columns = required_columns - set(df.columns)
+    
+    if missing_columns:
+        print(f"Warning: Missing required columns: {missing_columns}")  # Debug print
+        print(f"Available columns: {df.columns.tolist()}")  # Debug print
+        return pd.DataFrame()
+        
     try:
         # Filter metrics if a list is provided
         if metrics is not None:
@@ -115,7 +123,7 @@ def export_project_comparison_excel(
     output_path: str, 
     metrics: Optional[list[str]] = None,
     layout_config: Optional[ExcelLayoutConfig] = None
-) -> None:
+) -> pd.DataFrame:
     """
     Create and export project comparison to Excel file with customizable formatting.
 
@@ -125,79 +133,100 @@ def export_project_comparison_excel(
         metrics (Optional[list[str]]): List of metric names to include in the comparison
         layout_config (Optional[ExcelLayoutConfig]): Configuration for Excel layout.
             If None, default settings will be used.
+            
+    Returns:
+        pd.DataFrame: The comparison DataFrame that was exported
     """
     comparison_df = create_project_comparison_df(df, metrics)
     
-    if comparison_df.empty:
-        return
-        
-    config = layout_config or ExcelLayoutConfig()
+    print("Input DataFrame shape:", df.shape)  # Debug print
+    print("Comparison DataFrame shape:", comparison_df.shape)  # Debug print
+    print("Metrics:", metrics)  # Debug print
     
-    with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
-        comparison_df.to_excel(writer, index=False, sheet_name='Comparison')
-        worksheet = writer.sheets['Comparison']
+    if comparison_df.empty:
+        print("Warning: Comparison DataFrame is empty!")  # Debug print
+        return comparison_df
         
-        # Auto-adjust column widths if enabled
-        if config.auto_column_width:
-            for idx, col in enumerate(comparison_df.columns):
-                max_length = max(
-                    comparison_df[col].astype(str).apply(len).max(),
-                    len(str(col))
-                )
-                adjusted_width = max_length + 2
-                column_letter = get_column_letter(idx + 1)
-                worksheet.column_dimensions[column_letter].width = adjusted_width
+    # Make sure the output directory exists
+    output_dir = os.path.dirname(output_path)
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
         
-        # Set row height if specified
-        if config.row_height:
-            for row in range(1, len(comparison_df) + 2):
-                worksheet.row_dimensions[row].height = config.row_height
+    try:
+        config = layout_config or ExcelLayoutConfig()
         
-        # Add gridlines
-        for row in range(1, len(comparison_df) + 2):
-            for col in range(1, len(comparison_df.columns) + 1):
-                cell = worksheet.cell(row=row, column=col)
-                borders = {}
-                
-                if config.horizontal_lines:
-                    borders['bottom'] = openpyxl.styles.Side(style='thin')
-                if config.vertical_lines:
-                    borders['right'] = openpyxl.styles.Side(style='thin')
-                
-                if borders:
-                    cell.border = openpyxl.styles.Border(**borders)
-                
-                # Apply number format to numeric cells
-                if row > 1 and col > 1:  # Skip header row and project column
-                    try:
-                        float(cell.value)  # Check if value is numeric
-                        cell.number_format = config.number_format
-                    except (TypeError, ValueError):
-                        pass
-        
-        # Format headers
-        if config.bold_headers:
-            for col in range(1, len(comparison_df.columns) + 1):
-                cell = worksheet.cell(row=1, column=col)
-                cell.font = openpyxl.styles.Font(bold=True)
-                
-                if config.header_color:
-                    cell.fill = openpyxl.styles.PatternFill(
-                        start_color=config.header_color,
-                        end_color=config.header_color,
-                        fill_type='solid'
+        with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+            comparison_df.to_excel(writer, index=False, sheet_name='Comparison')
+            worksheet = writer.sheets['Comparison']
+            
+            # Auto-adjust column widths if enabled
+            if config.auto_column_width:
+                for idx, col in enumerate(comparison_df.columns):
+                    max_length = max(
+                        comparison_df[col].astype(str).apply(len).max(),
+                        len(str(col))
                     )
-        
-        # Apply alternating colors if enabled
-        if config.alternating_colors:
-            for row in range(2, len(comparison_df) + 2, 2):  # Start after header
+                    adjusted_width = max_length + 2
+                    column_letter = get_column_letter(idx + 1)
+                    worksheet.column_dimensions[column_letter].width = adjusted_width
+            
+            # Set row height if specified
+            if config.row_height:
+                for row in range(1, len(comparison_df) + 2):
+                    worksheet.row_dimensions[row].height = config.row_height
+            
+            # Add gridlines
+            for row in range(1, len(comparison_df) + 2):
                 for col in range(1, len(comparison_df.columns) + 1):
                     cell = worksheet.cell(row=row, column=col)
-                    cell.fill = openpyxl.styles.PatternFill(
-                        start_color='F5F5F5',  # Light gray
-                        end_color='F5F5F5',
-                        fill_type='solid'
-                    )
+                    borders = {}
+                    
+                    if config.horizontal_lines:
+                        borders['bottom'] = openpyxl.styles.Side(style='thin')
+                    if config.vertical_lines:
+                        borders['right'] = openpyxl.styles.Side(style='thin')
+                    
+                    if borders:
+                        cell.border = openpyxl.styles.Border(**borders)
+                    
+                    # Apply number format to numeric cells
+                    if row > 1 and col > 1:  # Skip header row and project column
+                        try:
+                            float(cell.value)  # Check if value is numeric
+                            cell.number_format = config.number_format
+                        except (TypeError, ValueError):
+                            pass
+            
+            # Format headers
+            if config.bold_headers:
+                for col in range(1, len(comparison_df.columns) + 1):
+                    cell = worksheet.cell(row=1, column=col)
+                    cell.font = openpyxl.styles.Font(bold=True)
+                    
+                    if config.header_color:
+                        cell.fill = openpyxl.styles.PatternFill(
+                            start_color=config.header_color,
+                            end_color=config.header_color,
+                            fill_type='solid'
+                        )
+            
+            # Apply alternating colors if enabled
+            if config.alternating_colors:
+                for row in range(2, len(comparison_df) + 2, 2):  # Start after header
+                    for col in range(1, len(comparison_df.columns) + 1):
+                        cell = worksheet.cell(row=row, column=col)
+                        cell.fill = openpyxl.styles.PatternFill(
+                            start_color='F5F5F5',  # Light gray
+                            end_color='F5F5F5',
+                            fill_type='solid'
+                        )
+
+        print(f"Excel file successfully created at: {output_path}")  # Debug print
+    except Exception as e:
+        print(f"Error creating Excel file: {str(e)}")  # Debug print
+        raise
+        
+    return comparison_df
 
 # Example usage:
 """
