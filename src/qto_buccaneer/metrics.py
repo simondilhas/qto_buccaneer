@@ -82,7 +82,7 @@ def calculate_single_metric(ifc_path: str, config: dict, metric_name: str, file_
 
 def calculate_all_metrics(config: Dict, ifc_path: str, file_info: Optional[dict] = None) -> pd.DataFrame:
     """
-    Calculate all metrics (base, relationship-based, and derived) defined in the configuration.
+    Calculate all metrics (base, relationship-based, derived, space-based, and grouped) defined in the configuration.
     """
     results = []
     
@@ -96,8 +96,27 @@ def calculate_all_metrics(config: Dict, ifc_path: str, file_info: Optional[dict]
         )
         results.append(metric_df)
 
+    # Calculate space-based metrics
+    for metric_name in config.get('room_based_metrics', {}).keys():
+        metric_df = calculate_single_metric_by_space(
+            ifc_path=ifc_path,
+            config=config,
+            metric_name=metric_name,
+            file_info=file_info
+        )
+        results.append(metric_df)
 
-    # Combine base and relationship metrics
+    # Calculate grouped metrics
+    for metric_name in config.get('grouped_by_attribute_metrics', {}).keys():
+        metric_df = calculate_single_grouped_metric(
+            ifc_path=ifc_path,
+            config=config,
+            metric_name=metric_name,
+            file_info=file_info
+        )
+        results.append(metric_df)
+
+    # Combine all metrics
     metrics_df = pd.concat(results, ignore_index=True) if results else pd.DataFrame(
         columns=["metric_name", "value", "unit", "category", "description", 
                 "calculation_time", "status"] + (list(file_info.keys()) if file_info else [])
