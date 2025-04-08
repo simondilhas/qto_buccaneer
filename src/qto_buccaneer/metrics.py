@@ -586,4 +586,5 @@ def _determine_unit(quantity_type: str) -> str:
         return "m²"
     elif quantity_type == "count":
         return "count"
-    return "unknown" 
+    return "unknown"
+
