@@ -85,18 +85,18 @@ class QtoCalculator:
 
     def calculate_quantity(
         self,
-        quantity_type: Literal["area", "volume"],
+        quantity_type: Literal["area", "volume", "count"],
         include_filter: Optional[dict] = None,
         include_filter_logic: Literal["AND", "OR"] = "OR",
         subtract_filter: Optional[dict] = None,
         subtract_filter_logic: Literal["AND", "OR"] = "OR",
         ifc_entity: str = "IfcSpace",
-        pset_name: str = "Qto_SpaceBaseQuantities",
+        pset_name: Optional[str] = None,
         prop_name: Optional[str] = None
-    ) -> float:
+    ) -> Union[float, int]:
         """
-        Generic method to calculate quantities (area or volume) with filters and filter logic.
-        Filters can contain numeric comparisons using tuples: {"Width": (">", 0.15)}
+        Generic method to calculate quantities (area, volume, or count) with filters and filter logic.
+        For count metrics, pset_name and prop_name are optional as we just count the elements.
         """
         # Default filters and property names based on quantity type
         defaults = {
@@ -107,6 +107,10 @@ class QtoCalculator:
             "volume": {
                 "include_filter": {"Name": "GrossVolume"},
                 "prop_name": "NetVolume"
+            },
+            "count": {
+                "include_filter": None,
+                "prop_name": None
             }
         }
 
@@ -129,10 +133,14 @@ class QtoCalculator:
                 ifc_entity=ifc_entity
             )
 
-        included_total = self.sum_quantity(include_elements, pset_name, prop_name)
-        subtracted_total = self.sum_quantity(subtract_elements, pset_name, prop_name)
-
-        return included_total - subtracted_total
+        if quantity_type == "count":
+            # For count, just return the number of elements
+            return len(include_elements) - len(subtract_elements)
+        else:
+            # For area and volume, sum the quantities
+            included_total = self.sum_quantity(include_elements, pset_name, prop_name)
+            subtracted_total = self.sum_quantity(subtract_elements, pset_name, prop_name)
+            return included_total - subtracted_total
 
 
 

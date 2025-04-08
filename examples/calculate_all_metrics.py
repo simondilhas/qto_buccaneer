@@ -9,7 +9,7 @@ from qto_buccaneer.utils.config import load_config
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 
 config = load_config("src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml")
-filepath = "examples/Mustermodell V1_abstractBIM.ifc"
+filepath = "examples/Mustermodell V1_abstractBIM_sp_enriched.ifc"
 
 loader = IfcLoader(filepath)
 file_info = {
@@ -19,3 +19,6 @@ file_info = {
 
 all_metrics = calculate_all_metrics(config, filepath, file_info)
 print(all_metrics)
+
+#save to excel
+all_metrics.to_excel("all_metrics.xlsx", index=False)

@@ -54,7 +54,8 @@ def add_spatial_data_to_ifc(
             ifc_file=loader,  # Pass the loader directly
             df_for_ifc_enrichment=spatial_df,
             key="GlobalId",
-            pset_name=pset_name
+            pset_name=pset_name,
+            file_postfix="sp"
         )
         print("Enrichment complete")
         return result

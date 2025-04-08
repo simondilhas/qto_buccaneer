@@ -16,9 +16,10 @@ def main():
 
     # Enrich IFC file - the function now handles the GlobalId mapping internally
     enriched_ifc_path = enrich_ifc_with_df(
-        ifc_file="examples/Mustermodell V1_abstractBIM.ifc",
+        ifc_file="examples/Mustermodell V1_abstractBIM_sp.ifc",
         df_for_ifc_enrichment=df_enrichment,
-        key="LongName"
+        key="LongName",
+        file_postfix="enriched"
     )
 
     print(f"\nCreated enriched IFC file: {enriched_ifc_path}")

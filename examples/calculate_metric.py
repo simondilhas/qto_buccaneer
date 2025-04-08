@@ -32,7 +32,10 @@ from qto_buccaneer.utils.ifc_loader import IfcLoader
 #METRIC_NAME = "doors_interior_area"
 #METRIC_NAME = "walls_interior_loadbearing_net_side_area"
 #METRIC_NAME = "walls_interior_non_loadbearing_net_side_area"
-METRIC_NAME = "GF ui Neubau"
+#METRIC_NAME = "GF ui Neubau"
+#METRIC_NAME = "doors_exterior_count"
+#METRIC_NAME = "windows_exterior_count"
+METRIC_NAME = "storeys_count_including_roof"
 
 
 def main():
