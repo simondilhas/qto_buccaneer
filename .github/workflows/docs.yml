@@ -27,9 +27,10 @@ jobs:
       - name: Generate documentation
         run: |
           rm -rf docs/*
-          # Generate docs (removed invalid --docformat option)
           pdoc --html --output-dir docs qto_buccaneer
-          # Create index.html with proper redirect
+          # Debug: List the contents of docs directory
+          ls -R docs/
+          # Create index.html with correct path
           echo '<!DOCTYPE html>
           <html>
             <head>
