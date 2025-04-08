@@ -764,6 +764,7 @@ relationship_based_metrics: #Dont delete the name "room_based_metrics". List all
       Pset_CoveringCommon.IsExternal: false
     include_filter_logic: "AND" 
 
+grouped_by_attribute_metrics:
   facade_net_area_by_direction:
     description: "Get facade gross area grouped by direction"
     ifc_entity: "IfcCovering"
@@ -773,28 +774,17 @@ relationship_based_metrics: #Dont delete the name "room_based_metrics". List all
     include_filter:
       PredefinedType: "CLADDING"
       Pset_CoveringCommon.IsExternal: true
-    include_filter_logic: "AND"
+    include_filter_logic: "AND" 
 
   windows_area_by_direction:
-    description: "Get external windows area grouped by direction"
+    description: "Get windows area grouped by direction"
     ifc_entity: "IfcWindow"
     grouping_attribute: "Pset_abstractBIM.Normal"
     pset_name: "Qto_WindowBaseQuantities"
     prop_name: "Area"
     include_filter:
       Pset_WindowCommon.IsExternal: true
-    include_filter_logic: "AND"
-
-  doors_area_by_direction:
-    description: "Get external doors area grouped by direction"
-    ifc_entity: "IfcDoor" 
-    grouping_attribute: "Pset_abstractBIM.Normal"
-    pset_name: "Qto_DoorBaseQuantities"
-    prop_name: "Area"
-    include_filter:
-      Pset_DoorCommon.IsExternal: true
-    include_filter_logic: "AND"
-
+    include_filter_logic: "AND" 
 
 # Add here the metrics that are calculated based on other metrics
 derived_metrics:

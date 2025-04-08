@@ -232,5 +232,65 @@ class QtoCalculator:
         return result
 
 
+    def _get_elements_by_attribute(
+        self,
+        ifc_entity: str,
+        grouping_attribute: str,
+        include_filter: Optional[dict] = None,
+        include_filter_logic: Literal["AND", "OR"] = "AND",
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal["AND", "OR"] = "OR",
+        pset_name: str = "Qto_BaseQuantities",
+        prop_name: str = "NetArea",
+    ) -> dict:
+        """Get elements grouped by an attribute with their quantities."""
+        # Get filtered elements first
+        elements = self.loader.get_elements(
+            filters=include_filter,
+            filter_logic=include_filter_logic,
+            ifc_entity=ifc_entity
+        ) or []
+        
+        print(f"Found {len(elements)} filtered elements of type {ifc_entity}")
+        
+        # Initialize result
+        result = {}
+        
+        # Process each element
+        for element in elements:
+            # Get the quantity
+            quantity = 0.0
+            for rel in getattr(element, "IsDefinedBy", []):
+                qto = getattr(rel, "RelatingPropertyDefinition", None)
+                if not qto or not qto.is_a("IfcElementQuantity") or qto.Name != pset_name:
+                    continue
+                for q in getattr(qto, "Quantities", []):
+                    if q.Name == prop_name and q.is_a("IfcQuantityArea"):
+                        quantity = q.AreaValue
+                        break
+        
+            if quantity == 0.0:
+                continue
+
+            # Get the grouping value
+            if '.' in grouping_attribute:
+                # For Pset attributes (e.g., "Pset_abstractBIM.Normal")
+                pset_name_group, attr_name = grouping_attribute.split('.')
+                for rel in getattr(element, "IsDefinedBy", []):
+                    pset = getattr(rel, "RelatingPropertyDefinition", None)
+                    if pset and pset.is_a("IfcPropertySet") and pset.Name == "ePset_abstractBIM":  # Note: using ePset_abstractBIM
+                        for prop in pset.HasProperties:
+                            if prop.Name == attr_name and hasattr(prop, 'NominalValue'):
+                                group_value = prop.NominalValue.wrappedValue
+                                if group_value not in result:
+                                    result[group_value] = 0.0
+                                result[group_value] += quantity
+                                print(f"Added {quantity} to direction {group_value}")
+                                break
+
+        print(f"Final results: {result}")
+        return result
+
+
 
     
