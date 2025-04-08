@@ -33,8 +33,8 @@ jobs:
           echo '<!DOCTYPE html>
           <html>
             <head>
-              <meta http-equiv="refresh" content="0; url=qto_buccaneer.html">
-              <script>window.location.href = "qto_buccaneer.html";</script>
+              <meta http-equiv="refresh" content="0; url=qto_buccaneer/index.html">
+              <script>window.location.href = "qto_buccaneer/index.html";</script>
             </head>
             <body>
               <p>Redirecting to documentation...</p>
