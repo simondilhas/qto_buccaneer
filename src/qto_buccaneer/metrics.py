@@ -82,58 +82,11 @@ def calculate_single_metric(ifc_path: str, config: dict, metric_name: str, file_
 
 def calculate_all_metrics(config: Dict, ifc_path: str, file_info: Optional[dict] = None) -> pd.DataFrame:
     """
-    Calculate all metrics defined in the configuration for a given IFC file.
-
-    Args:
-        config (Dict): Dictionary containing metrics configuration.
-            Expected format:
-            {
-                "metrics": {
-                    "metric_name": {
-                        "description": str,
-                        "quantity_type": str,
-                        "ifc_entity": str,
-                        ...
-                    },
-                    ...
-                }
-            }
-        ifc_path (str): Path to the IFC file to analyze
-        file_info (Optional[dict], optional): Additional file information to include in results. Defaults to None.
-
-    Returns:
-        pd.DataFrame: Combined DataFrame containing all metric results with columns:
-            - metric_name: Name of the metric
-            - value: Calculated value
-            - unit: Unit of measurement
-            - category: Metric category
-            - description: Metric description
-            - calculation_time: Time taken to calculate the metric
-            - status: Success or error status
-            - [file_info keys]: Additional columns from file_info if provided
-
-    Notes:
-        - If no metrics are defined in the config, returns an empty DataFrame with predefined columns
-        - Each metric is calculated independently; errors in one calculation won't affect others
-
-    Example:
-        >>> config = {
-        ...     "metrics": {
-        ...         "gross_floor_area": {
-        ...             "description": "Total floor area",
-        ...             "quantity_type": "area",
-        ...             "ifc_entity": "IfcSpace"
-        ...         },
-        ...         "wall_volume": {
-        ...             "description": "Total wall volume",
-        ...             "quantity_type": "volume",
-        ...             "ifc_entity": "IfcWall"
-        ...         }
-        ...     }
-        ... }
-        >>> df = calculate_all_metrics(config, "model.ifc")
+    Calculate all metrics (base and derived) defined in the configuration.
     """
     results = []
+    
+    # Calculate base metrics
     for metric_name in config.get('metrics', {}).keys():
         metric_df = calculate_single_metric(
             ifc_path=ifc_path,
@@ -143,115 +96,77 @@ def calculate_all_metrics(config: Dict, ifc_path: str, file_info: Optional[dict]
         )
         results.append(metric_df)
 
-    # Combine all results into a single DataFrame
-    if results:
-        return pd.concat(results, ignore_index=True)
-    else:
-        # Create base columns list
-        columns = [
-            "metric_name", "value", "unit", "category", 
-            "description", "calculation_time", "status"
-        ]
-        # Add file_info keys if present
-        if file_info:
-            columns.extend(file_info.keys())
-        return pd.DataFrame(columns=columns)
+    # Combine base metrics
+    metrics_df = pd.concat(results, ignore_index=True) if results else pd.DataFrame()
+    
+    # Calculate derived metrics in order, updating the DataFrame after each calculation
+    for metric_name, metric_config in config.get('derived_metrics', {}).items():
+        metric_df = calculate_single_derived_metric(
+            metric_name=metric_name,
+            unit="ratio" if "/" in metric_config['formula'] else metrics_df.iloc[0]['unit'],
+            formula=metric_config['formula'],
+            df_metrics=metrics_df,  # Use the updated metrics DataFrame
+            file_info=file_info
+        )
+        # Update the metrics DataFrame with the new derived metric
+        metrics_df = pd.concat([metrics_df, metric_df], ignore_index=True)
+    
+    return metrics_df if not metrics_df.empty else pd.DataFrame(
+        columns=["metric_name", "value", "unit", "category", "description", 
+                "calculation_time", "status"] + (list(file_info.keys()) if file_info else [])
+    )
 
-def calculate_single_derived_metric(metric_name: str, unit: str, formula: str, df_metrics: pd.DataFrame, file_info: Optional[dict] = None) -> pd.DataFrame:
+def calculate_single_derived_metric(
+    metric_name: str, 
+    unit: str, 
+    formula: str, 
+    df_metrics: pd.DataFrame, 
+    file_info: Optional[dict] = None
+) -> pd.DataFrame:
     """
     Calculate a single derived metric based on existing metrics.
 
     Args:
         metric_name (str): Name of the derived metric to calculate
+        unit (str): Unit of measurement for the result
         formula (str): Formula to calculate the derived metric
         df_metrics (pd.DataFrame): DataFrame containing the metrics to use in the calculation
-        file_info (Optional[dict], optional): Additional file information to include in results. Defaults to None.
+        file_info (Optional[dict]): Additional file information to include in results
 
     Returns:
-        pd.DataFrame: DataFrame containing the calculated derived metric with columns:
-            - metric_name: Name of the derived metric
-
+        pd.DataFrame: DataFrame containing the calculated derived metric
     """
-
     try:
-        # Evaluate the formula using the metrics DataFrame
-        result = eval(formula, {'pd': pd}, {'df_metrics': df_metrics})
+        # Create a dict of variables for formula evaluation
+        metric_values = df_metrics.set_index('metric_name')['value'].to_dict()
         
-        # Create a DataFrame with the result
-        result_df = pd.DataFrame([{
-            "metric_name": metric_name,
-            "value": result,
-            "unit": unit,
-            "category": "derived",
-            "description": "",
-            "calculation_time": datetime.now(),
-            "status": "success",
-        }])
+        # Evaluate the formula using the metric values
+        value = eval(formula, {"__builtins__": {}}, metric_values)
         
-        # Add file_info if provided
-        if file_info:
-            result_df.loc[:, file_info.keys()] = result_df.loc[:, file_info.keys()].apply(lambda x: x if x is not None else "")
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            value=value,
+            unit=unit,
+            category="derived",
+            description=formula,  # Use formula as description for transparency
+            **file_info or {}
+        )])
         
-        return result_df
+    except NameError as e:
+        # Handle case where a required metric is missing
+        missing_metric = str(e).split("'")[1]
+        error_msg = f"Required metric '{missing_metric}' not found in calculated metrics"
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            error_message=error_msg,
+            **file_info or {}
+        )])
     except Exception as e:
         return pd.DataFrame([create_result_dict(
             metric_name=metric_name,
             error_message=str(e),
             **file_info or {}
         )])
-
-def calculate_derived_metrics(config: dict, df_metrics: pd.DataFrame) -> pd.DataFrame:
-    """
-    Calculate derived metrics based on existing metrics.
-
-    Args:
-        config (dict): Dictionary containing metrics configuration with derived_metrics section
-        df_metrics (pd.DataFrame): DataFrame containing the calculated base metrics
-
-    Returns:
-        pd.DataFrame: DataFrame containing the calculated derived metrics
-    """
-    if 'derived_metrics' not in config:
-        return pd.DataFrame()  # Return empty DataFrame if no derived metrics defined
-
-    results = []
-    
-    for metric_name, metric_config in config['derived_metrics'].items():
-        try:
-            # Create a dict of variables for formula evaluation
-            metric_values = df_metrics.set_index('metric_name')['value'].to_dict()
-            
-            # Evaluate the formula using the metric values
-            try:
-                value = eval(metric_config['formula'], {"__builtins__": {}}, metric_values)
-            except NameError as e:
-                # Handle case where a required metric is missing
-                missing_metric = str(e).split("'")[1]
-                raise ValueError(f"Required metric '{missing_metric}' not found in calculated metrics")
-            
-            results.append({
-                "metric_name": metric_name,
-                "value": value,
-                "unit": "ratio" if "/" in metric_config['formula'] else df_metrics.iloc[0]['unit'],
-                "category": "derived",
-                "description": metric_config['description'],
-                "calculation_time": datetime.now(),
-                "status": "success"
-            })
-            
-        except Exception as e:
-            # Handle calculation errors
-            results.append({
-                "metric_name": metric_name,
-                "value": None,
-                "unit": "unknown",
-                "category": "derived",
-                "description": metric_config['description'],
-                "calculation_time": datetime.now(),
-                "status": f"error: {str(e)}"
-            })
-
-    return pd.DataFrame(results)
 
 def _process_quantity_calculation(qto: QtoCalculator, metric_name: str, metric_config: dict, file_info: Optional[dict] = None) -> dict:
     """Process a single quantity calculation and format its result.

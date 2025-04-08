@@ -184,7 +184,7 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
     include_filter:
       Pset_WallCommon.IsExternal: false
 
-  coverings_exterior_area:
+  facade_vertical_area:
     description: "The total area of exterior coverings"
     quantity_type: "area"
     ifc_entity: "IfcCovering"
@@ -383,15 +383,15 @@ derived_metrics:
 
   facade_area_to_gross_volume_ratio:
     description: "Ratio of facade area to gross volume. Relevance: Indicates envelope efficiency. Typical use: Comparing compactness and evaluating surface-related energy loss."
-    formula: "facade_area / gross_volume"
+    formula: "(facade_vertical_area + windows_exterior_area + doors_exterior_area) / gross_volume"
 
   facade_area_to_gross_floor_area_ratio:
     description: "Ratio of facade area to gross floor area. Relevance: Assesses building envelope exposure per usable area. Typical use: Thermal envelope design and cost estimation."
-    formula: "facade_area / gross_floor_area"
+    formula: "(facade_vertical_area + windows_exterior_area + doors_exterior_area) / gross_floor_area"
 
   opening_area_to_total_facade_area_ratio:
     description: "Ratio of opening area to total facade area. Relevance: Key factor in daylight, ventilation, and heat loss. Typical use: Evaluating window-to-wall ratio for building code compliance."
-    formula: "opening_area / facade_area"
+    formula: "windows_exterior_area / facade_vertical_area"
 
   construction_area_to_gross_floor_area_ratio:
     description: "Ratio of construction area to gross floor area. Relevance: Measures structural overhead. Typical use: Analyzing design efficiency and structure-to-usage proportion."
