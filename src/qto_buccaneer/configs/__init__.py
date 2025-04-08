@@ -70,34 +70,53 @@ subtract_filter:
 ### Standard Metrics
 Single value for entire project
 ```yaml
-gross_floor_area:
-    description: "Total gross floor area"
+metrics:
+  gross_floor_area:
+    description: "The gross floor area excluding voids"
     quantity_type: "area"
     ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      Name: "GrossArea"
+    subtract_filter:
+      Name: ["LUF", "Void", "Luftraum"]
 ```
 
 ### Room-Based Metrics
 Grouped by room attributes
 ```yaml
-windows_area_by_room:
-    description: "Windows grouped by room"
+room_based_metrics:
+  windows_area_by_room:
+    description: "Get windows grouped by room"
     ifc_entity: "IfcWindow"
     grouping_attribute: "GlobalId"
+    pset_name: "Qto_WindowBaseQuantities"
+    prop_name: "Area"
 ```
 
 ### Grouped-by-Attribute Metrics
 Grouped by specific element attributes
 ```yaml
-facade_net_area_by_direction:
-    description: "Facade area by direction"
+grouped_by_attribute_metrics:
+  facade_net_area_by_direction:
+    description: "Get facade gross area grouped by direction"
+    ifc_entity: "IfcCovering"
     grouping_attribute: "Pset_abstractBIM.Normal"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "CLADDING"
+      Pset_CoveringCommon.IsExternal: true
+    include_filter_logic: "AND" 
 ```
 
 ### Derived Metrics
 Calculated using formulas from other metrics
 ```yaml
-construction_area:
-    description: "Total construction area"
+derived_metrics:
+  construction_area:
+    description: "The total construction area. Relevance: Helps assess structural and usable footprint. Typical use: Estimating construction costs and comparing project scales."
     formula: "gross_floor_area - space_interior_floor_area"
 ```
 

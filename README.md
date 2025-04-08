@@ -130,7 +130,9 @@ pip install git+https://github.com/simondilhas/qto-buccaneer.git
 
 ### Usage Examples
 
-Look bellow or in the folder /examples for more detailed once.
+Look bellow or in the folder examples for more detailed once or in the documentation: 
+
+https://simondilhas.github.io/qto_buccaneer/qto_buccaneer/index.html
 
 #### Calculate Metrics
 ```python
