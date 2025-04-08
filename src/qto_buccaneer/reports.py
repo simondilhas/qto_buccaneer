@@ -77,7 +77,14 @@ def create_project_comparison_df(df: pd.DataFrame, metrics: Optional[list[str]] 
             values='value'
         )
         
-        pivot_df = pivot_df.sort_index(axis=1)
+        # Only sort if no specific metrics order was provided
+        if metrics is None:
+            pivot_df = pivot_df.sort_index(axis=1)
+        else:
+            # Reorder columns based on the provided metrics order
+            metric_order = [m + ' [' + df[df['metric_name'] == m]['unit'].iloc[0] + ']' for m in metrics]
+            pivot_df = pivot_df[metric_order]
+            
         pivot_df = pivot_df.reset_index()
         pivot_df = pivot_df.rename(columns={'file_name': 'Project'})
         
