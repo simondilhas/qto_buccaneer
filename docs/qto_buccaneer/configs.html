@@ -111,25 +111,26 @@
 </blockquote>
 
 <ol>
-<li>add a new metric to the metrics list by copying this template:
-metrics:
-new_metric:
-  description: "Description of the metric"
-  quantity_type: "area" or "volume" or "count"
-  ifc_entity: "IfcSpace"
-  pset_name: "Pset_Name" (leave blank for attributes)
-  prop_name: "Attribute Name or Property Name"
-  include_filter:
-    "Key": "Value"
-    "Key": ["Value1", "Value2"]
-    ...
-  include_filter_logic: "AND" or "OR"
-  subtract_filter:
-    "Key": ["&lt;"", Number]
-    "Key": ["Value1", "Value2"]
-    ...
-  subtract_filter_logic: "OR"Explain the difference between metrics and room-based metrics:</li>
+<li>add a new metric to the metrics list by copying this template yaml:</li>
 </ol>
+
+<p>metrics:
+  new_metric:
+    description: "Description of the metric"
+    quantity_type: "area" or "volume" or "count"
+    ifc_entity: "IfcSpace"
+    pset_name: "Pset_Name" (leave blank for attributes)
+    prop_name: "Attribute Name or Property Name"
+    include_filter:
+      "Key": "Value"
+      "Key": ["Value1", "Value2"]
+      ...
+    include_filter_logic: "AND" or "OR"
+    subtract_filter:
+      "Key": ["&lt;"", Number]
+      "Key": ["Value1", "Value2"]
+      ...
+    subtract_filter_logic: "OR"Explain the difference between metrics and room-based metrics:</p>
 
 <ul>
 <li>metrics: Calculated based on all spaces or elements in the project.</li>
@@ -181,27 +182,30 @@ new_metric:
 </span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">Example:</span>
 </span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">    include_filter: PredefinedType: &quot;INTERNAL&quot;, Pset_SpaceCommon.IsExternal: true</span>
 </span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">    include_filter_logic: &quot;AND&quot;adding new metrics and template:</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">1. add a new metric to the metrics list by copying this template:</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">metrics:</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">  new_metric:</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">    description: &quot;Description of the metric&quot;</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">    quantity_type: &quot;area&quot; or &quot;volume&quot; or &quot;count&quot;</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="sd">    ifc_entity: &quot;IfcSpace&quot;</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">    pset_name: &quot;Pset_Name&quot; (leave blank for attributes)</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">    prop_name: &quot;Attribute Name or Property Name&quot;</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">    include_filter:</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">      &quot;Key&quot;: &quot;Value&quot;</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="sd">      &quot;Key&quot;: [&quot;Value1&quot;, &quot;Value2&quot;]</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">      ...</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a><span class="sd">    include_filter_logic: &quot;AND&quot; or &quot;OR&quot;</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">    subtract_filter:</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a><span class="sd">      &quot;Key&quot;: [&quot;&lt;&quot;&quot;, Number]</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="sd">      &quot;Key&quot;: [&quot;Value1&quot;, &quot;Value2&quot;]</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="sd">      ...</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">    subtract_filter_logic: &quot;OR&quot;Explain the difference between metrics and room-based metrics:</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">- metrics: Calculated based on all spaces or elements in the project.</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">- room-based metrics: Calculated based on spaces grouped by room.</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">1. add a new metric to the metrics list by copying this template yaml:</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">metrics:</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">  new_metric:</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="sd">    description: &quot;Description of the metric&quot;</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">    quantity_type: &quot;area&quot; or &quot;volume&quot; or &quot;count&quot;</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">    ifc_entity: &quot;IfcSpace&quot;</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">    pset_name: &quot;Pset_Name&quot; (leave blank for attributes)</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">    prop_name: &quot;Attribute Name or Property Name&quot;</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="sd">    include_filter:</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">      &quot;Key&quot;: &quot;Value&quot;</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a><span class="sd">      &quot;Key&quot;: [&quot;Value1&quot;, &quot;Value2&quot;]</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">      ...</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a><span class="sd">    include_filter_logic: &quot;AND&quot; or &quot;OR&quot;</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="sd">    subtract_filter:</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="sd">      &quot;Key&quot;: [&quot;&lt;&quot;&quot;, Number]</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">      &quot;Key&quot;: [&quot;Value1&quot;, &quot;Value2&quot;]</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">      ...</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">    subtract_filter_logic: &quot;OR&quot;Explain the difference between metrics and room-based metrics:</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">- metrics: Calculated based on all spaces or elements in the project.</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="sd">- room-based metrics: Calculated based on spaces grouped by room.</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 
