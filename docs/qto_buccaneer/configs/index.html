@@ -65,57 +65,62 @@ Each metric is defined with the following keys:</p>
 <p>Filter Types and Examples:
 a) Simple key-value:
 include_filter:
-PredefinedType: "INTERNAL"</p>
-</li>
-</ol>
-<p>b) Multiple values:
+PredefinedType: "INTERNAL
+b) Multiple values:
 subtract_filter:
-Name: ["LUF", "Void"]</p>
-<p>c) Boolean value:
+Name: ["LUF", "Void"
+c) Boolean value:
 include_filter:
-Pset_CoveringCommon.IsExternal: true</p>
-<p>d) Conditional operators:
+Pset_CoveringCommon.IsExternal: tru
+d) Conditional operators:
 subtract_filter:
 Thickness: ["&lt;", 0.1]</p>
-<ol>
-<li>Metric Types:
-a) Standard Metrics:<ul>
+</li>
+<li>
+<p>Metric Types:
+a) Standard Metrics:</p>
+</li>
 <li>Single value for entire project
 Example:
 gross_floor_area:
 description: "Total gross floor area"
 quantity_type: "area"
 ifc_entity: "IfcSpace"
-&hellip;</li>
-</ul>
-</li>
-</ol>
-<p>b) Room-Based Metrics:
-- Grouped by room attributes
+..
+b) Room-Based Metrics:</li>
+<li>Grouped by room attributes
 Example:
 windows_area_by_room:
 description: "Windows grouped by room"
 ifc_entity: "IfcWindow"
 grouping_attribute: "GlobalId"
-&hellip;</p>
-<p>c) Grouped-by-Attribute Metrics:
-- Grouped by specific element attributes
+..
+c) Grouped-by-Attribute Metrics:</li>
+<li>Grouped by specific element attributes
 Example:
 facade_net_area_by_direction:
 description: "Facade area by direction"
 grouping_attribute: "Pset_abstractBIM.Normal"
-&hellip;</p>
-<p>d) Derived Metrics:
-- Calculated using formulas from other metrics
+..
+d) Derived Metrics:</li>
+<li>Calculated using formulas from other metrics
 Example:
 construction_area:
 description: "Total construction area"
-formula: "gross_floor_area - space_interior_floor_area"</p>
+formula: "gross_floor_area - space_interior_floor_area"</li>
+</ol>
 <p>Note: When adding new metrics, ensure they follow the appropriate structure based on
 their type and include all required fields. The configuration system validates the
 structure and relationships between metrics during loading.</p>
 </section>
 <section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="qto_buccaneer.configs.validate_config_file" href="validate_config_file.html">qto_buccaneer.configs.validate_config_file</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
 </section>
 <section>
 </section>
@@ -132,6 +137,11 @@ structure and relationships between metrics during loading.</p>
 <li><h3>Super-module</h3>
 <ul>
 <li><code><a title="qto_buccaneer" href="../index.html">qto_buccaneer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="qto_buccaneer.configs.validate_config_file" href="validate_config_file.html">qto_buccaneer.configs.validate_config_file</a></code></li>
 </ul>
 </li>
 </ul>
