@@ -14,7 +14,7 @@ from qto_buccaneer.utils.qto_calculator import QtoCalculator
 from qto_buccaneer.utils.config_loader import create_result_dict
 
 def calculate_single_grouped_metric(ifc_path: str, config: dict, metric_name: str, file_info: Optional[dict] = None) -> pd.DataFrame:
-    """Calculate a single metric grouped by an attribute.
+    """Calculate a single metric grouped by an attribute. This helps to dynamically calculate metrics based on the attribute values in the IFC.
     
     Args:
         ifc_path: Path to the IFC file
