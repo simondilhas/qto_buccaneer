@@ -4,73 +4,67 @@ Configuration files for QTO Buccaneer.
 This package contains configuration files for defining metrics, enrichment rules, and report templates:
 
 1. Metric Configurations (metrics_config_abstractBIM.yaml):
-   - Standard metrics: Single-value calculations for the entire project
-   - Room-based metrics: Calculations grouped by room
-   - Grouped-by-attribute metrics: Calculations grouped by specific attributes
-   - Derived metrics: Metrics calculated from other metrics using formulas
+- Standard metrics: Single-value calculations for the entire project
+- Room-based metrics: Calculations grouped by room
+- Grouped-by-attribute metrics: Calculations grouped by specific attributes
+- Derived metrics: Metrics calculated from other metrics using formulas
 
 2. Configuration Structure:
-   Each metric is defined with the following keys:
-   - description: A short description of the metric
-   - quantity_type: Type of quantity ("area", "volume", "count")
-   - ifc_entity: IFC entity type (e.g., "IfcWall", "IfcSlab")
-   - pset_name: Property Set name (optional for attributes)
-   - prop_name: Property or attribute name
-   - include_filter: Conditions for including elements
-   - include_filter_logic: Logic for combining include filters ("AND"/"OR")
-   - subtract_filter: Conditions for subtracting elements
-   - subtract_filter_logic: Logic for combining subtract filters ("AND"/"OR")
+Each metric is defined with the following keys:
+- description: A short description of the metric
+- quantity_type: Type of quantity ("area", "volume", "count")
+- ifc_entity: IFC entity type (e.g., "IfcWall", "IfcSlab")
+- pset_name: Property Set name (optional for attributes)
+- prop_name: Property or attribute name
+- include_filter: Conditions for including elements
+- include_filter_logic: Logic for combining include filters ("AND"/"OR")
+- subtract_filter: Conditions for subtracting elements
+- subtract_filter_logic: Logic for combining subtract filters ("AND"/"OR")
 
 3. Filter Types and Examples:
-   a) Simple key-value:
-      include_filter:
-        PredefinedType: "INTERNAL"
-
-   b) Multiple values:
-      subtract_filter:
-        Name: ["LUF", "Void"]
-
-   c) Boolean value:
-      include_filter:
-        Pset_CoveringCommon.IsExternal: true
-
-   d) Conditional operators:
-      subtract_filter:
-        Thickness: ["<", 0.1]
+a) Simple key-value:
+   include_filter:
+     PredefinedType: "INTERNAL
+b) Multiple values:
+   subtract_filter:
+     Name: ["LUF", "Void"
+c) Boolean value:
+   include_filter:
+     Pset_CoveringCommon.IsExternal: tru
+d) Conditional operators:
+   subtract_filter:
+     Thickness: ["<", 0.1]
 
 4. Metric Types:
-   a) Standard Metrics:
-      - Single value for entire project
-      Example:
-        gross_floor_area:
-          description: "Total gross floor area"
-          quantity_type: "area"
-          ifc_entity: "IfcSpace"
-          ...
-
-   b) Room-Based Metrics:
-      - Grouped by room attributes
-      Example:
-        windows_area_by_room:
-          description: "Windows grouped by room"
-          ifc_entity: "IfcWindow"
-          grouping_attribute: "GlobalId"
-          ...
-
-   c) Grouped-by-Attribute Metrics:
-      - Grouped by specific element attributes
-      Example:
-        facade_net_area_by_direction:
-          description: "Facade area by direction"
-          grouping_attribute: "Pset_abstractBIM.Normal"
-          ...
-
-   d) Derived Metrics:
-      - Calculated using formulas from other metrics
-      Example:
-        construction_area:
-          description: "Total construction area"
-          formula: "gross_floor_area - space_interior_floor_area"
+a) Standard Metrics:
+   - Single value for entire project
+   Example:
+     gross_floor_area:
+       description: "Total gross floor area"
+       quantity_type: "area"
+       ifc_entity: "IfcSpace"
+       ..
+b) Room-Based Metrics:
+   - Grouped by room attributes
+   Example:
+     windows_area_by_room:
+       description: "Windows grouped by room"
+       ifc_entity: "IfcWindow"
+       grouping_attribute: "GlobalId"
+       ..
+c) Grouped-by-Attribute Metrics:
+   - Grouped by specific element attributes
+   Example:
+     facade_net_area_by_direction:
+       description: "Facade area by direction"
+       grouping_attribute: "Pset_abstractBIM.Normal"
+       ..
+d) Derived Metrics:
+   - Calculated using formulas from other metrics
+   Example:
+     construction_area:
+       description: "Total construction area"
+       formula: "gross_floor_area - space_interior_floor_area"
 
 Note: When adding new metrics, ensure they follow the appropriate structure based on 
 their type and include all required fields. The configuration system validates the 
