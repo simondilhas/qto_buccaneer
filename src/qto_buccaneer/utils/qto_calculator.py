@@ -134,6 +134,8 @@ class QtoCalculator:
 
         return included_total - subtracted_total
 
+
+
     def _get_elements_by_space(
         self,
         ifc_entity: str,
@@ -220,5 +222,7 @@ class QtoCalculator:
                                 result[room_key] += area
     
         return result
+
+
 
     

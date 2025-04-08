@@ -39,7 +39,9 @@ Yes, you can still use raw IFC + ifcopenshell, but you'll want to be comfortable
 
 """
 
-__version__ = "0.1.1"
+from ._version import __version__
+
+__version__ = __version__
 __author__ = "Simon Dilhas"
 
 # Comment out imports until we verify what actually exists

@@ -70,10 +70,31 @@
 # TODO: . as seperator can lead to problems in Pset.Attribut
 # TODO: use the IfcOpenshell logic for filtering => more felxibility and more stabel (https://docs.ifcopenshell.org/ifcopenshell-python/selector_syntax.html)
 
-metrics: #Dont delete the name "metrics". List all the standard metrics that return a single value for the entire project here
+# Common column definitions for all metrics and benchmarks dataframe (dont delete the name "column_definitions")
+column_definitions:
+  metric_name:
+    description: "Unique identifier for the metric"
+    type: "string"
+  value:
+    description: "Calculated numeric value"
+    type: "float"
+  unit:
+    description: "Unit of measurement (m², m³, ratio, etc.)"
+    type: "string"
+  category:
+    description: "Type of measurement (area, volume, ratio, count)"
+    type: "string"
+  description:
+    description: "Detailed explanation of what is being measured"
+    type: "string"
+  calculation_time:
+    description: "When the metric was calculated"
+    type: "datetime"
+  status:
+    description: "Calculation status (success/error)"
+    type: "string"
 
-  
-  
+metrics: #Dont delete the name "metrics". List all the standard metrics that return a single value for the entire project here
   gross_floor_area:
     description: "The gross floor area from the outside of the exterior walls, including all interior spaces, the area of spaces with Name = LUF is subtracted"
     quantity_type: "area"
@@ -342,3 +363,45 @@ room_based_metrics: #Dont delete the name "room_based_metrics". List all the met
       PredefinedType: "CLADDING"
       Pset_CoveringCommon.IsExternal: false
     include_filter_logic: "AND" 
+
+derived_metrics:
+  construction_area:
+    description: "The total construction area. Relevance: Helps assess structural and usable footprint. Typical use: Estimating construction costs and comparing project scales."
+    formula: "gross_floor_area - space_interior_floor_area"
+
+  construction_volume:
+    description: "The total construction volume. Relevance: Reflects the built volume above and below ground. Typical use: Energy demand modeling, material estimation."
+    formula: "gross_volume - space_interior_volume"
+
+  gv_to_gf_ratio:
+    description: "Ratio of gross volume to gross floor area. Relevance: Indicates spatial efficiency and height characteristics. Typical use: Early-stage massing analysis and zoning checks."
+    formula: "gross_volume / gross_floor_area"
+
+  window_to_floor_ratio:
+    description: "Ratio of window area to floor area. Relevance: Influences daylighting and thermal performance. Typical use: Energy simulations and facade design decisions."
+    formula: "windows_exterior_area / gross_floor_area"
+
+  facade_area_to_gross_volume_ratio:
+    description: "Ratio of facade area to gross volume. Relevance: Indicates envelope efficiency. Typical use: Comparing compactness and evaluating surface-related energy loss."
+    formula: "facade_area / gross_volume"
+
+  facade_area_to_gross_floor_area_ratio:
+    description: "Ratio of facade area to gross floor area. Relevance: Assesses building envelope exposure per usable area. Typical use: Thermal envelope design and cost estimation."
+    formula: "facade_area / gross_floor_area"
+
+  opening_area_to_total_facade_area_ratio:
+    description: "Ratio of opening area to total facade area. Relevance: Key factor in daylight, ventilation, and heat loss. Typical use: Evaluating window-to-wall ratio for building code compliance."
+    formula: "opening_area / facade_area"
+
+  construction_area_to_gross_floor_area_ratio:
+    description: "Ratio of construction area to gross floor area. Relevance: Measures structural overhead. Typical use: Analyzing design efficiency and structure-to-usage proportion."
+    formula: "construction_area / gross_floor_area"
+
+  construction_volume_to_gross_volume_ratio:
+    description: "Ratio of construction volume to gross volume. Relevance: Indicates how much volume is occupied by structure vs. usable space. Typical use: Structural optimization and material estimation."
+    formula: "construction_volume / gross_volume"
+
+
+
+
+

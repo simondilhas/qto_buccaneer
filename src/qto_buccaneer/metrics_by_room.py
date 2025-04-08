@@ -11,13 +11,18 @@ sys.path.append(src_dir)
 
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 from qto_buccaneer.utils.qto_calculator import QtoCalculator
+from qto_buccaneer.utils.config_loader import create_result_dict
 
 
 def calculate_single_room_metric(ifc_path: str, config: dict, metric_name: str, file_info: dict) -> pd.DataFrame:
     """Calculate a single room-based metric."""
     
     if metric_name not in config.get('room_based_metrics', {}):
-        return _create_error_df(metric_name, "Metric not found in room-based metrics configuration", file_info)
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            error_message="Metric not found in room-based metrics configuration",
+            **file_info
+        )])
 
     loader = IfcLoader(ifc_path)
     qto = QtoCalculator(loader)
@@ -41,34 +46,35 @@ def calculate_single_room_metric(ifc_path: str, config: dict, metric_name: str, 
         # Create results for each room/space
         results = []
         for room_name, value in room_values.items():
-            results.append({
-                "metric_name": f"{metric_by_group}_{room_name}",
-                "value": round(value, 2) if value is not None else None,
-                "unit": "m³" if metric_config.get("quantity_type") == "volume" else "m²",
-                "category": metric_config.get("quantity_type", "area"),
-                "description": metric_config.get("description", ""),
-                "calculation_time": datetime.now(),
-                "status": "success",
+            results.append(create_result_dict(
+                metric_name=f"{metric_by_group}_{room_name}",
+                value=value,
+                unit="m³" if metric_config.get("quantity_type") == "volume" else "m²",
+                category=metric_config.get("quantity_type", "area"),
+                description=metric_config.get("description", ""),
                 **file_info
-            })
+            ))
 
         if results:
             return pd.DataFrame(results)
         else:
-            return _create_error_df(metric_by_group, "No results calculated", file_info)
+            return pd.DataFrame([create_result_dict(
+                metric_name=metric_by_group,
+                error_message="No results calculated",
+                **file_info
+            )])
 
     except Exception as e:
-        return _create_error_df(metric_by_group, str(e), file_info)
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_by_group,
+            error_message=str(e),
+            **file_info
+        )])
 
 def _create_error_df(metric_name: str, error_message: str, file_info: dict) -> pd.DataFrame:
     """Create a DataFrame for error cases."""
-    return pd.DataFrame([{
-        "metric_name": metric_name,
-        "value": None,
-        "unit": "m²",  # Default to m² for errors as we don't have metric_config
-        "category": "unknown",
-        "description": "",
-        "calculation_time": datetime.now(),
-        "status": f"error: {error_message}",
+    return pd.DataFrame([create_result_dict(
+        metric_name=metric_name,
+        error_message=error_message,
         **file_info
-    }])
+    )])

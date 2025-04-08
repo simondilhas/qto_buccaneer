@@ -38,7 +38,9 @@ Use filters to narrow down the included or subtracted elements. Examples:1. Key-
 Example:
     include_filter: PredefinedType: "INTERNAL", Pset_SpaceCommon.IsExternal: true
     include_filter_logic: "AND"adding new metrics and template:
-1. add a new metric to the metrics list by copying this template:
+
+1. add a new metric to the metrics list by copying this template yaml:
+
 metrics:
   new_metric:
     description: "Description of the metric"
@@ -56,6 +58,7 @@ metrics:
       "Key": ["Value1", "Value2"]
       ...
     subtract_filter_logic: "OR"Explain the difference between metrics and room-based metrics:
+
 - metrics: Calculated based on all spaces or elements in the project.
 - room-based metrics: Calculated based on spaces grouped by room.
 """
