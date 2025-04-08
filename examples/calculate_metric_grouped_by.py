@@ -4,7 +4,7 @@ from pathlib import Path
 src_dir = str(Path(__file__).parent.parent / "src")
 sys.path.append(src_dir)
 
-from qto_buccaneer.metrics_grouped_by_attribute import calculate_single_grouped_metric
+from qto_buccaneer.metrics import calculate_single_grouped_metric
 from qto_buccaneer.utils.config import load_config
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 
