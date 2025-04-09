@@ -118,28 +118,47 @@ el.replaceWith(d);
 <h2 id="4-metric-types">4. Metric Types</h2>
 <h3 id="standard-metrics">Standard Metrics</h3>
 <p>Single value for entire project</p>
-<pre><code class="language-yaml">gross_floor_area:
-    description: &quot;Total gross floor area&quot;
+<pre><code class="language-yaml">metrics:
+  gross_floor_area:
+    description: &quot;The gross floor area excluding voids&quot;
     quantity_type: &quot;area&quot;
     ifc_entity: &quot;IfcSpace&quot;
+    pset_name: &quot;Qto_SpaceBaseQuantities&quot;
+    prop_name: &quot;NetFloorArea&quot;
+    include_filter:
+      Name: &quot;GrossArea&quot;
+    subtract_filter:
+      Name: [&quot;LUF&quot;, &quot;Void&quot;, &quot;Luftraum&quot;]
 </code></pre>
 <h3 id="room-based-metrics">Room-Based Metrics</h3>
 <p>Grouped by room attributes</p>
-<pre><code class="language-yaml">windows_area_by_room:
-    description: &quot;Windows grouped by room&quot;
+<pre><code class="language-yaml">room_based_metrics:
+  windows_area_by_room:
+    description: &quot;Get windows grouped by room&quot;
     ifc_entity: &quot;IfcWindow&quot;
     grouping_attribute: &quot;GlobalId&quot;
+    pset_name: &quot;Qto_WindowBaseQuantities&quot;
+    prop_name: &quot;Area&quot;
 </code></pre>
 <h3 id="grouped-by-attribute-metrics">Grouped-by-Attribute Metrics</h3>
 <p>Grouped by specific element attributes</p>
-<pre><code class="language-yaml">facade_net_area_by_direction:
-    description: &quot;Facade area by direction&quot;
+<pre><code class="language-yaml">grouped_by_attribute_metrics:
+  facade_net_area_by_direction:
+    description: &quot;Get facade gross area grouped by direction&quot;
+    ifc_entity: &quot;IfcCovering&quot;
     grouping_attribute: &quot;Pset_abstractBIM.Normal&quot;
+    pset_name: &quot;Qto_CoveringBaseQuantities&quot;
+    prop_name: &quot;NetArea&quot;
+    include_filter:
+      PredefinedType: &quot;CLADDING&quot;
+      Pset_CoveringCommon.IsExternal: true
+    include_filter_logic: &quot;AND&quot; 
 </code></pre>
 <h3 id="derived-metrics">Derived Metrics</h3>
 <p>Calculated using formulas from other metrics</p>
-<pre><code class="language-yaml">construction_area:
-    description: &quot;Total construction area&quot;
+<pre><code class="language-yaml">derived_metrics:
+  construction_area:
+    description: &quot;The total construction area. Relevance: Helps assess structural and usable footprint. Typical use: Estimating construction costs and comparing project scales.&quot;
     formula: &quot;gross_floor_area - space_interior_floor_area&quot;
 </code></pre>
 <p>Note: When adding new metrics, ensure they follow the appropriate structure based on
