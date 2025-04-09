@@ -3,14 +3,15 @@ This package provides tools for exploring, extracting, and calculating quantitie
 from IFC models. It's designed for construction, architecture, and BIM professionals 
 who need automated quantity takeoffs.
 
-# Main Components:
+### Main Components
+
 - metrics: Core metrics calculation functionality
 - enrich: Enrich and clean up IFC files—friendlier than raw ifcopenshell
 - reports: Export and reporting utilities
 - utils: Helper functions for IFC handling and quantity calculations
 - configs: Configuration files and settings
 
-# With this toolkit, you can:
+### With this toolkit, you can
 
 - Calculate project-wide metrics based on your definitions
 - Calculate metrics per room or space
@@ -49,3 +50,7 @@ __author__ = "Simon Dilhas"
 # The following code block is commented out as it's not provided in the original file
 # from .utils import load_ifc  # Uncomment if load_ifc exists in utils.py
 # from .reports import export_to_excel  # Uncomment if export_to_excel exists in reports.py 
+
+# Expose utils modules
+from .utils.ifc_loader import IfcLoader
+from .utils.qto_calculator import QtoCalculator

@@ -1,6 +1,5 @@
 import pandas as pd
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, Optional
 
 import sys
@@ -417,6 +416,10 @@ def calculate_single_metric_by_space(ifc_path: str, config: dict, metric_name: s
         return pd.DataFrame([create_result_dict(
             metric_name=metric_by_group,
             error_message=str(e),
+            value=0,  # Add default value
+            unit="",  # Add default unit
+            category="error",  # Add default category
+            description="Error occurred during calculation",  # Add default description
             **file_info
         )])
 

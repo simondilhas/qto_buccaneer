@@ -54,65 +54,25 @@ Yes, you can still use raw IFC + ifcopenshell, but you'll want to be comfortable
 > Use abstractBIM as your map. The calculations here are free—the clean data is the magic sauce.
 
 
-## 📁 Project Structure
-
-create a new tree
-```bash
-tree -a --dirsfirst -L 3 -I '.venv|docs|__pycache__|*.pyc|.git|.pytest_cache|.coverage|*.egg-info|__init__.py'
-
-qto-buccaneer/
-├── src/
-│   └── qto_buccaneer/
-│       ├── configs/                                  # Configuration files
-│       │   ├── enrichment_config_abstractBIM.yaml
-│       │   ├── enrichment_space_table.xlsx
-│       │   ├── metrics_config_abstractBIM.yaml
-│       │   └── report_templat.tex
-│       ├── utils/                                    # Utility functions
-│       │   ├── config_loader.py                      # Configuration loading utilities
-│       │   ├── config.py                             # Configuration management
-│       │   ├── ifc_loader.py                         # IFC file loading and filtering
-│       │   └── qto_calculator.py                     # Core quantity calculation methods
-│       ├── enrich.py                                 # IFC enrichment functionality
-│       ├── metrics.py                                # Main metrics calculation interface
-│       ├── preprocess_ifc.py                         # IFC preprocessing utilities
-│       ├── reports.py                                # Report generation
-│       ├── validate_config_file.py                   # Configuration validation
-│       └── _version.py                               # Version information
-├── examples/                                         # Example scripts and data
-│   ├── data/
-│   ├── calculate_all_metrics.py
-│   ├── calculate_metric_grouped_by.py
-│   ├── calculate_metric.py
-│   ├── calculate_metrics_by_relationship.py
-│   ├── calculate_metrics_by_room.py
-│   ├── calculate_single_derived_metric.py
-│   ├── create_report_excel_project_metrics_overview.py
-│   ├── create_room_program_comparison.py
-│   ├── enriche_ifc_with_spatial_data.py
-│   ├── enrich_ifc_with_df_by_room.py
-│   └── enrich_ifc_with_df.py
-├── templates/                                         # Template files for configuration
-│   ├── enrichment_config_abstractBIM.yaml
-│   ├── enrichment_space_table.xlsx
-│   └── target_room_program.xlsx
-├── tests/                                             # Test files
-│   ├── help.py
-│   ├── test_data.yaml
-│   ├── test_model_1.ifc
-│   └── test_qto_calculator.py
-├── scripts/                                           # Development scripts
-│   ├── generate_docs.py
-│   └── serve_docs.py
-├── requirements.txt                                   # Project dependencies
-├── setup.py                                           # Package installation configuration
-├── LICENSE.md                                         # License information
-└── README.md                                          # Project documentation
-
-```
-
-
 ## 🚀 Quick Start
+
+### Tutorial for Programming Landlubbers
+
+Welcome aboard — and congrats on making it this far!
+Ten years ago, I was right where you are now. The black screens, the weird acronyms, the cryptic error messages — they all freaked me out too. It took time (and plenty of coffee) to feel at home with code. And honestly? I'm still learning new tricks every day.
+
+That's exactly why I am the right pirate to guide you. I know the waters, I've hit the reefs — and I've mapped a path to help you sail around the fear and dive straight into the good stuff.
+
+This tutorial is your first step into a world that's surprisingly rewarding — and not nearly as scary as it seems.
+
+I believe in hands-on learning. That means you're gonna roll up your sleeves and set up your environment.
+
+**Step 1: Set Sail on Colab**
+
+Head over to [Google Colab](https://colab.research.google.com) — this will be your coding playground, no installations needed. It's like Jupyter Notebook in the cloud, ready to go in your browser.
+
+# How to best open the jupyter notebook?
+
 
 ### Installation
 
@@ -215,6 +175,63 @@ Key configuration concepts:
   - Boolean values: `IsExternal: true`
 
 For more examples and detailed configuration options, check the `configs/` directory in the repository.
+
+## 📁 Project Structure
+
+create a new tree
+```bash
+tree -a --dirsfirst -L 3 -I '.venv|docs|__pycache__|*.pyc|.git|.pytest_cache|.coverage|*.egg-info|__init__.py'
+
+qto-buccaneer/
+├── src/
+│   └── qto_buccaneer/
+│       ├── configs/                                  # Configuration files
+│       │   ├── enrichment_config_abstractBIM.yaml
+│       │   ├── enrichment_space_table.xlsx
+│       │   ├── metrics_config_abstractBIM.yaml
+│       │   └── report_templat.tex
+│       ├── utils/                                    # Utility functions
+│       │   ├── config_loader.py                      # Configuration loading utilities
+│       │   ├── config.py                             # Configuration management
+│       │   ├── ifc_loader.py                         # IFC file loading and filtering
+│       │   └── qto_calculator.py                     # Core quantity calculation methods
+│       ├── enrich.py                                 # IFC enrichment functionality
+│       ├── metrics.py                                # Main metrics calculation interface
+│       ├── preprocess_ifc.py                         # IFC preprocessing utilities
+│       ├── reports.py                                # Report generation
+│       ├── validate_config_file.py                   # Configuration validation
+│       └── _version.py                               # Version information
+├── examples/                                         # Example scripts and data
+│   ├── data/
+│   ├── calculate_all_metrics.py
+│   ├── calculate_metric_grouped_by.py
+│   ├── calculate_metric.py
+│   ├── calculate_metrics_by_relationship.py
+│   ├── calculate_metrics_by_room.py
+│   ├── calculate_single_derived_metric.py
+│   ├── create_report_excel_project_metrics_overview.py
+│   ├── create_room_program_comparison.py
+│   ├── enriche_ifc_with_spatial_data.py
+│   ├── enrich_ifc_with_df_by_room.py
+│   └── enrich_ifc_with_df.py
+├── templates/                                         # Template files for configuration
+│   ├── enrichment_config_abstractBIM.yaml
+│   ├── enrichment_space_table.xlsx
+│   └── target_room_program.xlsx
+├── tests/                                             # Test files
+│   ├── help.py
+│   ├── test_data.yaml
+│   ├── test_model_1.ifc
+│   └── test_qto_calculator.py
+├── scripts/                                           # Development scripts
+│   ├── generate_docs.py
+│   └── serve_docs.py
+├── requirements.txt                                   # Project dependencies
+├── setup.py                                           # Package installation configuration
+├── LICENSE.md                                         # License information
+└── README.md                                          # Project documentation
+
+```
 
 ## Dependencies
 

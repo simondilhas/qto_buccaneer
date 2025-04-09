@@ -1,6 +1,0 @@
-ifcopenshell
-pandas
-pyyaml
-
-[docs]
-pdoc3

@@ -1,14 +1,7 @@
 Metadata-Version: 2.4
 Name: qto_buccaneer
-Version: 0.1.0
+Version: 0.1.1
 Requires-Python: >=3.8
 License-File: LICENSE.md
-Requires-Dist: ifcopenshell
-Requires-Dist: pandas
-Requires-Dist: pyyaml
-Provides-Extra: docs
-Requires-Dist: pdoc3; extra == "docs"
 Dynamic: license-file
-Dynamic: provides-extra
-Dynamic: requires-dist
 Dynamic: requires-python

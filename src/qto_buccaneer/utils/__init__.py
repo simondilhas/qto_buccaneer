@@ -8,5 +8,6 @@ This package contains helper functions and classes for:
 """
 
 from .ifc_loader import IfcLoader
-# Remove QtoCalculator if it doesn't exist
-# from .qto_calculator import QtoCalculator
+from .qto_calculator import QtoCalculator
+
+__all__ = ['IfcLoader', 'QtoCalculator']

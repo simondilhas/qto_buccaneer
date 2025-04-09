@@ -21,4 +21,6 @@ all_metrics = calculate_all_metrics(config, filepath, file_info)
 print(all_metrics)
 
 #save to excel
-all_metrics.to_excel("all_metrics.xlsx", index=False)
+all_metrics.to_excel("examples/all_metrics.xlsx", index=False)
+
+#all_metrics = calculate_all_metrics("metrics_config_abstractBIM.yaml", "your_ifc_file.ifc")
