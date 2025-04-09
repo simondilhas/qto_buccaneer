@@ -8,12 +8,111 @@ from dataclasses import dataclass
 import openpyxl
 from openpyxl.utils import get_column_letter
 
+@dataclass
+class ExcelLayoutConfig:
+    """Configuration for Excel export layout."""
+    horizontal_lines: bool = True
+    vertical_lines: bool = False
+    bold_headers: bool = True
+    auto_column_width: bool = True
+    row_height: Optional[float] = None
+    alternating_colors: bool = False
+    number_format: str = '#,##0.00'
+    header_color: str = 'E0E0E0'  # Light gray
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert config to dictionary."""
+        return {k: v for k, v in self.__dict__.items()}
 
-def export_to_excel(df: pd.DataFrame, path: str) -> None:
-    """Export a DataFrame to a new Excel file."""
-    if not df.empty:
-        df.to_excel(path, index=False)
-
+def export_to_excel(
+    df: pd.DataFrame, 
+    path: str, 
+    config: Optional[ExcelLayoutConfig] = None
+) -> None:
+    """Export a DataFrame to a new Excel file with optional styling.
+    
+    Args:
+        df (pd.DataFrame): DataFrame to export
+        path (str): Path where the Excel file should be saved
+        config (Optional[ExcelLayoutConfig]): Configuration for Excel styling. 
+            If None, uses default ExcelLayoutConfig settings.
+    """
+    if df.empty:
+        return
+        
+    # Use default config if none provided
+    if config is None:
+        config = ExcelLayoutConfig()
+    
+    # Create Excel writer
+    with pd.ExcelWriter(path, engine='openpyxl') as writer:
+        # Write DataFrame to Excel
+        df.to_excel(writer, index=False, sheet_name='Sheet1')
+        
+        # Get workbook and worksheet
+        workbook = writer.book
+        worksheet = writer.sheets['Sheet1']
+        
+        # Apply styling based on config
+        if config.bold_headers:
+            for cell in worksheet[1]:
+                cell.font = openpyxl.styles.Font(bold=True)
+                if config.header_color:
+                    cell.fill = openpyxl.styles.PatternFill(
+                        start_color=config.header_color,
+                        end_color=config.header_color,
+                        fill_type='solid'
+                    )
+        
+        # Set number format
+        number_format = config.number_format
+        for row in worksheet.iter_rows(min_row=2):
+            for cell in row:
+                if isinstance(cell.value, (int, float)):
+                    cell.number_format = number_format
+        
+        # Set row height if specified
+        if config.row_height:
+            for row in worksheet.iter_rows():
+                worksheet.row_dimensions[row[0].row].height = config.row_height
+        
+        # Set column widths
+        if config.auto_column_width:
+            for column in worksheet.columns:
+                max_length = 0
+                column = [cell for cell in column]
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+        
+        # Apply borders
+        if config.horizontal_lines or config.vertical_lines:
+            for row in worksheet.iter_rows():
+                for cell in row:
+                    border = openpyxl.styles.Border()
+                    if config.horizontal_lines:
+                        border.top = openpyxl.styles.Side(style='thin')
+                        border.bottom = openpyxl.styles.Side(style='thin')
+                    if config.vertical_lines:
+                        border.left = openpyxl.styles.Side(style='thin')
+                        border.right = openpyxl.styles.Side(style='thin')
+                    cell.border = border
+        
+        # Apply alternating colors if enabled
+        if config.alternating_colors:
+            for row_idx, row in enumerate(worksheet.iter_rows(min_row=2), start=2):
+                if row_idx % 2 == 0:
+                    for cell in row:
+                        cell.fill = openpyxl.styles.PatternFill(
+                            start_color='F0F0F0',
+                            end_color='F0F0F0',
+                            fill_type='solid'
+                        )
 
 def generate_pdf_report(
     project_data: dict, 
@@ -102,21 +201,7 @@ def create_project_comparison_df(df: pd.DataFrame, metrics: Optional[list[str]] 
     except Exception as e:
         return pd.DataFrame()
 
-@dataclass
-class ExcelLayoutConfig:
-    """Configuration for Excel export layout."""
-    horizontal_lines: bool = True
-    vertical_lines: bool = False
-    bold_headers: bool = True
-    auto_column_width: bool = True
-    row_height: Optional[float] = None
-    alternating_colors: bool = False
-    number_format: str = '#,##0.00'
-    header_color: str = 'E0E0E0'  # Light gray
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert config to dictionary."""
-        return {k: v for k, v in self.__dict__.items()}
+
 
 def export_project_comparison_excel(
     df: pd.DataFrame, 
