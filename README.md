@@ -67,14 +67,38 @@ This tutorial is your first step into a world that's surprisingly rewarding — 
 
 I believe in hands-on learning. That means you're gonna roll up your sleeves and set up your environment.
 
-**Step 1: Set Sail on Colab**
+#### **Step 1: Set Sail on Colab**
 
-Head over to [Google Colab](https://colab.research.google.com) — this will be your coding playground, no installations needed. It's like Jupyter Notebook in the cloud, ready to go in your browser.
+Head over to [Google Colab](https://colab.research.google.com) — this will be your coding playground, no installations needed. It's like a Notebook in the cloud that can execute code and document transparently the steps you take. 
 
-# How to best open the jupyter notebook?
+*Pro Lingo Tip: These kind of Notebooks are called Jupyter notebooks
+
+#### Step 2: Open the Jupyter Notebook
+
+- Click **"Open Notebook"**.
+- Navigate to the **GitHub** tab.
+- Paste the following URL into the search bar:
+
+  https://github.com/simondilhas/qto_buccaneer/blob/main/tutorial/Intro/QTO_Buccaneer_Intro_Tutorial.ipynb 
+  
+- The notebook will open.
+
+> **Pro Lingo Tip:** GitHub is like a pirate's cloud vault for code — it tracks changes, keeps everything versioned, and makes collaboration easy across your crew.
+
+---
+
+#### 🧭 Step 3: Follow the Notebook’s Commands Like a Good Deckhand
+
+Once the notebook is open, you’re in the captain’s seat. You’ll:
+
+- Get introduced to **pandas** — the data wrangler’s version of Excel (but with more firepower).
+- Calculate quantity metrics using the general tools of panda.
+- Open a BIM model and use the built-in **QTO Buccaneer shortcuts** to speed up your takeoff workflow.
 
 
-### Installation
+ Great job! So grab your keyboard cutlass and dive in! Follow the flow of the notebook...
+
+### Installation (for non landlubbers)
 
 ```bash
 # Option 1: Clone and install locally
