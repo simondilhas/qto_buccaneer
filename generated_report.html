@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Example Project – Bill of Quantities</title>
+  <style>
+    body { font-family: sans-serif; counter-reset: page; }
+    h1, h2, h3 { color: #2C3E50; margin-top: 2em; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+    th, td { padding: 8px; text-align: left; }
+    img { max-width: 100%; height: auto; margin: 1em 0; }
+    .placeholder { color: #aaa; font-style: italic; }
+    .page-break-before {
+      page-break-before: always;
+      counter-increment: page;
+    }
+    .project-title {
+      string-set: project-name content();
+    }
+    @page {
+      @bottom-left {
+        content: string(project-name);
+        font-family: sans-serif;
+        font-size: 8pt;
+      }
+      @bottom-right {
+        content: counter(page) "/" counter(pages);
+        font-family: sans-serif;
+        font-size: 8pt;
+      }
+    }
+    @page :first {
+      @bottom-left { content: none; }
+      @bottom-right { content: none; }
+    }
+    .metrics-section {
+        margin: 20px 0;
+    }
+    
+    .metrics-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    
+    .metrics-table td {
+        padding: 8px 12px;
+        text-align: left;
+    }
+    
+    .metrics-table td:nth-child(1) {
+        width: 30%;
+    }
+    
+    .metrics-table td:nth-child(2) {
+        width: 40%;
+        text-align: right;
+    }
+    
+    .metrics-table td:nth-child(3) {
+        width: 30%;
+        text-align: right;
+    }
+    .toc {
+        margin: 20px 0;
+    }
+    
+    .toc ul {
+        list-style-type: none;
+        padding: 0;
+    }
+    
+    .toc li {
+        margin: 10px 0;
+    }
+    
+    .toc a {
+        text-decoration: none;
+        color: #2C3E50;
+    }
+    
+    .toc a::after {
+        content: leader('.') target-counter(attr(href), page);
+        float: right;
+    }
+  </style>
+</head>
+<body>
+
+<h1 class="project-title">Example Project</h1>
+<p><strong>Version:</strong> 2025-04-10 16:44</p>
+<p><strong>File Name:</strong> example_project.ifc</p>
+<p><strong>Address:</strong> 123 Main St, Anytown, USA</p>
+
+
+
+<div class="page-break-before"></div>
+
+<div class="toc">
+    <h2>Table of Contents</h2>
+    <ul>
+        
+        <li><a href="#general_metrics">General Metrics & Benchmarks XXX</a></li>
+        
+        <li><a href="#usable-space">Usable Space</a></li>
+        <li><a href="#roomtypes">Roomtypes</a></li>
+        <li><a href="#roomtypes-storey">Roomtypes by Storey</a></li>
+        <li><a href="#rooms">Rooms</a></li>
+        <li><a href="#appendix">Appendix</a></li>
+    </ul>
+</div>
+
+<div class="page-break-before"></div>
+
+
+<div class="metrics-section" id="general_metrics">
+    <h2>General Metrics & Benchmarks XXX</h2>
+    <table class="metrics-table">
+        <tbody>
+            
+            <tr>
+                <td>Gross Floor Area (GFA)</td>
+                <td>194.41 m²</td>
+                <td></td>
+            </tr>
+            
+            <tr>
+                <td>Gross Volume (GV)</td>
+                <td>710.21 m³</td>
+                <td></td>
+            </tr>
+            
+            <tr>
+                <td>Construction Area</td>
+                <td>38.32 m²</td>
+                <td>19.7% of Gross Floor Area</td>
+            </tr>
+            
+            <tr>
+                <td>Construction Volume</td>
+                <td>197.75 m³</td>
+                <td>27.8% of Gross Volume</td>
+            </tr>
+            
+            <tr>
+                <td>Number of Storeys</td>
+                <td>4.0</td>
+                <td></td>
+            </tr>
+            
+        </tbody>
+    </table>
+</div>
+
+
+
+
+
+<div class="page-break-before"></div>
+
+<div class="page-break-before"></div>
+
+<h2 id="usable-space">Usable Space</h2>
+
+<h3 id="roomtypes">Roomtypes</h3>
+
+<table>
+  <tr><th>Room Type</th><th>Count</th><th>m²</th><th>m³</th><th>% of GFA</th><th>% of GV</th></tr>
+  
+</table>
+
+<h3 id="roomtypes-storey">Roomtypes by Storey</h3>
+
+
+<h2 id="rooms">Rooms</h2>
+
+
+
+
+
+<h2 id="appendix">Appendix</h2>
+<h3>Definitions</h3>
+
+
+<h3>Disclaimer</h3>
+<p></p>
+
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ project_name }} – Bill of Quantities</title>
+  <style>
+    body { font-family: sans-serif; counter-reset: page; }
+    h1, h2, h3 { color: #2C3E50; margin-top: 2em; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+    th, td { padding: 8px; text-align: left; }
+    img { max-width: 100%; height: auto; margin: 1em 0; }
+    .placeholder { color: #aaa; font-style: italic; }
+    .page-break-before {
+      page-break-before: always;
+      counter-increment: page;
+    }
+    .project-title {
+      string-set: project-name content();
+    }
+    @page {
+      @bottom-left {
+        content: string(project-name);
+        font-family: sans-serif;
+        font-size: 8pt;
+      }
+      @bottom-right {
+        content: counter(page) "/" counter(pages);
+        font-family: sans-serif;
+        font-size: 8pt;
+      }
+    }
+    @page :first {
+      @bottom-left { content: none; }
+      @bottom-right { content: none; }
+    }
+    .metrics-section {
+        margin: 20px 0;
+    }
+    
+    .metrics-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    
+    .metrics-table td {
+        padding: 8px 12px;
+        text-align: left;
+    }
+    
+    .metrics-table td:nth-child(1) {
+        width: 30%;
+    }
+    
+    .metrics-table td:nth-child(2) {
+        width: 40%;
+        text-align: right;
+    }
+    
+    .metrics-table td:nth-child(3) {
+        width: 30%;
+        text-align: right;
+    }
+    .toc {
+        margin: 20px 0;
+    }
+    
+    .toc ul {
+        list-style-type: none;
+        padding: 0;
+    }
+    
+    .toc li {
+        margin: 10px 0;
+    }
+    
+    .toc a {
+        text-decoration: none;
+        color: #2C3E50;
+    }
+    
+    .toc a::after {
+        content: leader('.') target-counter(attr(href), page);
+        float: right;
+    }
+  </style>
+</head>
+<body>
+
+<h1 class="project-title">{{ project_name }}</h1>
+<p><strong>Version:</strong> {{ date_time }}</p>
+<p><strong>File Name:</strong> {{ file_name }}</p>
+<p><strong>Address:</strong> {{ address }}</p>
+
+{% if images.pic_project %}<img src="{{ images.pic_project }}">{% endif %}
+
+<div class="page-break-before"></div>
+
+<div class="toc">
+    <h2>Table of Contents</h2>
+    <ul>
+        {% for section_id, section in metrics_table.items() %}
+        <li><a href="#{{ section_id }}">{{ section.title }}</a></li>
+        {% endfor %}
+        <li><a href="#usable-space">Usable Space</a></li>
+        <li><a href="#roomtypes">Roomtypes</a></li>
+        <li><a href="#roomtypes-storey">Roomtypes by Storey</a></li>
+        <li><a href="#rooms">Rooms</a></li>
+        <li><a href="#appendix">Appendix</a></li>
+    </ul>
+</div>
+
+<div class="page-break-before"></div>
+
+{% for section_id, section in metrics_table.items() %}
+<div class="metrics-section" id="{{ section_id }}">
+    <h2>{{ section.title }}</h2>
+    <table class="metrics-table">
+        <tbody>
+            {% for metric in section.metrics %}
+            <tr>
+                <td>{{ metric.name }}</td>
+                <td>{{ metric.value1 }}</td>
+                <td>{{ metric.value2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}
+
+{% if images.pic_gfa %}<img src="{{ images.pic_gfa }}">{% endif %}
+{% if images.pic_gv %}<img src="{{ images.pic_gv }}">{% endif %}
+
+<div class="page-break-before"></div>
+
+<div class="page-break-before"></div>
+
+<h2 id="usable-space">Usable Space</h2>
+
+<h3 id="roomtypes">Roomtypes</h3>
+{% if images.pic_net_space_1 %}<img src="{{ images.pic_net_space_1 }}">{% endif %}
+<table>
+  <tr><th>Room Type</th><th>Count</th><th>m²</th><th>m³</th><th>% of GFA</th><th>% of GV</th></tr>
+  {% for row in roomtypes %}
+  <tr><td>{{ row.name }}</td><td>{{ row.count }}</td><td>{{ row.area }}</td><td>{{ row.volume }}</td><td>{{ row.per_gfa }}</td><td>{{ row.per_gv }}</td></tr>
+  {% endfor %}
+</table>
+
+<h3 id="roomtypes-storey">Roomtypes by Storey</h3>
+{% for storey in roomtypes_by_storey %}
+  <h4>{{ storey.name }}, {{ storey.z }}</h4>
+  {% if storey.pic %}<img src="{{ storey.pic }}">{% endif %}
+  <table>
+    <tr><th>Room Type</th><th>Count</th><th>m²</th><th>m³</th><th>% of GFA</th><th>% of GV</th></tr>
+    {% for row in storey.data %}
+    <tr><td>{{ row.name }}</td><td>{{ row.count }}</td><td>{{ row.area }}</td><td>{{ row.volume }}</td><td>{{ row.per_gfa }}</td><td>{{ row.per_gv }}</td></tr>
+    {% endfor %}
+  </table>
+{% endfor %}
+
+<h2 id="rooms">Rooms</h2>
+{% if images.pic_room_floorplan_scale %}<img src="{{ images.pic_room_floorplan_scale }}">{% endif %}
+{% if images.pic_room_coverings_scale %}<img src="{{ images.pic_room_coverings_scale }}">{% endif %}
+
+{% for room in rooms %}
+  <h3>{{ room.storey }}, {{ room.number }} – {{ room.long_name }}</h3>
+  {% if room.pic %}<img src="{{ room.pic }}">{% endif %}
+  <ul>
+    <li>Description: {{ room.description }}</li>
+    <li>Floor Area: {{ room.area }}</li>
+    <li>Perimeter: {{ room.perimeter }}</li>
+    <li>Height: {{ room.height }}</li>
+    <li>Window Count: {{ room.window_count }}, Area: {{ room.window_area }} ({{ room.per_window_to_floor_area }}%)</li>
+    <li>Door Count: {{ room.door_count }}, Area: {{ room.door_area }}</li>
+    <li>Wall Surface Area: {{ room.cladding_area }}</li>
+    <li>Ceiling Surface Area: {{ room.ceiling_area }}</li>
+  </ul>
+{% endfor %}
+
+<h2 id="appendix">Appendix</h2>
+<h3>Definitions</h3>
+{% for definition in formatted_definitions %}
+<p>{{ definition }}</p>
+{% endfor %}
+
+<h3>Disclaimer</h3>
+<p>{{ formatted_disclaimer }}</p>
+
+</body>
+</html>

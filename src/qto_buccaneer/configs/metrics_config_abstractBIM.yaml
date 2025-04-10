@@ -900,7 +900,23 @@ derived_metrics:
     description: "The total count of storeys excluding the roof above ground"
     formula: "storeys_count_including_roof_above_ground - 1"
 
-
+reports:
+  useable_space_summary:
+    title: "Usable Space Summary"
+    ifc_entity: IfcSpace
+    grouping_attribute: LongName
+    fields:
+      - name: count
+        type: count
+      - name: area
+        type: area
+        pset_name: Qto_SpaceBaseQuantities
+        prop_name: NetFloorArea
+      - name: volume
+        type: volume
+        pset_name: Qto_SpaceBaseQuantities
+        prop_name: NetVolume
+    include_percentages:
 
 
 

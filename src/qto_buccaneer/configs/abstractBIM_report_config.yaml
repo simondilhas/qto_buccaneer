@@ -1,0 +1,85 @@
+# Report configuration for abstractBIM metrics report
+
+# Default language
+default_language: en 
+
+# Report sections and their order
+sections:
+  - id: general_metrics
+    title:
+      en: "General Metrics & Benchmarks XXX"
+      de: "Allgemeine Kennzahlen & Benchmarks"
+    metrics:
+      - gross_floor_area
+      - gross_volume
+      - building_storeys
+      - construction_area
+      - construction_volume
+      - storeys_count_excluding_roof
+
+  - id: usable_space
+    title:
+      en: "Usable Space"
+      de: "Nutzfläche"
+    metrics:
+      - net_floor_area
+      - net_floor_volume
+
+# Metric display names and relationships
+metrics:
+  gross_floor_area:
+    name:
+      en: "Gross Floor Area (GFA)"
+      de: "Bruttogeschossfläche (BGF)"
+    base_metric: null  # This is a base metric, nothing is calculated relative to it
+
+  gross_volume:
+    name:
+      en: "Gross Volume (GV)"
+      de: "Bruttorauminhalt (BRI)"
+    base_metric: null  # This is a base metric, nothing is calculated relative to it
+
+  net_floor_area:
+    name:
+      en: "Net Floor Area (NFA)"
+      de: "Nettogeschossfläche (NGF)"
+    base_metric: gross_floor_area  # Will show as percentage of GFA
+
+  net_floor_volume:
+    name:
+      en: "Net Volume (NVA)"
+      de: "Netto-Rauminhalt (NRI)"
+    base_metric: gross_volume  # Will show as percentage of GV
+
+  construction_area:
+    name:
+      en: "Construction Area"
+      de: "Konstruktionsfläche"
+    base_metric: gross_floor_area  # Will show as percentage of GFA
+
+  construction_volume:
+    name:
+      en: "Construction Volume"
+      de: "Konstruktionsvolumen"
+    base_metric: gross_volume  # Will show as percentage of GV
+
+  building_storeys:
+    name:
+      en: "Building Storeys"
+      de: "Geschosse"
+    base_metric: null  # No percentage calculation needed
+
+  storeys_count_excluding_roof:
+    name:
+      en: "Number of Storeys"
+      de: "Geschossanzahl"
+    base_metric: null  # No percentage calculation needed
+
+# Formatting rules
+formatting:
+  percentage:
+    format: "{value:.1f}% of {base_name}"
+    languages:
+      en: "of"
+      de: "von"
+
