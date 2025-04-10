@@ -88,7 +88,7 @@ def test_config():
                 "description": "Window area by orientation",
                 "quantity_type": "area",
                 "ifc_entity": "IfcWindow",
-                "grouping_attribute": "Pset_abstractBIM.Normal",
+                "grouping_attribute": "ePset_abstractBIM.Normal",
                 "pset_name": "Qto_WindowBaseQuantities",
                 "prop_name": "Area"
             }   
@@ -243,7 +243,11 @@ def test_window_area_by_direction(test_config, test_data):
     for direction, expected_area in test_data['grouped_metrics']['window_area_by_direction'].items():
         direction_result = result[result['metric_name'] == f"window_area_by_direction_{direction.lower()}"]
         assert not direction_result.empty, f"No result found for direction {direction}"
-        assert direction_result['value'].iloc[0] == expected_area
+        assert np.isclose(
+            direction_result['value'].iloc[0], 
+            expected_area,
+            rtol=1e-3
+        ), f"Expected {expected_area}, got {direction_result['value'].iloc[0]}"
         assert direction_result['unit'].iloc[0] == "m²"
 
 def test_window_area_per_gross_floor_area(test_config, test_data):

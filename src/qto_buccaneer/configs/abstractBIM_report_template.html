@@ -33,6 +33,46 @@
       @bottom-left { content: none; }
       @bottom-right { content: none; }
     }
+    
+    /* Section-specific styles */
+    .title-page {
+        text-align: center;
+        margin: 100px 0;
+    }
+    
+    .title-page h1 {
+        font-size: 2.5em;
+        margin-bottom: 1em;
+    }
+    
+    .title-page p {
+        font-size: 1.2em;
+        margin: 0.5em 0;
+    }
+    
+    .table-of-contents {
+        margin: 20px 0;
+    }
+    
+    .table-of-contents ul {
+        list-style-type: none;
+        padding: 0;
+    }
+    
+    .table-of-contents li {
+        margin: 10px 0;
+    }
+    
+    .table-of-contents a {
+        text-decoration: none;
+        color: #2C3E50;
+    }
+    
+    .table-of-contents a::after {
+        content: leader('.') target-counter(attr(href), page);
+        float: right;
+    }
+    
     .metrics-section {
         margin: 20px 0;
     }
@@ -53,129 +93,75 @@
     }
     
     .metrics-table td:nth-child(2) {
-        width: 40%;
+        width: 30%;
         text-align: right;
     }
     
     .metrics-table td:nth-child(3) {
-        width: 30%;
+        width: 40%;
         text-align: right;
-    }
-    .toc {
-        margin: 20px 0;
-    }
-    
-    .toc ul {
-        list-style-type: none;
-        padding: 0;
-    }
-    
-    .toc li {
-        margin: 10px 0;
-    }
-    
-    .toc a {
-        text-decoration: none;
-        color: #2C3E50;
-    }
-    
-    .toc a::after {
-        content: leader('.') target-counter(attr(href), page);
-        float: right;
     }
   </style>
 </head>
 <body>
 
-<h1 class="project-title">{{ project_name }}</h1>
-<p><strong>Version:</strong> {{ date_time }}</p>
-<p><strong>File Name:</strong> {{ file_name }}</p>
-<p><strong>Address:</strong> {{ address }}</p>
-
-{% if images.pic_project %}<img src="{{ images.pic_project }}">{% endif %}
-
-<div class="page-break-before"></div>
-
-<div class="toc">
-    <h2>Table of Contents</h2>
-    <ul>
-        {% for section_id, section in metrics_table.items() %}
-        <li><a href="#{{ section_id }}">{{ section.title }}</a></li>
-        {% endfor %}
-        <li><a href="#usable-space">Usable Space</a></li>
-        <li><a href="#roomtypes">Roomtypes</a></li>
-        <li><a href="#roomtypes-storey">Roomtypes by Storey</a></li>
-        <li><a href="#rooms">Rooms</a></li>
-        <li><a href="#appendix">Appendix</a></li>
-    </ul>
-</div>
-
-<div class="page-break-before"></div>
-
+<!-- Titel Page -->
 {% for section_id, section in metrics_table.items() %}
-<div class="metrics-section" id="{{ section_id }}">
-    <h2>{{ section.title }}</h2>
-    <table class="metrics-table">
-        <tbody>
-            {% for metric in section.metrics %}
-            <tr>
-                <td>{{ metric.name }}</td>
-                <td>{{ metric.value1 }}</td>
-                <td>{{ metric.value2 }}</td>
-            </tr>
+    {% if section_id == 'title_page' %}
+    <div class="title-page" id="{{ section_id }}">
+        <h1>{{ project_name }}</h1>
+        <p><strong>Version:</strong> {{ date_time }}</p>
+        <p><strong>File Name:</strong> {{ file_name }}</p>
+        <p><strong>Address:</strong> {{ address }}</p>
+        {% if images.pic_project %}<img src="{{ images.pic_project }}">{% endif %}
+    </div>
+    <div class="page-break-before"></div>
+
+    <!-- Table of Contents -->
+
+    {% elif section_id == 'table_of_contents' %}
+    <div class="table-of-contents" id="{{ section_id }}">
+        <h2>{{ section.title }}</h2>
+        <ul>
+            {% for toc_section_id, toc_section in metrics_table.items() %}
+            <li><a href="#{{ toc_section_id }}">{{ toc_section.title }}</a></li>
             {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endfor %}
+            <li><a href="#appendix">Appendix</a></li>
+        </ul>
+    </div>
+    <div class="page-break-before"></div>
+    
+    <!-- General Metrics & Benchmarks -->
 
-{% if images.pic_gfa %}<img src="{{ images.pic_gfa }}">{% endif %}
-{% if images.pic_gv %}<img src="{{ images.pic_gv }}">{% endif %}
+    {% elif section_id == 'general_metrics' %}
+    <div class="metrics-section" id="{{ section_id }}">
+        <h2>{{ section.title }}</h2>
+        {% if section_id == 'general_metrics' and images.pic_gfa %}
+        <img src="{{ images.pic_gfa }}">
+        {% endif %}
+        {% if section_id == 'general_metrics' and images.pic_gv %}
+        <img src="{{ images.pic_gv }}">
+        {% endif %}
+        <table class="metrics-table">
+            <tbody>
+                {% for metric in section.metrics %}
+                <tr>
+                    <td>{{ metric.name }}</td>
+                    <td>{{ metric.value1 }}</td>
+                    <td>{{ metric.value2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="page-break-before"></div>
 
-<div class="page-break-before"></div>
+    <!-- Usable Space -->
 
-<div class="page-break-before"></div>
-
-<h2 id="usable-space">Usable Space</h2>
-
-<h3 id="roomtypes">Roomtypes</h3>
-{% if images.pic_net_space_1 %}<img src="{{ images.pic_net_space_1 }}">{% endif %}
-<table>
-  <tr><th>Room Type</th><th>Count</th><th>m²</th><th>m³</th><th>% of GFA</th><th>% of GV</th></tr>
-  {% for row in roomtypes %}
-  <tr><td>{{ row.name }}</td><td>{{ row.count }}</td><td>{{ row.area }}</td><td>{{ row.volume }}</td><td>{{ row.per_gfa }}</td><td>{{ row.per_gv }}</td></tr>
-  {% endfor %}
-</table>
-
-<h3 id="roomtypes-storey">Roomtypes by Storey</h3>
-{% for storey in roomtypes_by_storey %}
-  <h4>{{ storey.name }}, {{ storey.z }}</h4>
-  {% if storey.pic %}<img src="{{ storey.pic }}">{% endif %}
-  <table>
-    <tr><th>Room Type</th><th>Count</th><th>m²</th><th>m³</th><th>% of GFA</th><th>% of GV</th></tr>
-    {% for row in storey.data %}
-    <tr><td>{{ row.name }}</td><td>{{ row.count }}</td><td>{{ row.area }}</td><td>{{ row.volume }}</td><td>{{ row.per_gfa }}</td><td>{{ row.per_gv }}</td></tr>
-    {% endfor %}
-  </table>
-{% endfor %}
-
-<h2 id="rooms">Rooms</h2>
-{% if images.pic_room_floorplan_scale %}<img src="{{ images.pic_room_floorplan_scale }}">{% endif %}
-{% if images.pic_room_coverings_scale %}<img src="{{ images.pic_room_coverings_scale }}">{% endif %}
-
-{% for room in rooms %}
-  <h3>{{ room.storey }}, {{ room.number }} – {{ room.long_name }}</h3>
-  {% if room.pic %}<img src="{{ room.pic }}">{% endif %}
-  <ul>
-    <li>Description: {{ room.description }}</li>
-    <li>Floor Area: {{ room.area }}</li>
-    <li>Perimeter: {{ room.perimeter }}</li>
-    <li>Height: {{ room.height }}</li>
-    <li>Window Count: {{ room.window_count }}, Area: {{ room.window_area }} ({{ room.per_window_to_floor_area }}%)</li>
-    <li>Door Count: {{ room.door_count }}, Area: {{ room.door_area }}</li>
-    <li>Wall Surface Area: {{ room.cladding_area }}</li>
-    <li>Ceiling Surface Area: {{ room.ceiling_area }}</li>
-  </ul>
+    {% elif section_id == 'usable_space' %}
+    <div class="metrics-section" id="{{ section_id }}">
+        <h2>{{ section.title }}</h2>
+    {% endif %}
 {% endfor %}
 
 <h2 id="appendix">Appendix</h2>

@@ -741,7 +741,8 @@ def build_metrics_table(
     # Get all defined metrics from the configuration
     defined_metrics = set()
     for section in config.get('sections', []):
-        defined_metrics.update(section.get('metrics', []))
+        if 'metrics' in section:
+            defined_metrics.update(section.get('metrics', []))
     
     print(f"Defined metrics in config: {defined_metrics}")  # Debug print
     
@@ -786,8 +787,24 @@ def build_metrics_table(
     for section in config.get('sections', []):
         section_id = section['id']
         section_title = section['title'].get(language, section['title']['en'])
-        section_metrics = []
         
+        # Handle special sections
+        if section_id == 'title_page':
+            result[section_id] = {
+                'title': section_title,
+                'metrics': []  # No metrics for title page
+            }
+            continue
+            
+        if section_id == 'table_of_contents':
+            result[section_id] = {
+                'title': section_title,
+                'metrics': []  # No metrics for table of contents
+            }
+            continue
+            
+        # Handle metrics sections
+        section_metrics = []
         for metric_id in section.get('metrics', []):
             if metric_id not in filtered_metrics:
                 continue
@@ -816,7 +833,8 @@ def build_metrics_table(
                     base_name = config['metrics'][base_metric]['name'].get(language, config['metrics'][base_metric]['name']['en'])
                     percentage = config['formatting']['percentage']['format'].format(
                         value=pct,
-                        base_name=base_name.split('(')[0].strip()
+                        base_name=base_name.split('(')[0].strip(),
+                        of_word=config['formatting']['percentage']['languages'].get(language, 'of')
                     )
             
             section_metrics.append({

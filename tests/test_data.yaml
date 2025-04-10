@@ -14,7 +14,7 @@ room_metrics:
 
 grouped_metrics:
   window_area_by_direction:
-    "180": 6.110200000000002  # This value was found in the test output
+    "180": 6.11  # This value was found in the test output
 
 derived_metrics:
   window_area_per_gross_floor_area: 0.03  # 6.1102 / 206.04

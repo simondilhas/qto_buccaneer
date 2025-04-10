@@ -536,130 +536,76 @@ def calculate_single_room_metric(ifc_path: str, config: dict, metric_name: str, 
     except Exception as e:
         return _create_error_df(metric_by_group, str(e), file_info)
 
-def calculate_single_grouped_metric(ifc_path: str, config: dict, metric_name: str, file_info: Optional[dict] = None) -> pd.DataFrame:
-    """
-    Calculate a single metric grouped by an attribute value from the IFC model.
-
-    This function calculates quantities for building elements and groups them based on
-    a specified attribute (e.g., direction, material, level). It enables dynamic analysis
-    based on the actual attribute values present in the IFC model.
-
-    Args:
-        ifc_path (str): Path to the IFC file to analyze
-        config (dict): Configuration dictionary containing the metric definition.
-                      Must include grouped_by_attribute_metrics section.
-        metric_name (str): Name of the grouped metric to calculate
-        file_info (Optional[dict]): Additional file metadata. Defaults to None.
-
-    Returns:
-        pd.DataFrame: DataFrame containing the calculated metrics grouped by the
-                     specified attribute, with columns:
-            - metric_name: Name of the metric
-            - group: Value of the grouping attribute
-            - value: Calculated numeric value
-            - unit: Unit of measurement (m², m³, count)
-            - category: Type of measurement
-            - description: Description of what is being measured
-            - calculation_time: When the metric was calculated
-            - status: Calculation status (success/error)
-
-    Example:
-        ```python
-        from qto_buccaneer.utils.config import load_config
-
-        # Load configuration
-        config = load_config("src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml")
-
-        # Calculate facade area grouped by orientation
-        results = calculate_single_grouped_metric(
-            ifc_path="path/to/model.ifc",
-            config=config,
-            metric_name="facade_net_area_by_direction",
-            file_info={"project_name": "Office Building"}
-        )
-
-        print(results[["metric_name", "group", "value", "unit"]])
-        # Example output:
-        #   metric_name                  group    value  unit
-        # 0 facade_net_area_by_direction North    150.5   m²
-        # 1 facade_net_area_by_direction South    142.3   m²
-        # 2 facade_net_area_by_direction East     98.7    m²
-        # 3 facade_net_area_by_direction West     95.2    m²
-
-        # Another example: windows area by direction
-        results = calculate_single_grouped_metric(
-            ifc_path="path/to/model.ifc",
-            config=config,
-            metric_name="windows_area_by_direction"
-        )
-
-        print(results[["metric_name", "group", "value", "unit"]])
-        # Example output:
-        #   metric_name              group    value  unit
-        # 0 windows_area_by_direction   90     45.2   m²
-        # 1 windows_area_by_direction  180     52.8   m²
-        # 2 windows_area_by_direction  -90     28.4   m²
-        # 3 windows_area_by_direction -180     25.6   m²
-        ```
-
-    Note:
-        - The metric must be defined in the grouped_by_attribute_metrics section of config
-        - Required configuration fields:
-          - ifc_entity: Type of element to measure
-          - grouping_attribute: Attribute to group by (e.g., "Pset_abstractBIM.Normal")
-          - pset_name: Property set containing the quantity
-          - prop_name: Name of the quantity property
-        - Optional filters can be used to include/exclude specific elements
-        - Groups are created dynamically based on unique attribute values in the model
-        - Elements without the specified attribute will be excluded
-    """
+def calculate_single_grouped_metric(
+    ifc_path: str,
+    config: dict,
+    metric_name: str,
+    file_info: Optional[dict] = None,
+) -> pd.DataFrame:
+    """Calculate a single grouped metric."""
     if metric_name not in config.get('grouped_by_attribute_metrics', {}):
         return pd.DataFrame([create_result_dict(
             metric_name=metric_name,
             error_message="Metric not found in grouped metrics configuration",
             **file_info or {}
         )])
-
+    
     loader = IfcLoader(ifc_path)
     qto = QtoCalculator(loader)
     metric_config = config['grouped_by_attribute_metrics'][metric_name]
     
     try:
-        # Get grouped values using the new method
+        ifc_entity = metric_config["ifc_entity"]
+        grouping_attribute = metric_config.get("grouping_attribute")
+        grouping_pset = metric_config.get("grouping_pset")
+        pset_name = metric_config.get("pset_name")
+        prop_name = metric_config.get("prop_name")
+        include_filter = metric_config.get("include_filter")
+        include_filter_logic = metric_config.get("include_filter_logic", "AND")
+        subtract_filter = metric_config.get("subtract_filter")
+        subtract_filter_logic = metric_config.get("subtract_filter_logic", "AND")
+        quantity_type = metric_config.get("quantity_type", "area")
+
+        # Get grouped values
         grouped_values = qto._get_elements_by_attribute(
-            ifc_entity=metric_config["ifc_entity"],
-            grouping_attribute=metric_config["grouping_attribute"],
-            include_filter=metric_config.get("include_filter"),
-            include_filter_logic=metric_config.get("include_filter_logic", "AND"),
-            subtract_filter=metric_config.get("subtract_filter"),
-            subtract_filter_logic=metric_config.get("subtract_filter_logic", "OR"),
-            pset_name=metric_config.get("pset_name"),
-            prop_name=metric_config.get("prop_name")
+            ifc_entity=ifc_entity,
+            grouping_attribute=grouping_attribute,
+            grouping_pset=grouping_pset,
+            include_filter=include_filter,
+            include_filter_logic=include_filter_logic,
+            subtract_filter=subtract_filter,
+            subtract_filter_logic=subtract_filter_logic,
+            pset_name=pset_name,
+            prop_name=prop_name,
         )
 
         # Create results for each group
         results = []
         for group_value, value in grouped_values.items():
-            # Convert the group value to string and clean it
+            # Clean up the group value for use in metric name
             clean_group_value = str(group_value).replace(" ", "_").lower()
+            # Create the metric name with the group value appended
+            full_metric_name = f"{metric_name}_{clean_group_value}"
             
-            results.append(create_result_dict(
-                metric_name=f"{metric_name}_{clean_group_value}",
-                value=value,
-                unit=_determine_unit(metric_config.get("quantity_type", "area")),
-                category=metric_config.get("quantity_type", "area"),
-                description=metric_config.get("description", ""),
-                **file_info or {}
-            ))
+            results.append({
+                "metric_name": full_metric_name,
+                "value": value,
+                "unit": "m²" if quantity_type == "area" else "m³" if quantity_type == "volume" else "count",
+                "category": quantity_type,
+                "description": metric_config["description"],
+                "calculation_time": datetime.now(),
+                "status": "success",
+                **(file_info or {})
+            })
 
-        if results:
-            return pd.DataFrame(results)
-        else:
+        if not results:
             return pd.DataFrame([create_result_dict(
                 metric_name=metric_name,
                 error_message="No results calculated",
                 **file_info or {}
             )])
+
+        return pd.DataFrame(results)
 
     except Exception as e:
         return pd.DataFrame([create_result_dict(

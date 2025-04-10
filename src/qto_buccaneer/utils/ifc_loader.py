@@ -179,123 +179,63 @@ class IfcLoader:
 
     def get_elements(
         self,
+        ifc_entity: str,
         filters: Optional[dict] = None,
         filter_logic: Literal["AND", "OR"] = "AND",
-        ifc_entity: str = None
-    ) -> List[Any]:
-        """Get elements from the IFC file that match the given filters.
+    ) -> List[IfcElement]:
+        """Get elements of a specific type with optional filters."""
+        elements = self.model.by_type(ifc_entity)
         
-        Args:
-            filters: Dictionary of property filters
-            filter_logic: How to combine filters ("AND" or "OR")
-            ifc_entity: IFC entity type to filter for (e.g., "IfcSpace", "IfcWall")
-        
-        Returns:
-            List of matching IFC elements
-        """
-        # Get all elements of the specified type
-        if ifc_entity:
-            elements = self.model.by_type(ifc_entity)
-        else:
-            elements = self.model.by_type("IfcProduct")
-        
-        # If no filters, return all elements
         if not filters:
             return elements
+            
+        print(f"\nFiltering {len(elements)} {ifc_entity} elements with:")
+        print(f"Filters: {filters}")
+        print(f"Filter logic: {filter_logic}")
         
-        # Filter elements
         filtered_elements = []
         for element in elements:
             matches = []
-            
             for key, value in filters.items():
-                # Handle direct attribute comparison
-                if not "." in key:
-                    element_value = getattr(element, key, None)
-                    matches.append(self._compare_values(element_value, value))
-                    continue
+                # Get the attribute value
+                attr_value = getattr(element, key, None)
+                print(f"\nElement: {element}")
+                print(f"Checking filter {key}: {value}")
+                print(f"Element has {key}: {attr_value}")
                 
-                # Handle property set values
-                pset_name, prop_name = key.split(".")
-                prop_value = None
-                
-                # Check IfcPropertySet and IfcElementQuantity
-                for rel in getattr(element, "IsDefinedBy", []):
-                    definition = getattr(rel, "RelatingPropertyDefinition", None)
-                    if not definition:
-                        continue
-                        
-                    if definition.is_a("IfcPropertySet") and definition.Name == pset_name:
-                        for prop in definition.HasProperties:
-                            if prop.Name == prop_name:
-                                prop_value = getattr(prop, "NominalValue", None)
-                                if prop_value:
-                                    prop_value = prop_value.wrappedValue
-                                break
-                
-                    # Check IfcElementQuantity
-                    elif definition.is_a("IfcElementQuantity") and definition.Name == pset_name:
-                        for quantity in definition.Quantities:
-                            if quantity.Name == prop_name:
-                                if quantity.is_a("IfcQuantityArea"):
-                                    prop_value = quantity.AreaValue
-                                elif quantity.is_a("IfcQuantityLength"):
-                                    prop_value = quantity.LengthValue
-                                elif quantity.is_a("IfcQuantityVolume"):
-                                    prop_value = quantity.VolumeValue
-                                break
-                
-                matches.append(self._compare_values(prop_value, value))
+                # Handle different types of filter values
+                if isinstance(value, list):
+                    # For list values, check if any match
+                    if isinstance(value[0], tuple) and len(value[0]) == 2:
+                        # Handle comparison operators
+                        op, val = value[0]
+                        if op == ">":
+                            matches.append(attr_value > val)
+                        elif op == ">=":
+                            matches.append(attr_value >= val)
+                        elif op == "<":
+                            matches.append(attr_value < val)
+                        elif op == "<=":
+                            matches.append(attr_value <= val)
+                        elif op == "=":
+                            matches.append(attr_value == val)
+                    else:
+                        # For simple list values, check if any match
+                        matches.append(attr_value in value)
+                else:
+                    # For single values, check exact match
+                    matches.append(attr_value == value)
             
-            # Add element if it matches according to filter logic
-            if filter_logic == "AND" and all(matches):
-                filtered_elements.append(element)
-            elif filter_logic == "OR" and any(matches):
-                filtered_elements.append(element)
+            # Apply filter logic
+            if filter_logic == "AND":
+                if all(matches):
+                    filtered_elements.append(element)
+            else:  # OR
+                if any(matches):
+                    filtered_elements.append(element)
         
+        print(f"Found {len(filtered_elements)} matching elements")
         return filtered_elements
-
-    def _compare_values(self, actual_value: Any, filter_value: Any) -> bool:
-        # Handle string operators like "<=0.15"
-        if isinstance(filter_value, str):
-            operators = [">=", "<=", "!=", "=", ">", "<"]
-            for op in operators:
-                if filter_value.startswith(op):
-                    try:
-                        value = float(filter_value[len(op):])
-                        actual_value = float(actual_value)
-                        return {
-                            ">": actual_value > value,
-                            "<": actual_value < value,
-                            "=": actual_value == value,
-                            "!=": actual_value != value,
-                            "<=": actual_value <= value,
-                            ">=": actual_value >= value
-                        }[op]
-                    except (TypeError, ValueError):
-                        return False
-        
-        # Handle list with operator and value
-        elif isinstance(filter_value, list) and len(filter_value) == 2:
-            operator, value = filter_value
-            try:
-                actual_value = float(actual_value)
-                value = float(value)
-                return {
-                    ">": actual_value > value,
-                    "<": actual_value < value,
-                    "=": actual_value == value,
-                    "!=": actual_value != value,
-                    "<=": actual_value <= value,
-                    ">=": actual_value >= value
-                }[operator]
-            except (TypeError, ValueError):
-                return False
-        # Handle regular list membership
-        elif isinstance(filter_value, list):
-            return actual_value in filter_value
-        
-        return actual_value == filter_value
 
     def get_project_info(self) -> dict:
         """

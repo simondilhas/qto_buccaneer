@@ -727,59 +727,81 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
 
 # Room-based metrics
 room_based_metrics: #Dont delete the name "room_based_metrics". List all the metrics calculated per room here e.g. window area by roomtyp
-  windows_area_by_room:
-    description: "Get windows grouped by room"
+  windows_external_area_by_room:
+    description: "Get external windows grouped by room"
     ifc_entity: "IfcWindow"
-    grouping_attribute: "GlobalId"
+    grouping_attribute: "SpacesName"
+    room_reference_attribute_guid: "ePset_abstractBIM.Spaces"
     pset_name: "Qto_WindowBaseQuantities"
     prop_name: "Area"
-
-  doors_interior_area_by_room_type:  
-    description: "Get interior doors grouped by room"
-    ifc_entity: "IfcDoor"
-    grouping_attribute: "GlobalId"
-    pset_name: "Qto_DoorBaseQuantities"
-    prop_name: "Area"
     include_filter:
-      Pset_DoorCommon.IsExternal: false
+      Pset_WindowCommon.IsExternal: true
     include_filter_logic: "AND"
 
-  doors_exterior_area_by_room_type:
-    description: "Get exterior doors grouped by room"
-    ifc_entity: "IfcDoor"
-    grouping_attribute: "GlobalId"
-    pset_name: "Qto_DoorBaseQuantities"
+  windows_internal_area_by_room:
+    description: "Get internal windows grouped by room"
+    ifc_entity: "IfcWindow"
+    grouping_attribute: "SpacesName"
+    room_reference_attribute_guid: "ePset_abstractBIM.Spaces"
+    pset_name: "Qto_WindowBaseQuantities"
     prop_name: "Area"
     include_filter:
-      Pset_DoorCommon.IsExternal: true
+      Pset_WindowCommon.IsExternal: false
+    include_filter_logic: "AND"
 
   wall_surface_net_area_by_room_type:
     description: "Get wall coverings grouped by room"
     ifc_entity: "IfcCovering"
-    grouping_attribute: "LongName"
+    grouping_attribute: "SpacesName"
+    room_reference_attribute_guid: "ePset_abstractBIM.Spaces"
     pset_name: "Qto_CoveringBaseQuantities"
     prop_name: "NetArea"
     include_filter:
       PredefinedType: "CLADDING"
       Pset_CoveringCommon.IsExternal: false
-    include_filter_logic: "AND" 
+    include_filter_logic: "AND"
+
 
 grouped_by_attribute_metrics:
+  room_area_by_room_type:
+    description: "Get room area grouped by room type"
+    ifc_entity: "IfcSpace"
+    grouping_attribute: "LongName"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      PredefinedType: ["INTERNAL", "EXTERNAL"]
+    include_filter_logic: "OR"
+
+
+  room_volume_by_room_type:
+    description: "Get room volume grouped by room type"
+    ifc_entity: "IfcSpace"
+    grouping_attribute: "LongName"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetVolume"
+    include_filter:
+      PredefinedType: ["INTERNAL", "EXTERNAL"]
+    include_filter_logic: "OR"
+
+    
   facade_net_area_by_direction:
     description: "Get facade gross area grouped by direction"
     ifc_entity: "IfcCovering"
-    grouping_attribute: "Pset_abstractBIM.Normal"
+    grouping_pset: "ePset_abstractBIM"
+    grouping_attribute: "Normal"
     pset_name: "Qto_CoveringBaseQuantities"
     prop_name: "NetArea"
     include_filter:
       PredefinedType: "CLADDING"
       Pset_CoveringCommon.IsExternal: true
-    include_filter_logic: "AND" 
+    include_filter_logic: "AND"
 
   windows_area_by_direction:
     description: "Get windows area grouped by direction"
     ifc_entity: "IfcWindow"
-    grouping_attribute: "Pset_abstractBIM.Normal"
+    grouping_pset: "ePset_abstractBIM"
+    grouping_attribute: "Normal"
     pset_name: "Qto_WindowBaseQuantities"
     prop_name: "Area"
     include_filter:
