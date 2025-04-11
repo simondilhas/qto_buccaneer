@@ -65,22 +65,17 @@ def test_config():
             }
         },
         "room_based_metrics": {
-            "net_area_by_room": {
-                "description": "Net area per room",
-                "quantity_type": "area",
-                "ifc_entity": "IfcSpace",
-                "grouping_attribute": "LongName",
-                "pset_name": "Qto_SpaceBaseQuantities",
-                "prop_name": "NetFloorArea"
-            },
-            "window_area_per_space": {
-                "description": "Window area per space",
-                "quantity_type": "area",
+            "windows_external_area_by_room": {
+                "description": "Get external windows grouped by room",
                 "ifc_entity": "IfcWindow",
-                "grouping_attribute": "GlobalId",
+                "grouping_attribute": "LongName",
                 "room_reference_attribute_guid": "ePset_abstractBIM.Spaces",
-                "pset_name": "Qto_WindowBaseQuantities",
-                "prop_name": "Area"
+                "metric_pset_name": "Qto_WindowBaseQuantities",
+                "metric_prop_name": "Area",
+                "include_filter": {
+                    "Pset_WindowCommon.IsExternal": True
+                },
+                "include_filter_logic": "AND"
             }
         },
         "grouped_by_attribute_metrics": {
@@ -291,21 +286,27 @@ def test_window_area_per_gross_floor_area(test_config, test_data):
     ), f"Expected {test_data['derived_metrics']['window_area_per_gross_floor_area']}, got {result['value'].iloc[0]}"
     assert result['unit'].iloc[0] == "ratio"
 
-def test_window_area_per_space(test_config, test_data):
-    """Test calculation of window area per space"""
+def test_windows_external_area_by_room(test_config, test_data):
+    """Test calculation of external window area by room"""
     result = calculate_single_metric_by_space(
         ifc_path=TEST_IFC_PATH,
         config=test_config,
-        metric_name="window_area_per_space",
+        metric_name="windows_external_area_by_room",
         file_info={"test": "test_grouped_metric"}
     )
 
-    print("\nDEBUG INFO - Window Area per Space:")
+    print("\nDEBUG INFO - External Window Area by Room:")
     print(f"Result DataFrame:\n{result}")
+    print("\nAll metric names in result:")
+    print(result['metric_name'].unique())
+    print("\nAll room names in result:")
+    print([name.split('_')[-1] for name in result['metric_name'].unique()])
     
     # Check each room's window area
-    for room_name, expected_area in test_data['room_metrics']['window_area_per_space'].items():
-        room_result = result[result['metric_name'] == f"window_area_per_space_by_longname_{room_name.lower()}"]
+    for room_name, expected_area in test_data['room_metrics']['windows_external_area_by_room'].items():
+        metric_name = f"windows_external_area_by_room_by_longname_{room_name.lower()}"
+        print(f"\nLooking for metric: {metric_name}")
+        room_result = result[result['metric_name'] == metric_name]
         print(f"\nRoom {room_name}:")
         print(f"Expected area: {expected_area}")
         if not room_result.empty:
@@ -318,8 +319,10 @@ def test_window_area_per_space(test_config, test_data):
     assert all(result['status'] == "success"), f"Error in calculation: {result[result['status'] != 'success']['status'].iloc[0]}"
     
     # Check window area for each room
-    for room_name, expected_area in test_data['room_metrics']['window_area_per_space'].items():
-        room_result = result[result['metric_name'] == f"window_area_per_space_by_longname_{room_name}"]
+    for room_name, expected_area in test_data['room_metrics']['windows_external_area_by_room'].items():
+        metric_name = f"windows_external_area_by_room_by_longname_{room_name.lower()}"
+        print(f"\nLooking for metric: {metric_name}")
+        room_result = result[result['metric_name'] == metric_name]
         assert not room_result.empty, f"No result found for room {room_name}"
         assert np.isclose(room_result['value'].iloc[0], expected_area, rtol=1e-7), \
             f"Expected {expected_area}, got {room_result['value'].iloc[0]}"

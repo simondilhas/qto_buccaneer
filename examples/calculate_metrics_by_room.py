@@ -4,17 +4,18 @@ from pathlib import Path
 src_dir = str(Path(__file__).parent.parent / "src")
 sys.path.append(src_dir)
 
-from qto_buccaneer.metrics import calculate_single_room_metric
+from qto_buccaneer.metrics import calculate_single_metric_by_space
 from qto_buccaneer.utils.config import load_config
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 from qto_buccaneer.utils.qto_calculator import QtoCalculator
 
 # Specify the room-based metric you want to calculate
-#METRIC_NAME = "windows_area_by_room"  # Example room-based metric
+
 #METRIC_NAME = "doors_interior_area_by_room_type"
 #METRIC_NAME = "doors_exterior_area_by_room_type"
 #METRIC_NAME = "wall_surface_net_area_by_room_type"
-METRIC_NAME = "doors_interior_area_by_room_type"
+#METRIC_NAME = "doors_exterior_area_by_room_type"
+METRIC_NAME = "windows_external_area_by_room"  # Example room-based metric
 
 
 def main():
@@ -41,8 +42,9 @@ def main():
     }
     
     # Calculate single room metric with loaded config
-    df= calculate_single_room_metric(ifc_path, config, metric_name, file_info)
+    df= calculate_single_metric_by_space(ifc_path, config, metric_name, file_info)
     print(df)
+    df.to_excel("output.xlsx", index=False)
 
 
 if __name__ == "__main__":

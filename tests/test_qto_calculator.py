@@ -198,3 +198,28 @@ def test_apply_filter(calculator):
         "OR"
     ) is True
 
+def test_get_elements_by_space(calculator):
+    """Test getting elements grouped by space with their quantities."""
+    # Test window area calculation using the exact config from metrics_config_abstractBIM.yaml
+    result = calculator._get_elements_by_space(
+        ifc_entity="IfcWindow",
+        grouping_pset=None,
+        grouping_attribute_or_property="LongName",
+        room_reference_attribute_guid="ePset_abstractBIM.Spaces",
+        include_filter={"Pset_WindowCommon.IsExternal": True},
+        include_filter_logic="AND",
+        metric_pset_name="Qto_WindowBaseQuantities",
+        metric_prop_name="Area"
+    )
+    
+    print("\nDEBUG INFO - Window Area by Space:")
+    print(f"Result: {result}")
+    
+    # Verify that we got some results
+    assert len(result) > 0, "No window areas calculated"
+    
+    # Verify that all values are positive numbers
+    for space_name, area in result.items():
+        assert isinstance(area, float), f"Area for space {space_name} is not a float"
+        assert area > 0, f"Area for space {space_name} is not positive"
+

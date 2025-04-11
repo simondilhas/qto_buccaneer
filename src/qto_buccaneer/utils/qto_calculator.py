@@ -298,69 +298,132 @@ class QtoCalculator:
     def _get_elements_by_space(
         self,
         ifc_entity: str,
-        pset_name: str,
-        prop_name: str,
-        grouping_attribute: str,
+        grouping_pset: str,
+        grouping_attribute_or_property: str,
         room_reference_attribute_guid: str,
         include_filter: dict = None,
         include_filter_logic: str = "AND",
+        metric_pset_name: str = None,
+        metric_prop_name: str = None,
     ) -> dict:
         """Get elements grouped by space and sum their quantities.
 
         Args:
             ifc_entity: The IFC entity to get elements for.
-            pset_name: The name of the property set to get the quantity from.
-            prop_name: The name of the property to get the quantity from.
-            grouping_attribute: The attribute to group the elements by.
+            grouping_pset: The name of the property set to get the grouping attribute from.
+            grouping_attribute_or_property: The attribute to group the elements by.
             room_reference_attribute_guid: The property set and property name for the room reference GUID.
             include_filter: A dictionary of conditions to include only specific elements.
             include_filter_logic: The logic to use when combining multiple include filters.
+            metric_pset_name: The name of the property set to get the quantity from.
+            metric_prop_name: The name of the property to get the quantity from.
 
         Returns:
             A dictionary with the space name as key and the sum of quantities as value.
         """
+        print("\nDEBUG - Starting _get_elements_by_space")
+        print(f"Parameters:")
+        print(f"- ifc_entity: {ifc_entity}")
+        print(f"- grouping_pset: {grouping_pset}")
+        print(f"- grouping_attribute_or_property: {grouping_attribute_or_property}")
+        print(f"- room_reference_attribute_guid: {room_reference_attribute_guid}")
+        print(f"- include_filter: {include_filter}")
+        print(f"- include_filter_logic: {include_filter_logic}")
+        print(f"- metric_pset_name: {metric_pset_name}")
+        print(f"- metric_prop_name: {metric_prop_name}")
+
         # Get all elements of the specified entity
-        elements = self.ifc_file.by_type(ifc_entity)
-        print(f"Found {len(elements)} {ifc_entity} elements")
+        elements = self.loader.get_elements(ifc_entity=ifc_entity) or []
+        print(f"\nFound {len(elements)} {ifc_entity} elements")
 
         # Apply include filters if specified
         if include_filter:
-            elements = self._apply_filters(elements, include_filter, include_filter_logic)
+            elements = [
+                element for element in elements 
+                if self._apply_filter(element, include_filter, include_filter_logic)
+            ]
+            print(f"After filtering: {len(elements)} elements")
 
         # Create a dictionary to store the sum of quantities for each space
         space_quantities = {}
 
         # Get all spaces for mapping GUIDs to names
-        spaces = self.ifc_file.by_type("IfcSpace")
-        space_map = {space.GlobalId: space.LongName for space in spaces}
-        print(f"Found {len(spaces)} spaces for mapping")
+        spaces = self.loader.get_elements(ifc_entity="IfcSpace") or []
+        space_map = {}
+        for space in spaces:
+            # Get the grouping attribute value from the space
+            if '.' in grouping_attribute_or_property:
+                # Handle property set attributes
+                pset_name_group, prop_name_group = grouping_attribute_or_property.split('.')
+                group_value, _ = self._get_property_value(space, pset_name_group, prop_name_group)
+            else:
+                # Handle direct attributes
+                group_value = getattr(space, grouping_attribute_or_property, None)
+            
+            if group_value is not None:
+                space_map[space.GlobalId] = str(group_value)
+        print(f"\nFound {len(spaces)} spaces for mapping")
+        print(f"Space map: {space_map}")
 
         # Process each element
         for element in elements:
+            print(f"\nProcessing element {element.GlobalId}")
+            
             # Get the quantity from the property set
-            quantity = self._get_quantity(element, pset_name, prop_name)
-            if quantity is None:
+            quantity = 0.0
+            for rel in getattr(element, "IsDefinedBy", []):
+                qto = getattr(rel, "RelatingPropertyDefinition", None)
+                if not qto or not qto.is_a("IfcElementQuantity"):
+                    continue
+                if metric_pset_name and qto.Name != metric_pset_name:
+                    continue
+                for q in getattr(qto, "Quantities", []):
+                    if q.Name == metric_prop_name:
+                        if q.is_a("IfcQuantityArea"):
+                            quantity = q.AreaValue
+                        elif q.is_a("IfcQuantityVolume"):
+                            quantity = q.VolumeValue
+                        elif q.is_a("IfcQuantityLength"):
+                            quantity = q.LengthValue
+                        break
+            
+            if quantity == 0.0:
+                print(f"Warning: No quantity found for element {element.GlobalId}")
                 continue
+
+            print(f"Found quantity: {quantity}")
 
             # Get space references from the property set
             space_guids = []
             if room_reference_attribute_guid:
-                pset_name, prop_name = room_reference_attribute_guid.split(".")
-                space_guids = self._get_property_value(element, pset_name, prop_name)
-                if space_guids is None:
-                    space_guids = []
-                elif not isinstance(space_guids, list):
-                    space_guids = [space_guids]
+                ref_pset_name, ref_prop_name = room_reference_attribute_guid.split(".")
+                for rel in getattr(element, "IsDefinedBy", []):
+                    pset = getattr(rel, "RelatingPropertyDefinition", None)
+                    if not pset or not pset.is_a("IfcPropertySet") or pset.Name != ref_pset_name:
+                        continue
+                    for prop in pset.HasProperties:
+                        if prop.Name == ref_prop_name and hasattr(prop, 'NominalValue'):
+                            value = prop.NominalValue.wrappedValue
+                            if isinstance(value, list):
+                                space_guids.extend(value)
+                            else:
+                                space_guids.append(value)
+                            print(f"Found space reference: {value}")
+
+            print(f"Found space references: {space_guids}")
 
             # For each space reference, add the quantity to the space's total
             for space_guid in space_guids:
                 space_name = space_map.get(space_guid)
                 if space_name:
                     if space_name not in space_quantities:
-                        space_quantities[space_name] = 0
+                        space_quantities[space_name] = 0.0
                     space_quantities[space_name] += quantity
+                    print(f"Added quantity {quantity} to space {space_name}")
+                else:
+                    print(f"Warning: No space name found for GUID {space_guid}")
 
-        print(f"Calculated quantities for {len(space_quantities)} spaces")
+        print(f"\nFinal space quantities: {space_quantities}")
         return space_quantities
 
 

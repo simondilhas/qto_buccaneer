@@ -324,45 +324,6 @@ def calculate_single_metric_by_space(ifc_path: str, config: dict, metric_name: s
             - description: Description of what is being measured
             - calculation_time: When the metric was calculated
             - status: Calculation status (success/error)
-
-    Example:
-        ```python
-        from qto_buccaneer.utils.config import load_config
-        
-        # Load configuration
-        config = load_config("src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml")
-
-        # File information
-        file_info = {
-            "project_name": "Office Building",
-            "date": "2024-01-15"
-        }
-
-        # Calculate windows area by room
-        results = calculate_single_metric_by_space(
-            ifc_path="path/to/model.ifc",
-            config=config,
-            metric_name="windows_area_by_room",
-            file_info=file_info
-        )
-
-        print(results[["metric_name", "space_name", "value", "unit"]])
-        # Example output:
-        #   metric_name           space_name  value unit
-        # 0 windows_area_by_room  Office 101   5.2   m²
-        # 1 windows_area_by_room  Office 102   3.8   m²
-        # 2 windows_area_by_room  Meeting 201  8.5   m²
-        ```
-
-    Note:
-        - The metric must be defined in the room_based_metrics section of the config
-        - The metric definition must include:
-          - ifc_entity: The type of element to measure
-          - grouping_attribute: The space attribute to group by
-          - pset_name: Property set containing the quantity
-          - prop_name: Name of the quantity property
-        - Spaces without the specified elements will not appear in the results
-        - The elements must be associated with a space through a space reference attribute
     """
     
     if metric_name not in config.get('room_based_metrics', {}):
@@ -375,54 +336,17 @@ def calculate_single_metric_by_space(ifc_path: str, config: dict, metric_name: s
     loader = IfcLoader(ifc_path)
     qto = QtoCalculator(loader)
     metric_config = config['room_based_metrics'][metric_name]
-    grouping_attribute = metric_config.get("grouping_attribute", "LongName")
-    metric_by_group = f"{metric_name}_by_{grouping_attribute.lower()}"
 
     try:
-        room_values = qto._get_elements_by_space(
-            ifc_entity=metric_config["ifc_entity"],
-            grouping_attribute=grouping_attribute,
-            room_reference_attribute_guid=metric_config.get("room_reference_attribute_guid", "ePset_abstractBIM.Spaces"),
-            include_filter=metric_config.get("include_filter"),
-            include_filter_logic=metric_config.get("include_filter_logic", "AND"),
-            subtract_filter=metric_config.get("subtract_filter"),
-            subtract_filter_logic=metric_config.get("subtract_filter_logic", "OR"),
-            pset_name=metric_config.get("pset_name", "Qto_BaseQuantities"),
-            prop_name=metric_config.get("prop_name", "NetArea")
-        )
-
-        # Create results for each room/space
-        results = []
-        for room_name, value in room_values.items():
-            results.append(create_result_dict(
-                metric_name=f"{metric_by_group}_{room_name}",
-                value=value,
-                unit="m³" if metric_config.get("quantity_type") == "volume" else "m²",
-                category=metric_config.get("quantity_type", "area"),
-                description=metric_config.get("description", ""),
-                **file_info
-            ))
-
-        if results:
-            return pd.DataFrame(results)
-        else:
-            return pd.DataFrame([create_result_dict(
-                metric_name=metric_by_group,
-                error_message="No results calculated",
-                **file_info
-            )])
-
+        # Use the relationship calculation method for room-based metrics
+        results = _process_space_relationship_calculation(qto, metric_name, metric_config, file_info)
+        return pd.DataFrame(results)
     except Exception as e:
         return pd.DataFrame([create_result_dict(
-            metric_name=metric_by_group,
+            metric_name=metric_name,
             error_message=str(e),
-            value=0,  # Add default value
-            unit="",  # Add default unit
-            category="error",  # Add default category
-            description="Error occurred during calculation",  # Add default description
             **file_info
         )])
-
 
 def calculate_single_room_metric(ifc_path: str, config: dict, metric_name: str, file_info: dict) -> pd.DataFrame:
     """
@@ -450,46 +374,6 @@ def calculate_single_room_metric(ifc_path: str, config: dict, metric_name: str, 
             - description: Description of what is being measured
             - calculation_time: When the metric was calculated
             - status: Calculation status (success/error)
-
-    Example:
-        ```python
-        from qto_buccaneer.utils.config import load_config
-
-        # Load configuration
-        config = load_config("src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml")
-
-        # File information
-        file_info = {
-            "project_name": "Office Building",
-            "date": "2024-01-15"
-        }
-
-        # Calculate net floor areas by room type
-        results = calculate_single_room_metric(
-            ifc_path="path/to/model.ifc",
-            config=config,
-            metric_name="net_floor_area_by_room_type",
-            file_info=file_info
-        )
-
-        print(results[["metric_name", "room_type", "room_name", "value", "unit"]])
-        # Example output:
-        #   metric_name                 room_type  room_name  value  unit
-        # 0 net_floor_area_by_room_type Office     Room 101   25.5   m²
-        # 1 net_floor_area_by_room_type Office     Room 102   28.3   m²
-        # 2 net_floor_area_by_room_type Meeting    Room 201   35.0   m²
-        # 3 net_floor_area_by_room_type Corridor   C-1F       45.2   m²
-        ```
-
-    Note:
-        - The metric must be defined in the room_based_metrics section of the config
-        - Required configuration fields:
-          - ifc_entity: Usually "IfcSpace"
-          - pset_name: Property set containing the quantity (e.g., "Qto_SpaceBaseQuantities")
-          - prop_name: Name of the quantity property (e.g., "NetFloorArea")
-          - grouping_attribute: Room attribute to group by (optional)
-        - Optional filters can be used to include/exclude specific rooms
-        - Results include all rooms that match the filter criteria
     """
     
     if metric_name not in config.get('room_based_metrics', {}):
@@ -499,27 +383,24 @@ def calculate_single_room_metric(ifc_path: str, config: dict, metric_name: str, 
     qto = QtoCalculator(loader)
     metric_config = config['room_based_metrics'][metric_name]
     
-    grouping_attribute = metric_config.get("grouping_attribute", "LongName")
-    metric_by_group = f"{metric_name}_by_{grouping_attribute.lower()}"
-    
     try:
+        # Get the room values using _get_elements_by_space
         room_values = qto._get_elements_by_space(
             ifc_entity=metric_config["ifc_entity"],
-            grouping_attribute=grouping_attribute,
-            room_reference_attribute_guid=metric_config.get("room_reference_attribute_guid", "ePset_abstractBIM.Spaces"),
+            pset_name=metric_config["pset_name"],
+            prop_name=metric_config["prop_name"],
+            grouping_attribute=metric_config["grouping_attribute"],
+            room_reference_attribute_guid=metric_config["room_reference_attribute_guid"],
             include_filter=metric_config.get("include_filter"),
-            include_filter_logic=metric_config.get("include_filter_logic", "AND"),
-            subtract_filter=metric_config.get("subtract_filter"),
-            subtract_filter_logic=metric_config.get("subtract_filter_logic", "OR"),
-            pset_name=metric_config.get("pset_name", "Qto_BaseQuantities"),
-            prop_name=metric_config.get("prop_name", "NetArea")
+            include_filter_logic=metric_config.get("include_filter_logic", "AND")
         )
         
         # Create results for each room/space
         results = []
         for room_name, value in room_values.items():
             results.append({
-                "metric_name": f"{metric_by_group}_{room_name}",
+                "metric_name": metric_name,
+                "room_name": room_name,
                 "value": round(value, 2) if value is not None else None,
                 "unit": "m³" if metric_config.get("quantity_type") == "volume" else "m²",
                 "category": metric_config.get("quantity_type", "area"),
@@ -532,9 +413,9 @@ def calculate_single_room_metric(ifc_path: str, config: dict, metric_name: str, 
         if results:
             return pd.DataFrame(results)
         else:
-            return _create_error_df(metric_by_group, "No results calculated", file_info)
+            return _create_error_df(metric_name, "No results calculated", file_info)
     except Exception as e:
-        return _create_error_df(metric_by_group, str(e), file_info)
+        return _create_error_df(metric_name, str(e), file_info)
 
 def calculate_single_grouped_metric(
     ifc_path: str,
@@ -686,32 +567,37 @@ def _process_quantity_calculation(qto: QtoCalculator, metric_name: str, metric_c
             
         return result
 
-def _process_space_relationship_calculation(qto: QtoCalculator, metric_name: str, metric_config: dict, file_info: Optional[dict] = None) -> dict:
+def _process_space_relationship_calculation(qto: QtoCalculator, metric_name: str, metric_config: dict, file_info: Optional[dict] = None) -> list:
     """Process a single relationship-based calculation and format its result."""
     try:
-        grouping_attribute = metric_config.get("grouping_attribute")
+        # Get required parameters from config
+        grouping_attribute_orProperty = metric_config["grouping_attribute"]
         
         # Determine if this is a Pset attribute or direct attribute
-        if '.' in grouping_attribute:
+        if '.' in grouping_attribute_orProperty:
             # For Pset attributes (e.g., "Pset_abstractBIM.Normal")
-            pset_name, attr_name = grouping_attribute.split('.')
+            pset_name, attr_name = grouping_attribute_orProperty.split('.')
             grouping_name = attr_name.lower()
+            # For Pset attributes, we need pset_name
+            grouping_pset = pset_name
         else:
-            # For direct attributes (e.g., "LongName")
-            grouping_name = grouping_attribute.lower()
+            # For direct attributes (e.g., "SpacesName")
+            grouping_name = grouping_attribute_orProperty.lower()
+            # For direct attributes, we don't need pset_name
+            grouping_pset = None
             
         metric_by_group = f"{metric_name}_by_{grouping_name}"
         
+        # Get room values with required parameters
         room_values = qto._get_elements_by_space(
             ifc_entity=metric_config["ifc_entity"],
-            grouping_attribute=grouping_attribute,
-            room_reference_attribute_guid=metric_config.get("room_reference_attribute_guid", "ePset_abstractBIM.Spaces"),
+            grouping_pset=grouping_pset,
+            grouping_attribute_or_property=grouping_attribute_orProperty,
+            room_reference_attribute_guid=metric_config["room_reference_attribute_guid"],
             include_filter=metric_config.get("include_filter"),
             include_filter_logic=metric_config.get("include_filter_logic", "AND"),
-            subtract_filter=metric_config.get("subtract_filter"),
-            subtract_filter_logic=metric_config.get("subtract_filter_logic", "OR"),
-            pset_name=metric_config.get("pset_name", "Qto_BaseQuantities"),
-            prop_name=metric_config.get("prop_name", "NetArea")
+            metric_pset_name=metric_config.get("metric_pset_name"),
+            metric_prop_name=metric_config.get("metric_prop_name")
         )
         
         # Create results for each group
@@ -728,20 +614,21 @@ def _process_space_relationship_calculation(qto: QtoCalculator, metric_name: str
                 description=metric_config.get("description", ""),
                 **file_info or {}
             ))
+            
         if results:
-            return results[0]  # Return the first result as a single-row DataFrame
+            return results  # Return all results
         else:
-            return create_result_dict(
+            return [create_result_dict(
                 metric_name=metric_by_group,
                 error_message="No results calculated",
                 **file_info or {}
-            )
+            )]
     except Exception as e:
-        return create_result_dict(
+        return [create_result_dict(
             metric_name=metric_name,
             error_message=str(e),
             **file_info or {}
-        )
+        )]
 
 def _create_error_df(metric_name: str, error_message: str, file_info: Optional[dict] = None) -> pd.DataFrame:
     """Create a DataFrame for error cases.

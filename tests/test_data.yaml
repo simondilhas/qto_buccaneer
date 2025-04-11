@@ -6,11 +6,9 @@ metrics:
 
 room_metrics:
   net_area_by_room:
-  window_area_per_space:
-    "021YoEi1HD9eSoSLT0LMfy": 3.0551  # Half of the total window area (6.1102) since we have 2 rooms
-    "2ky6TqzMD7gwJbHxE3Kcxy": 3.0551  # Half of the total window area (6.1102) since we have 2 rooms
-
-
+  windows_external_area_by_room:
+    "GSA": 3.0551  # Half of the total window area (6.1102) since we have 2 rooms
+    "WCD": 3.0551  # Half of the total window area (6.1102) since we have 2 rooms
 
 grouped_metrics:
   window_area_by_direction:

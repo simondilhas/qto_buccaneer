@@ -13,10 +13,6 @@
 # - include_filter_logic: Logical operator to combine multiple include filters. Options:
 #     - "AND"
 #     - "OR"
-# - subtract_filter: A dictionary of conditions to subtract specific elements from the result.
-# - subtract_filter_logic: Logical operator to combine multiple subtract filters. Options:
-#     - "AND"
-#     - "OR"
 
 # ---------------------------
 # Filter Key Usage Examples:
@@ -730,10 +726,10 @@ room_based_metrics: #Dont delete the name "room_based_metrics". List all the met
   windows_external_area_by_room:
     description: "Get external windows grouped by room"
     ifc_entity: "IfcWindow"
-    grouping_attribute: "SpacesName"
+    grouping_attribute: "LongName"
     room_reference_attribute_guid: "ePset_abstractBIM.Spaces"
-    pset_name: "Qto_WindowBaseQuantities"
-    prop_name: "Area"
+    metric_pset_name: "Qto_WindowBaseQuantities"
+    metric_prop_name: "Area"
     include_filter:
       Pset_WindowCommon.IsExternal: true
     include_filter_logic: "AND"
@@ -743,8 +739,8 @@ room_based_metrics: #Dont delete the name "room_based_metrics". List all the met
     ifc_entity: "IfcWindow"
     grouping_attribute: "SpacesName"
     room_reference_attribute_guid: "ePset_abstractBIM.Spaces"
-    pset_name: "Qto_WindowBaseQuantities"
-    prop_name: "Area"
+    metric_pset_name: "Qto_WindowBaseQuantities"
+    metric_prop_name: "Area"
     include_filter:
       Pset_WindowCommon.IsExternal: false
     include_filter_logic: "AND"
@@ -754,8 +750,8 @@ room_based_metrics: #Dont delete the name "room_based_metrics". List all the met
     ifc_entity: "IfcCovering"
     grouping_attribute: "SpacesName"
     room_reference_attribute_guid: "ePset_abstractBIM.Spaces"
-    pset_name: "Qto_CoveringBaseQuantities"
-    prop_name: "NetArea"
+    metric_pset_name: "Qto_CoveringBaseQuantities"
+    metric_prop_name: "NetArea"
     include_filter:
       PredefinedType: "CLADDING"
       Pset_CoveringCommon.IsExternal: false
