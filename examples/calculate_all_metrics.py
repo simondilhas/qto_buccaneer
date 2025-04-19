@@ -10,6 +10,7 @@ from qto_buccaneer.utils.ifc_loader import IfcLoader
 from qto_buccaneer.reports import export_to_excel
 
 config = load_config("src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml")
+#filepath = "examples/Demo_abstractBIM.ifc"
 filepath = "examples/Mustermodell V1_abstractBIM_sp_enriched.ifc"
 
 loader = IfcLoader(filepath)

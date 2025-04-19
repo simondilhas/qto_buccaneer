@@ -7,13 +7,14 @@ Ahoy! This Python library is your toolkit for exploring, extracting, and calcula
 ## 📑 Table of Contents
 - [What This Is](#-what-this-is)
 - [Designed for IFC, optimized for abstractBIM Data](#-designed-for-abstractbim-data)
-- [Project Structure](#-project-structure)
-- [Installation](#️-installation)
 - [Quick Start](#-quick-start)
+  - [Tutorial for Programming Landlubbers](#tutorial-for-programming-landlubbers)
+  - [Installation](#installation-for-non-landlubbers)
   - [Usage Examples](#usage-examples)
-  - [Calculate Metrics](#calculate-metrics)
-  - [Enrich IFC Model](#enrich-ifc-model)
-  - [Configuration Files](#configuration-files)
+    - [Calculate Metrics](#calculate-metrics)
+    - [Enrich IFC Model](#enrich-ifc-model)
+    - [Configuration Files](#configuration-files)
+- [Project Structure](#-project-structure)
 - [Dependencies](#dependencies)
   - [Core Dependencies](#core-dependencies)
   - [Python Package Dependencies](#python-package-dependencies)
@@ -35,23 +36,59 @@ With this toolkit, you can:
 - Define metric logic using a userfriendly YAML config file, instead of having to deal with code or clicking in projecsoftware tools
 - Enrich and clean up IFC files—friendlier than raw ifcopenshell
 
-## 🧭 Designed for IFC optimized for abstractBIM IFC Data
+## 🧭 Philosophy: Independence First — Tools for the Bold
 
-This library works with any well-structured IFC file, but it shines brightest when used with clean, consistent data.
-And that's why it's optimized for abstractBIM Data in the presets. 
+QTO Buccaneer is built for those who believe in **owning their workflow**.  
+You don't need paid services to sail these seas:  
+Everything you need to calculate metrics, enrich models, and create reports is included here — free, open-source, and ready for action.
 
-Because abstractBIM gives you:
+Our compass points to **open standards**, **hands-on knowledge**, and **giving you full control** over your quantity takeoffs.
 
-- Consistent naming
-- Predictable geometry
-- Clean data structure
+> True pirates don’t depend on kings.  
+> They build their own ships — and borrow a map when it saves time.
 
-Which means less time debugging, more time automating.
+---
 
-Yes, you can still use raw IFC + ifcopenshell, but you'll want to be comfortable with model quirks. We will added some helpers and examples to ease the pain...
+## 🚀 Fast Lanes: Smooth Sailing When You Want It
 
-> Want to skip the modeling chaos and get right to the treasure?  
-> Use abstractBIM as your map. The calculations here are free—the clean data is the magic sauce.
+While QTO Buccaneer is fully independent, some parts of the journey can be rough:
+
+| Challenge | Fast Lane Solution |
+|:----------|:-------------------|
+| Getting clean, consistent architectural models is hard. | 👉 **abstractBIM templates** provide clean IFC models with predictable naming, structure, and geometry. |
+| Extracting structured geometry from IFC files is tedious and messy. | 👉 **abstractBIM IFC-to-JSON API** delivers clean, structured model data ready for figures and floorplan visualizations. |
+
+> **These fast lanes are optional.**  
+> You can always chart your own course — but when you want smoother sailing, they're ready for you.
+
+---
+
+## 🗺️ Available Fast Lanes
+
+### 🏛️ abstractBIM Data Templates
+- Clean IFC models
+- Consistent structure
+- Predictable naming conventions
+- Optimized for automation
+
+👉 [Try abstractBIM](www.abstractBIM.com)
+
+---
+
+### 📡 IFC-to-JSON Web Service
+- Transform raw IFC into clean structured JSON
+- Quickly generate floorplans, element overviews, and spatial figures
+- Skip the tedious IFC parsing setups
+
+👉 [Contact abstractBIM for access to the api](mailto:simon.dilhas@abstract.build) 
+
+---
+
+## 📜 Summary
+
+- Use QTO Buccaneer freely and independently.
+- Use **fast lanes** when you want to save time or avoid setup pain.
+- The choice is yours — that's the pirate way.
 
 
 ## 🚀 Quick Start
@@ -66,6 +103,8 @@ That's exactly why I am the right pirate to guide you. I know the waters, I've h
 This tutorial is your first step into a world that's surprisingly rewarding — and not nearly as scary as it seems.
 
 I believe in hands-on learning. That means you're gonna roll up your sleeves and set up your environment.
+
+Check out this video for a quick start: [Webinar](https://www.youtube.com/watch?v=O9jkSgPl_Hg)
 
 #### **Step 1: Set Sail on Colab**
 
@@ -87,16 +126,23 @@ Head over to [Google Colab](https://colab.research.google.com) — this will be 
 
 ---
 
-#### 🧭 Step 3: Follow the Notebook’s Commands Like a Good Deckhand
+#### 🧭 Step 3: Follow the Notebook's Commands Like a Good Deckhand
 
-Once the notebook is open, you’re in the captain’s seat. You’ll:
+Once the notebook is open, you're in the captain's seat. You'll:
 
-- Get introduced to **pandas** — the data wrangler’s version of Excel (but with more firepower).
+- Get introduced to **pandas** — the data wrangler's version of Excel (but with more firepower).
 - Calculate quantity metrics using the general tools of panda.
 - Open a BIM model and use the built-in **QTO Buccaneer shortcuts** to speed up your takeoff workflow.
 
 
  Great job! So grab your keyboard cutlass and dive in! Follow the flow of the notebook...
+
+
+### You need more support to get started?
+
+Check out the QTO Buccaneer page for more information:
+
+
 
 ### Installation (for non landlubbers)
 
