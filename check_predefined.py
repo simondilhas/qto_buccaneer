@@ -1,1 +1,0 @@
-import ifcopenshell; f = ifcopenshell.open('examples/Mustermodell V1_abstractBIM_sp_enriched.ifc'); spaces = f.by_type('IfcSpace'); print('Spaces:'); [print(f'- {s.Name}: PredefinedType = {s.PredefinedType}') for s in spaces]

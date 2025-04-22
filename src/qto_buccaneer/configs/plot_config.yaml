@@ -1,0 +1,75 @@
+# Main configuration settings for plotly graphs
+plot_settings:
+  # Default styling applied to all plots unless overridden
+  defaults:
+    title: "Default Plot Title"
+    font_family: "Arial"
+    title_size: 24
+    text_size: 12
+    legend_size: 14
+    show_legend: true
+    background_color: "white"
+    margin:
+      left: 50
+      right: 50
+      top: 50
+      bottom: 50
+  
+  # Predefined visualization modes that can be referenced in plots
+  modes:
+    3d_view:
+      type: "3d"
+      opacity: 1.0
+      line_color: "black"
+      line_width: 0.8
+      view_angle:
+        x: 1.5
+        y: 1.5
+        z: 1.5
+    
+    floor_plan:
+      type: "2d"
+      opacity: 0.8
+      line_color: "gray"
+      line_width: 0.5
+      view: "top"
+
+# Plot definitions - each key is a unique plot identifier
+plots:
+  # Example plot: External elements visualization
+  exterior_elements:
+    # Reference to a predefined mode
+    mode: "3d_view"
+    title: "External Coverings and Windows"
+    description: "3D view showing external facade elements"
+    
+    # Elements to include in this plot
+    elements:
+      - name: "Windows"
+        # Simple filter syntax for beginners
+        filter: "type=IfcWindow AND Pset_WindowCommon.IsExternal=true" #AND, OR, NOT, ()
+        color: "skyblue"
+        
+      - name: "External Walls"
+        filter: "type=IfcCovering AND Pset_CoveringCommon.IsExternal=true"
+        # Color by a property value
+        color: "light grey"
+        label: none
+  
+  # Another example plot
+  floor_layout_by_name:
+    mode: "floor_plan"
+    title: "Floor Plan by Level"
+    description: "2D floor plan showing spaces"
+    
+    elements:
+      - name: "Spaces"
+        filter: "type=IfcSpace AND (PredefinedType=INTERNAL OR PredefinedType=EXTERNAL)" #AND, OR, NOT, ()
+        color_by: "LongName"
+        # Show labels on elements
+        labels:
+          show: true
+          properties: 
+            - "LongName"
+            - "Qto_SpaceBaseQuantities.NetFloorArea"
+          size: 10

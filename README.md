@@ -65,7 +65,8 @@ While QTO Buccaneer is fully independent, some parts of the journey can be rough
 
 ## 🗺️ Available Fast Lanes
 
-### 🏛️ abstractBIM Data Templates
+### 🏛️ abstractBIM
+- Convert any architectural BIM with Spaces into a consistent ifc with walls, slabs, ...
 - Clean IFC models
 - Consistent structure
 - Predictable naming conventions
@@ -80,15 +81,7 @@ While QTO Buccaneer is fully independent, some parts of the journey can be rough
 - Quickly generate floorplans, element overviews, and spatial figures
 - Skip the tedious IFC parsing setups
 
-👉 [Contact abstractBIM for access to the api](mailto:simon.dilhas@abstract.build) 
-
----
-
-## 📜 Summary
-
-- Use QTO Buccaneer freely and independently.
-- Use **fast lanes** when you want to save time or avoid setup pain.
-- The choice is yours — that's the pirate way.
+👉 [Contact Simon Dilhas for access to the api](mailto:simon.dilhas@abstract.build) 
 
 
 ## 🚀 Quick Start
