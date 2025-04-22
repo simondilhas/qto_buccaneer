@@ -145,7 +145,8 @@ def _add_scale_bar(fig: go.Figure, x_range: List[float], y_range: List[float]) -
         y=[scale_y, scale_y],
         mode='lines',
         line=dict(color='black', width=1),  # Thinner line
-        showlegend=False
+        showlegend=False,
+        zorder=10000  # Very high zorder to ensure it's always on top
     ))
     
     # Add small vertical lines at ends
@@ -156,7 +157,8 @@ def _add_scale_bar(fig: go.Figure, x_range: List[float], y_range: List[float]) -
             y=[scale_y - tick_height/2, scale_y + tick_height/2],
             mode='lines',
             line=dict(color='black', width=1),  # Thinner line
-            showlegend=False
+            showlegend=False,
+            zorder=10000  # Very high zorder to ensure it's always on top
         ))
     
     # Add text label below the scale bar
@@ -166,7 +168,8 @@ def _add_scale_bar(fig: go.Figure, x_range: List[float], y_range: List[float]) -
         text=[f"{scale_length}m"],
         mode='text',
         textposition='bottom center',
-        showlegend=False
+        showlegend=False,
+        zorder=10000  # Very high zorder to ensure it's always on top
     ))
 
 def _calculate_optimal_layout(x_coords: List[float], y_coords: List[float], max_size: int = 1200) -> Dict:
@@ -370,8 +373,10 @@ def _add_spaces_to_plot(
     color_mapping = {space_type: colors[i % len(colors)] 
                     for i, space_type in enumerate(sorted(all_space_types))}
     
-    # Group spaces by their type for the current storey
+    # Group spaces by their type for the current storey and calculate total areas
     grouped_spaces = {}
+    total_areas = {}
+    
     for space_id in loader.by_type_index.get('IfcSpace', []):
         space = loader.properties['elements'].get(str(space_id))
         if space:
@@ -391,12 +396,23 @@ def _add_spaces_to_plot(
             if group_value:
                 if group_value not in grouped_spaces:
                     grouped_spaces[group_value] = []
+                    total_areas[group_value] = 0.0
                 grouped_spaces[group_value].append(space)
+                
+                # Add to total area for this group
+                if 'properties' in space and 'Qto_SpaceBaseQuantities.NetFloorArea' in space['properties']:
+                    area = space['properties']['Qto_SpaceBaseQuantities.NetFloorArea']
+                    if isinstance(area, (int, float)):
+                        total_areas[group_value] += area
     
     # Add each group of spaces with consistent coloring
     for group_value, space_group in grouped_spaces.items():
         # Get color from our consistent mapping
         color = color_mapping.get(group_value, 'lightgray')
+        
+        # Format the legend name with total area
+        total_area = total_areas.get(group_value, 0.0)
+        legend_name = f"{group_value} ({total_area:.1f} m²)"
         
         # Add all spaces in this group with the same color
         for i, space in enumerate(space_group):
@@ -408,7 +424,7 @@ def _add_spaces_to_plot(
                 color=color,
                 view='2d' if plot_config and plot_config.get('mode') == 'floor_plan' else '3d',
                 plot_settings=plot_settings,
-                group_name=group_value,
+                group_name=legend_name if i == 0 else None,  # Only show total area in first entry
                 show_in_legend=(i == 0),  # Only show first space in legend
                 legendgroup=group_value  # Group legend items by space type
             )
@@ -456,14 +472,21 @@ def _add_single_space_to_plot(
     j = [f[1] for f in faces]
     k = [f[2] for f in faces]
     
-    # Get the space name from properties or direct attributes
+    # Get the space name and area from properties
     space_name = None
-    if 'properties' in space and 'LongName' in space['properties']:
-        space_name = space['properties']['LongName']
+    space_area = None
+    if 'properties' in space:
+        if 'LongName' in space['properties']:
+            space_name = space['properties']['LongName']
+        if 'Qto_SpaceBaseQuantities.NetFloorArea' in space['properties']:
+            space_area = space['properties']['Qto_SpaceBaseQuantities.NetFloorArea']
     elif 'LongName' in space:
         space_name = space['LongName']
     elif 'name' in space:
         space_name = space['name']
+    
+    # For legend, use the group name which already contains the total area
+    legend_name = group_name if show_in_legend else None
     
     if view == '2d':
         # For 2D view, create a filled polygon with sharp corners
@@ -471,7 +494,7 @@ def _add_single_space_to_plot(
             x=x + [x[0]],  # Close the polygon
             y=y + [y[0]],  # Close the polygon
             fill='toself',
-            name=group_name if group_name else space_name,
+            name=legend_name,
             fillcolor=color,
             line=dict(
                 color=color,  # Use same color as fill for the line
@@ -488,7 +511,7 @@ def _add_single_space_to_plot(
         fig.add_trace(go.Mesh3d(
             x=x, y=y, z=z,
             i=i, j=j, k=k,
-            name=group_name if group_name else space_name,
+            name=legend_name,
             color=color,
             opacity=0.8,
             showlegend=show_in_legend,
@@ -504,14 +527,10 @@ def _add_single_space_to_plot(
         point_inside = _find_point_inside_polygon(poly)
         text_x, text_y = point_inside
         
-        # Build label text from properties
-        label_text = []
-        for prop in ['LongName']:
-            if prop in space.get('properties', {}):
-                label_text.append(space['properties'][prop])
-            elif prop in space:
-                label_text.append(space[prop])
-            label_text.append('')  # Add extra newline after LongName
+        # Build label text with individual space area
+        label_text = [space_name]
+        if space_area:
+            label_text.append(f"{space_area:.1f} m²")
         
         if view == '2d':
             # For 2D view, position text at the guaranteed inside point
