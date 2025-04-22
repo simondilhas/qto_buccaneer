@@ -8,7 +8,7 @@ plot_settings:
     text_size: 12
     legend_size: 14
     show_legend: true
-    background_color: "white"
+    background_color: "white" #"white"
     margin:
       left: 50
       right: 50
@@ -33,6 +33,21 @@ plot_settings:
       line_color: "gray"
       line_width: 0.5
       view: "top"
+
+  # Color mappings for consistent coloring across plots
+  color_mappings:
+    space_types:
+      "Office": "lightblue"
+      "Meeting Room": "lightgreen"
+      "Corridor": "lightgray"
+      "Staircase": "lightcoral"
+      "Elevator": "lightpink"
+      "Restroom": "lightyellow"
+      "Kitchen": "lightskyblue"
+      "Storage": "lightseagreen"
+      "Technical Room": "lightsteelblue"
+      "External": "lightgoldenrodyellow"
+      "Unknown": "lightcyan"
 
 # Plot definitions - each key is a unique plot identifier
 plots:
