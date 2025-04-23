@@ -8,7 +8,7 @@ plot_settings:
     text_size: 12
     legend_size: 14
     show_legend: true
-    background_color: "white" #"white"
+    background_color: "grey" #"white"
     margin:
       left: 50
       right: 50
@@ -78,10 +78,10 @@ plots:
     description: "2D floor plan showing spaces"
     
     elements:
-      - name: "Background / Walls & GFA"
-        filter: "type=IfcSpace AND PredefinedType=GFA"
-        color: "darkgrey"
-        label: none
+      #- name: "Background / Walls & GFA"
+      #  filter: "type=IfcSpace AND PredefinedType=GFA"
+      #  color: "darkgrey"
+      #  label: none
       - name: "Spaces"
         filter: "type=IfcSpace AND (PredefinedType=INTERNAL OR PredefinedType=EXTERNAL)" #AND, OR, NOT, ()
         color_by: "LongName"
@@ -92,3 +92,6 @@ plots:
             - "LongName"
             - "Qto_SpaceBaseQuantities.NetFloorArea"
           size: 10
+      - name: "Doors"
+        filter: "type=IfcDoor"
+        label: none
