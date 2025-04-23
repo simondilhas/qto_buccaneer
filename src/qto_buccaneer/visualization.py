@@ -8,11 +8,11 @@ import json
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
 
 def create_floorplan_per_storey(
-    space_geometry_path: str ,
-    door_geometry_path: str ,
+    space_geometry_path: str,
+    door_geometry_path: str,
     properties_path: str,
     config_path: str,
-    output_dir: str 
+    output_dir: str
 ) -> Dict[str, str]:
     """Create floor plan visualizations for each storey.
     
@@ -80,14 +80,7 @@ def create_floorplan_per_storey(
     return storey_to_output_path
 
 def load_plot_config(config_path: str) -> Dict:
-    """Load plot configuration from YAML file.
-    
-    Args:
-        config_path: Path to the YAML configuration file
-        
-    Returns:
-        Dictionary containing plot configuration
-    """
+    """Load plot configuration from YAML file."""
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 
@@ -98,18 +91,7 @@ def create_single_plot(
     plot_name: str,
     file_info: Optional[Dict] = None
 ) -> Dict[str, go.Figure]:
-    """Create a single plot based on the configuration.
-    
-    Args:
-        geometry_json: List of geometry objects
-        properties_json: Dictionary of properties
-        config: Plot configuration dictionary
-        plot_name: Name of the plot to create
-        file_info: Optional dictionary with file information
-        
-    Returns:
-        Dictionary mapping storey names to Plotly Figure objects (or single figure if not a floor plan)
-    """
+    """Create a single plot based on the configuration."""
     if plot_name not in config.get('plots', {}):
         raise ValueError(f"Plot '{plot_name}' not found in configuration")
     
@@ -163,39 +145,100 @@ def create_single_plot(
     except Exception as e:
         raise RuntimeError(f"Error creating plot '{plot_name}': {str(e)}")
 
-def create_all_plots(
-    geometry_json: List[Dict[str, Any]],
-    properties_json: Dict[str, Any],
-    config: Dict,
-    file_info: Optional[Dict] = None
-) -> Dict[str, go.Figure]:
-    """Create all plots defined in the configuration.
+def _process_plot_creation(
+    fig: go.Figure,
+    loader: IfcJsonLoader,
+    plot_name: str,
+    plot_config: Dict,
+    plot_settings: Dict,
+    file_info: Optional[Dict] = None,
+    storey_name: Optional[str] = None
+) -> None:
+    """Process plot creation based on configuration."""
+    # Apply general layout settings
+    defaults = plot_settings['defaults']
     
-    Args:
-        geometry_json: List of geometry objects
-        properties_json: Dictionary of properties
-        config: Plot configuration dictionary
-        file_info: Optional dictionary with file information
-        
-    Returns:
-        Dictionary mapping plot names to Plotly Figure objects
-    """
-    plots = {}
+    # Convert font settings to Plotly format with minimal margins
+    layout_settings = {
+        'font': {
+            'family': defaults.get('font_family', 'Arial'),
+            'size': defaults.get('text_size', 12)
+        },
+        'showlegend': True,
+        'legend': {
+            'x': 0.98,
+            'y': 0.98,
+            'xanchor': 'right',
+            'yanchor': 'top',
+            'bgcolor': 'rgba(255, 255, 255, 0.8)',
+            'bordercolor': 'rgba(0, 0, 0, 0)',
+            'borderwidth': 0,
+            'orientation': 'v',
+            'traceorder': 'normal',
+            'itemwidth': 30,
+            'itemsizing': 'constant',
+            'tracegroupgap': 0
+        },
+        'paper_bgcolor': defaults.get('background_color', 'white'),
+        'plot_bgcolor': defaults.get('background_color', 'white'),
+        'margin': {
+            'l': 5,
+            'r': 5,
+            't': 5,
+            'b': 25,
+            'pad': 0
+        },
+        'autosize': False
+    }
     
-    for plot_name in config.get('plots', {}).keys():
-        try:
-            fig = create_single_plot(
-                geometry_json=geometry_json,
-                properties_json=properties_json,
-                config=config,
-                plot_name=plot_name,
-                file_info=file_info
+    # First find the bounds of ALL storeys to maintain consistent scale
+    all_x_coords = []
+    all_y_coords = []
+    
+    # Collect coordinates from all spaces in all storeys
+    for space_id in loader.by_type_index.get('IfcSpace', []):
+        space = loader.properties['elements'].get(str(space_id))
+        if space:
+            geometry = loader.get_geometry(str(space_id))
+            if geometry:
+                all_x_coords.extend([v[0] for v in geometry['vertices']])
+                all_y_coords.extend([v[1] for v in geometry['vertices']])
+    
+    if all_x_coords and all_y_coords:
+        # Calculate layout based on ALL storeys
+        optimal_layout = _calculate_optimal_layout(all_x_coords, all_y_coords)
+        layout_settings.update(optimal_layout)
+    
+    fig.update_layout(**layout_settings)
+    
+    # Now collect coordinates for the current storey (for scale bar)
+    current_x_coords = []
+    current_y_coords = []
+    
+    if plot_config.get('mode') == 'floor_plan':
+        for space_id in loader.by_type_index.get('IfcSpace', []):
+            space = loader.properties['elements'].get(str(space_id))
+            if space and (not storey_name or loader.get_storey_for_space(str(space_id)) == storey_name):
+                geometry = loader.get_geometry(str(space_id))
+                if geometry:
+                    current_x_coords.extend([v[0] for v in geometry['vertices']])
+                    current_y_coords.extend([v[1] for v in geometry['vertices']])
+    
+    # Process each element in the plot configuration
+    for i, element_config in enumerate(plot_config.get('elements', [])):
+        filter_str = element_config.get('filter', '')
+        if 'type=IfcSpace' in filter_str:
+            _add_spaces_to_plot(fig, loader, element_config, plot_settings, storey_name, plot_config)
+        elif 'type=IfcBuildingStorey' in filter_str:
+            pass  # Storey visualization not implemented
+        else:
+            _add_geometry_to_plot(
+                fig, loader, element_config, plot_settings, storey_name, plot_config, i, 'type=' in filter_str
             )
-            plots[plot_name] = fig
-        except Exception as e:
-            print(f"Error creating plot '{plot_name}': {str(e)}")
     
-    return plots
+    # Add scale bar for 2D plots using current storey bounds for positioning
+    if plot_config.get('mode') == 'floor_plan' and current_x_coords and current_y_coords:
+        _add_scale_bar(fig, [min(current_x_coords), max(current_x_coords)], [min(current_y_coords), max(current_y_coords)])
 
 def _add_scale_bar(fig: go.Figure, x_range: List[float], y_range: List[float]) -> None:
     """Add a scale bar to the plot that scales with zooming."""
@@ -317,101 +360,6 @@ def _calculate_optimal_layout(x_coords: List[float], y_coords: List[float]) -> D
             'domain': [0.01, 0.99]  # Use 98% of the height
         }
     }
-
-def _process_plot_creation(
-    fig: go.Figure,
-    loader: IfcJsonLoader,
-    plot_name: str,
-    plot_config: Dict,
-    plot_settings: Dict,
-    file_info: Optional[Dict] = None,
-    storey_name: Optional[str] = None
-) -> None:
-    """Process plot creation based on configuration."""
-    # Apply general layout settings
-    defaults = plot_settings['defaults']
-    
-    # Convert font settings to Plotly format with minimal margins
-    layout_settings = {
-        'font': {
-            'family': defaults.get('font_family', 'Arial'),
-            'size': defaults.get('text_size', 12)
-        },
-        'showlegend': True,  # Force legend to be shown
-        'legend': {
-            'x': 0.98,  # Position at the right edge
-            'y': 0.98,  # Position at the top
-            'xanchor': 'right',  # Anchor to right side
-            'yanchor': 'top',  # Anchor to top
-            'bgcolor': 'rgba(255, 255, 255, 0.8)',  # Semi-transparent white background
-            'bordercolor': 'rgba(0, 0, 0, 0)',  # No border
-            'borderwidth': 0,  # No border width
-            'orientation': 'v',  # Vertical orientation
-            'traceorder': 'normal',  # Keep original order
-            'itemwidth': 30,  # Width of legend items
-            'itemsizing': 'constant',  # Keep items same size
-            'tracegroupgap': 0  # Remove gaps between legend items
-        },
-        'paper_bgcolor': defaults.get('background_color', 'white'),
-        'plot_bgcolor': defaults.get('background_color', 'white'),
-        'margin': {
-            'l': 5,  # Minimal left margin
-            'r': 5,  # Minimal right margin
-            't': 5,  # Minimal top margin
-            'b': 25,  # Small bottom margin for scale bar
-            'pad': 0  # Remove padding
-        },
-        'autosize': False
-    }
-    
-    # First find the bounds of ALL storeys to maintain consistent scale
-    all_x_coords = []
-    all_y_coords = []
-    
-    # Collect coordinates from all spaces in all storeys
-    for space_id in loader.by_type_index.get('IfcSpace', []):
-        space = loader.properties['elements'].get(str(space_id))
-        if space:
-            geometry = loader.get_geometry(str(space_id))
-            if geometry:
-                all_x_coords.extend([v[0] for v in geometry['vertices']])
-                all_y_coords.extend([v[1] for v in geometry['vertices']])
-    
-    if all_x_coords and all_y_coords:
-        # Calculate layout based on ALL storeys
-        optimal_layout = _calculate_optimal_layout(all_x_coords, all_y_coords)
-        layout_settings.update(optimal_layout)
-    
-    fig.update_layout(**layout_settings)
-    
-    # Now collect coordinates for the current storey (for scale bar)
-    current_x_coords = []
-    current_y_coords = []
-    
-    if plot_config.get('mode') == 'floor_plan':
-        for space_id in loader.by_type_index.get('IfcSpace', []):
-            space = loader.properties['elements'].get(str(space_id))
-            if space and (not storey_name or loader.get_storey_for_space(str(space_id)) == storey_name):
-                geometry = loader.get_geometry(str(space_id))
-                if geometry:
-                    current_x_coords.extend([v[0] for v in geometry['vertices']])
-                    current_y_coords.extend([v[1] for v in geometry['vertices']])
-    
-    # Process each element in the plot configuration
-    for i, element_config in enumerate(plot_config.get('elements', [])):
-        filter_str = element_config.get('filter', '')
-        if 'type=IfcSpace' in filter_str:
-            _add_spaces_to_plot(fig, loader, element_config, plot_settings, storey_name, plot_config)
-        elif 'type=IfcBuildingStorey' in filter_str:
-            _add_storeys_to_plot(fig, loader, element_config, plot_settings)
-        else:
-            _add_geometry_to_plot(
-                fig, loader, element_config, plot_settings, storey_name, plot_config, i, 'type=' in filter_str
-            )
-    
-    # Add scale bar for 2D plots using current storey bounds for positioning
-    if plot_config.get('mode') == 'floor_plan' and current_x_coords and current_y_coords:
-        _add_scale_bar(fig, [min(current_x_coords), max(current_x_coords)], [min(current_y_coords), max(current_y_coords)])
 
 def _add_spaces_to_plot(
     fig: go.Figure,
@@ -616,23 +564,6 @@ def _add_single_space_to_plot(
                 )
             ))
 
-def _add_storeys_to_plot(
-    fig: go.Figure,
-    loader: IfcJsonLoader,
-    element_config: Dict,
-    plot_settings: Dict
-) -> None:
-    """Add storeys to the plot.
-    
-    Args:
-        fig: Plotly Figure to add storeys to
-        loader: IfcJsonLoader instance
-        element_config: Configuration for storey visualization
-        plot_settings: General plot settings
-    """
-    # Implementation for storey visualization
-    pass
-
 def _add_geometry_to_plot(
     fig: go.Figure,
     loader: IfcJsonLoader,
@@ -664,202 +595,95 @@ def _add_geometry_to_plot(
         if element_type == 'IfcDoor':
             _add_door_to_plot(fig, loader, element_config, plot_settings, storey_name, plot_config)
         elif element_type == 'IfcWindow':
-            pass
-        # _add_window_to_plot(fig, loader, element_config, plot_settings, storey_name, plot_config)
+            pass  # Window visualization not implemented
 
-def _group_spaces_by_type(
+def _add_door_to_plot(
+    fig: go.Figure,
     loader: IfcJsonLoader,
     element_config: Dict,
-    storey_name: Optional[str] = None
-) -> Dict[str, List[Dict]]:
-    """Group spaces by their type for consistent coloring."""
-    grouped_spaces = {}
-    total_areas = {}
-    
-    for space_id in loader.by_type_index.get('IfcSpace', []):
-        space = loader.properties['elements'].get(str(space_id))
-        if space:
-            # Check storey filter if specified
-            if storey_name:
-                space_storey = loader.get_storey_for_space(space['ifc_global_id'])
-                if space_storey != storey_name:
-                    continue
-            
-            # Get the value to group by
-            group_value = None
-            if element_config.get('color_by'):
-                if element_config['color_by'] in space.get('properties', {}):
-                    group_value = space['properties'][element_config['color_by']]
-                elif element_config['color_by'] in space:
-                    group_value = space[element_config['color_by']]
-            else:
-                group_value = element_config.get('name', 'Unknown')
-            
-            if group_value:
-                if group_value not in grouped_spaces:
-                    grouped_spaces[group_value] = []
-                    total_areas[group_value] = 0.0
-                grouped_spaces[group_value].append(space)
-                
-                # Add to total area for this group
-                if 'properties' in space and 'Qto_SpaceBaseQuantities.NetFloorArea' in space['properties']:
-                    area = space['properties']['Qto_SpaceBaseQuantities.NetFloorArea']
-                    if isinstance(area, (int, float)):
-                        total_areas[group_value] += area
-    
-    return grouped_spaces
-
-def _extract_geometry_data(geometry: Dict, element_type: str) -> Tuple[List[List[float]], List[List[int]]]:
-    """Extract vertices and faces from geometry data."""
-    if element_type in ['IfcWindow', 'IfcDoor'] and 'outline' in geometry:
-        vertices = geometry['outline']
-        faces = [[i, i+1, i+2] for i in range(0, len(vertices)-2)]
-    elif 'vertices' in geometry and 'faces' in geometry:
-        vertices = geometry['vertices']
-        faces = geometry['faces']
-    else:
-        return [], []
-    
-    return vertices, faces
-
-def _calculate_zorder(element_type: str, element_index: Optional[int]) -> int:
-    """Calculate zorder based on element type and config order."""
-    zorder = 1  # Default zorder
-    if element_type == 'IfcSpace':
-        zorder = 0  # Spaces go to the bottom
-    elif element_type == 'IfcWindow':
-        zorder = 3  # Windows go on top
-    elif element_type == 'IfcDoor':
-        zorder = 2  # Doors go above spaces but below windows
-    
-    # Add config order to zorder to respect element order in config
-    if element_index is not None:
-        zorder += element_index * 10  # Use larger steps to avoid conflicts
-    
-    return zorder
-
-def _create_legend_name(element: Dict, group_name: str, is_space: bool) -> Optional[str]:
-    """Create the name to show in the legend."""
-    if not is_space:
-        return element.get('name', 'Unknown')
-    
-    # For spaces, include the total area in the group name
-    total_area = 0.0
-    if 'properties' in element and 'Qto_SpaceBaseQuantities.NetFloorArea' in element['properties']:
-        area = element['properties']['Qto_SpaceBaseQuantities.NetFloorArea']
-        if isinstance(area, (int, float)):
-            total_area = area
-    
-    return f"{group_name} ({total_area:.1f} m²)"
-
-def _add_geometry_trace(
-    fig: go.Figure,
-    vertices: List[List[float]],
-    faces: List[List[int]],
-    view: str,
-    color: str,
-    legend_name: Optional[str],
-    show_legend: bool,
-    legendgroup: str,
-    zorder: int,
-    line_width: float
-) -> None:
-    """Add a geometry trace to the plot."""
-    x = [v[0] for v in vertices]
-    y = [v[1] for v in vertices]
-    z = [v[2] if len(v) > 2 else 0 for v in vertices]
-    
-    if view == '2d':
-        # For 2D view, create a filled polygon
-        x_outline = x + [x[0]]  # Close the polygon
-        y_outline = y + [y[0]]  # Close the polygon
-        
-        fig.add_trace(go.Scatter(
-            x=x_outline,
-            y=y_outline,
-            fill='toself',
-            name=legend_name,
-            fillcolor=color,
-            line=dict(
-                color=color,
-                width=line_width
-            ),
-            mode='lines',
-            opacity=0.8,
-            showlegend=show_legend,
-            legendgroup=legendgroup,
-            zorder=zorder
-        ))
-    else:
-        # For 3D view, create a mesh
-        i = [f[0] for f in faces]
-        j = [f[1] for f in faces]
-        k = [f[2] for f in faces]
-        
-        fig.add_trace(go.Mesh3d(
-            x=x, y=y, z=z,
-            i=i, j=j, k=k,
-            name=legend_name,
-            color=color,
-            opacity=0.8,
-            showlegend=show_legend,
-            legendgroup=legendgroup,
-            zorder=zorder
-        ))
-
-def _add_element_labels(
-    fig: go.Figure,
-    element: Dict,
-    vertices: List[List[float]],
-    view: str,
     plot_settings: Dict,
-    element_config: Dict
+    storey_name: Optional[str] = None,
+    plot_config: Optional[Dict] = None
 ) -> None:
-    """Add labels to the element."""
-    # Find a suitable position within the element
-    x_coords = [v[0] for v in vertices]
-    y_coords = [v[1] for v in vertices]
-    center_x = sum(x_coords) / len(x_coords)
-    center_y = sum(y_coords) / len(y_coords)
+    """Add doors to the plot as white squares with a line perpendicular to the door's orientation."""
+    # Get all door elements
+    door_ids = loader.by_type_index.get('IfcDoor', [])
+    print(f"Found {len(door_ids)} doors in by_type_index")
     
-    # Build label text
-    label_text = []
-    for prop in element_config.get('labels', {}).get('properties', []):
-        if prop in element.get('properties', {}):
-            value = element['properties'][prop]
-            if isinstance(value, (int, float)):
-                label_text.append(f"{value:.1f}")
-            else:
-                label_text.append(str(value))
-    
-    if not label_text:
-        return
-    
-    if view == '2d':
+    for door_id in door_ids:
+        print(f"Processing door with ID {door_id}")
+        # Get the door element using the numeric ID
+        door = loader.properties['elements'].get(str(door_id))
+        if not door:
+            print(f"No door properties found for ID {door_id}")
+            continue
+            
+        # Get geometry using the numeric ID
+        geometry = loader.get_geometry(str(door_id))
+        if not geometry:
+            print(f"No geometry found for door {door_id}")
+            continue
+        if 'vertices' not in geometry:
+            print(f"No vertices found for door {door_id}")
+            continue
+            
+        # Get the door's storey using the numeric ID
+        if storey_name:
+            door_storey = loader.get_storey_for_element(str(door_id))
+            if door_storey and door_storey != storey_name:
+                print(f"Door {door_id} not in storey {storey_name}")
+                continue
+            
+        # Get door vertices and calculate dimensions
+        vertices = geometry['vertices']
+        x_coords = [v[0] for v in vertices]
+        y_coords = [v[1] for v in vertices]
+        
+        # Calculate door center and dimensions
+        min_x, max_x = min(x_coords), max(x_coords)
+        min_y, max_y = min(y_coords), max(y_coords)
+        width = max_x - min_x
+        height = max_y - min_y
+        
+        # Create door rectangle vertices
+        door_rect_x = [min_x, max_x, max_x, min_x, min_x]
+        door_rect_y = [min_y, min_y, max_y, max_y, min_y]
+        
+        # Add the door rectangle without border
         fig.add_trace(go.Scatter(
-            x=[center_x],
-            y=[center_y],
-            text=['\n'.join(label_text)],
-            mode='text',
+            x=door_rect_x,
+            y=door_rect_y,
+            fill='toself',
+            fillcolor='white',
+            line=dict(width=0),  # Remove border
+            mode='lines',
             showlegend=False,
-            textfont=dict(
-                size=plot_settings['defaults']['text_size'],
-                family=plot_settings['defaults']['font_family']
-            )
+            zorder=2
         ))
-    else:
-        center_z = sum([v[2] if len(v) > 2 else 0 for v in vertices]) / len(vertices)
-        fig.add_trace(go.Scatter3d(
-            x=[center_x],
-            y=[center_y],
-            z=[center_z],
-            text=['\n'.join(label_text)],
-            mode='text',
+        
+        # Calculate center point
+        center_x = (min_x + max_x) / 2
+        center_y = (min_y + max_y) / 2
+        
+        # Determine door orientation and draw perpendicular line
+        if width > height:
+            # Horizontal door - draw vertical line
+            line_length = height * 2.5  # Extend further beyond door thickness
+            line_x = [center_x, center_x]
+            line_y = [center_y - line_length/2, center_y + line_length/2]
+        else:
+            # Vertical door - draw horizontal line
+            line_length = width * 2.5  # Extend further beyond door thickness
+            line_x = [center_x - line_length/2, center_x + line_length/2]
+            line_y = [center_y, center_y]
+            
+        fig.add_trace(go.Scatter(
+            x=line_x,
+            y=line_y,
+            line=dict(color='black', width=1),
+            mode='lines',
             showlegend=False,
-            textfont=dict(
-                size=plot_settings['defaults']['text_size'],
-                family=plot_settings['defaults']['font_family']
-            )
+            zorder=2
         ))
 
 def _point_inside_polygon(x: float, y: float, poly: List[List[float]]) -> bool:
@@ -901,166 +725,4 @@ def _find_point_inside_polygon(poly: List[List[float]]) -> List[float]:
                 return [x, y]
     
     # If no point found in grid, return the first vertex
-    return poly[0]
-
-def _add_door_to_plot(
-    fig: go.Figure,
-    loader: IfcJsonLoader,
-    element_config: Dict,
-    plot_settings: Dict,
-    storey_name: Optional[str] = None,
-    plot_config: Optional[Dict] = None
-) -> None:
-    """Add doors to the plot as simple red dots."""
-    # Get all door elements
-    door_ids = loader.by_type_index.get('IfcDoor', [])
-    print(f"Found {len(door_ids)} doors in by_type_index")
-    
-    for door_id in door_ids:
-        print(f"Processing door with ID {door_id}")
-        # Get the door element using the numeric ID
-        door = loader.properties['elements'].get(str(door_id))
-        if not door:
-            print(f"No door properties found for ID {door_id}")
-            continue
-            
-        # Get geometry using the numeric ID
-        geometry = loader.get_geometry(str(door_id))
-        if not geometry:
-            print(f"No geometry found for door {door_id}")
-            continue
-        if 'vertices' not in geometry:
-            print(f"No vertices found for door {door_id}")
-            continue
-            
-        # Get the door's storey using the numeric ID
-        if storey_name:
-            door_storey = loader.get_storey_for_element(str(door_id))
-            if door_storey and door_storey != storey_name:
-                print(f"Door {door_id} not in storey {storey_name}")
-                continue
-            
-        # Calculate door center
-        vertices = geometry['vertices']
-        x_coords = [v[0] for v in vertices]
-        y_coords = [v[1] for v in vertices]
-        center_x = sum(x_coords) / len(x_coords)
-        center_y = sum(y_coords) / len(y_coords)
-        
-        print(f"Adding door at ({center_x}, {center_y}) with vertices: {vertices}")
-        
-        # Add a red dot at the door location
-        fig.add_trace(go.Scatter(
-            x=[center_x],
-            y=[center_y],
-            mode='markers',
-            marker=dict(
-                color='red',
-                size=10
-            ),
-            showlegend=False,
-            zorder=2
-        ))
-
-#def _add_window_to_plot(
-#    fig: go.Figure,
-#    loader: IfcJsonLoader,
-#    element_config: Dict,
-#    plot_settings: Dict,
-#    storey_name: Optional[str] = None,
-#    plot_config: Optional[Dict] = None
-#) -> None:
-#    """Add windows to the plot as simple symbols with a cross."""
-#    # Get all window elements
-#    window_ids = loader.by_type_index.get('IfcWindow', [])
-#    print(f"Found {len(window_ids)} windows to process")  # Debug log
-#    
-#    for window_id in window_ids:
-#        window = loader.properties['elements'].get(str(window_id))
-#        if not window:
-#            print(f"No window properties found for ID {window_id}")  # Debug log
-#            continue
-#            
-#        # Check storey filter if specified
-#        if storey_name:
-#            window_storey = loader.get_storey_for_element(window['ifc_global_id'])
-#            if window_storey != storey_name:
-#                print(f"Window {window['ifc_global_id']} not in storey {storey_name}")  # Debug log
-#                continue
-#        
-#        # Get geometry
-#        geometry = loader.get_geometry(window['ifc_global_id'])
-#        if not geometry:
-#            print(f"No geometry found for window {window['ifc_global_id']}")  # Debug log
-#            continue
-#        
-#        # Extract vertices
-#        vertices = geometry['vertices']
-#        if not vertices:
-#            print(f"No vertices found for window {window['ifc_global_id']}")  # Debug log
-#            continue
-#        
-#        # Calculate window dimensions and position
-#        x_coords = [v[0] for v in vertices]
-#        y_coords = [v[1] for v in vertices]
-#        z_coords = [v[2] for v in vertices]
-#        
-#        # Calculate window center and dimensions
-#        center_x = sum(x_coords) / len(x_coords)
-#        center_y = sum(y_coords) / len(y_coords)
-#        window_width = max(x_coords) - min(x_coords)
-#        window_height = max(z_coords) - min(z_coords)
-#        
-#        print(f"Adding window at ({center_x}, {center_y}) with size {window_width}x{window_height}")  # Debug log
-#        
-#        # Create window symbol (rectangle with cross)
-#        # Scale the symbol to match the window size
-#        symbol_width = window_width * 0.8  # 80% of window width
-#        symbol_height = window_height * 0.8  # 80% of window height
-#        
-#        # Create rectangle vertices
-#        rect_x = [
-#            center_x - symbol_width/2,
-#            center_x + symbol_width/2,
-#            center_x + symbol_width/2,
-#            center_x - symbol_width/2,
-#            center_x - symbol_width/2  # Close the rectangle
-#        ]
-#        rect_y = [
-#            center_y - symbol_height/2,
-#            center_y - symbol_height/2,
-#            center_y + symbol_height/2,
-#            center_y + symbol_height/2,
-#            center_y - symbol_height/2  # Close the rectangle
-#        ]
-#        
-#        # Add the window rectangle
-#        fig.add_trace(go.Scatter(
-#            x=rect_x,
-#            y=rect_y,
-#            fill='toself',
-#            fillcolor='white',
-#            line=dict(color='black', width=1),
-#            mode='lines',
-#            showlegend=False,
-#            zorder=3  # Ensure windows are above doors
-#        ))
-#        
-#        # Add cross lines
-#        fig.add_trace(go.Scatter(
-#            x=[center_x - symbol_width/2, center_x + symbol_width/2],
-#            y=[center_y - symbol_height/2, center_y + symbol_height/2],
-#            line=dict(color='black', width=1),
-#            mode='lines',
-#            showlegend=False,
-#            zorder=4  # Above the rectangle
-#        ))
-#        
-#        fig.add_trace(go.Scatter(
-#            x=[center_x - symbol_width/2, center_x + symbol_width/2],
-#            y=[center_y + symbol_height/2, center_y - symbol_height/2],
-#            line=dict(color='black', width=1),
-#            mode='lines',
-#            showlegend=False,
-#            zorder=4  # Above the rectangle
-#        )) 
+    return poly[0] 
