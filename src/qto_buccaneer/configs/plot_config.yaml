@@ -7,7 +7,7 @@ plot_settings:
     title_size: 24
     text_size: 12
     legend_size: 14
-    show_legend: true
+    show_legend: false
     background_color: "white" #"white"
     margin:
       left: 50
@@ -26,6 +26,55 @@ plot_settings:
         x: 1.5
         y: 1.5
         z: 1.5
+      scene:
+        xaxis:
+          visible: false
+          showgrid: false
+          zeroline: false
+          showticklabels: false
+          showline: false
+          showbackground: false
+          showspikes: false
+          gridcolor: "rgba(0,0,0,0)"
+          zerolinecolor: "rgba(0,0,0,0)"
+          linecolor: "rgba(0,0,0,0)"
+        yaxis:
+          visible: false
+          showgrid: false
+          zeroline: false
+          showticklabels: false
+          showline: false
+          showbackground: false
+          showspikes: false
+          gridcolor: "rgba(0,0,0,0)"
+          zerolinecolor: "rgba(0,0,0,0)"
+          linecolor: "rgba(0,0,0,0)"
+        zaxis:
+          visible: false
+          showgrid: false
+          zeroline: false
+          showticklabels: false
+          showline: false
+          showbackground: false
+          showspikes: false
+          gridcolor: "rgba(0,0,0,0)"
+          zerolinecolor: "rgba(0,0,0,0)"
+          linecolor: "rgba(0,0,0,0)"
+        camera:
+          up:
+            x: 0
+            y: 0
+            z: 1
+          center:
+            x: 0
+            y: 0
+            z: 0
+          eye:
+            x: 1.5
+            y: 1.5
+            z: 1.5
+        aspectmode: "data"
+        bgcolor: "rgba(0,0,0,0)"
     
     floor_plan:
       type: "2d"
@@ -52,25 +101,30 @@ plot_settings:
 # Plot definitions - each key is a unique plot identifier
 plots:
   # Example plot: External elements visualization
-  exterior_elements:
+  exterior_view:
     # Reference to a predefined mode
     mode: "3d_view"
-    title: "External Coverings and Windows"
+    title: "External Coverings"
     description: "3D view showing external facade elements"
     
     # Elements to include in this plot
     elements:
-      - name: "Windows"
-        # Simple filter syntax for beginners
-        filter: "type=IfcWindow AND Pset_WindowCommon.IsExternal=true" #AND, OR, NOT, ()
-        color: "black"
-        
-      - name: "External Walls"
-        filter: "type=IfcCovering AND Pset_CoveringCommon.IsExternal=true"
-        # Color by a property value
-        color: "lightgrey"
+      - name: "External Coverings"
+        filter: "type=IfcCovering AND Pset_CoveringCommon.IsExternal=true AND PredefinedType=CLADDING"
+        color: "#f2f2f2"
         label: none
-  
+      - name: "Slabs"
+        filter: "type=IfcSlab"
+        color: "#f2f2f2"
+        label: none
+      - name: "Windows"
+        filter: "type=IfcWindow AND Pset_WindowCommon.IsExternal=true"
+        color: "Black"
+        label: none
+      - name: "Doors"
+        filter: "type=IfcDoor AND Pset_DoorCommon.IsExternal=true"
+        color: "darkgrey"
+        label: none
   # Another example plot
   floor_layout_by_name:
     mode: "floor_plan"
