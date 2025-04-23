@@ -8,8 +8,7 @@ import json
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
 
 def create_floorplan_per_storey(
-    space_geometry_path: str,
-    door_geometry_path: str,
+    geometry_dir: str,
     properties_path: str,
     config_path: str,
     output_dir: str
@@ -17,28 +16,46 @@ def create_floorplan_per_storey(
     """Create floor plan visualizations for each storey.
     
     Args:
-        space_geometry_path: Path to space geometry JSON file
-        door_geometry_path: Path to door geometry JSON file
+        geometry_dir: Directory containing geometry JSON files (e.g., IfcSpace_geometry.json, IfcDoor_geometry.json)
         properties_path: Path to properties JSON file
         config_path: Path to plot configuration YAML file
         output_dir: Output directory for the visualizations
-
+        
     Returns:
         Dictionary mapping storey names to their output HTML file paths
+
+    Raises:
+        FileNotFoundError: If required geometry files are missing
     """
     # Load data
-    print(f"Loading data from {space_geometry_path}, {door_geometry_path} and {properties_path}...")
+    print(f"Loading geometry data from {geometry_dir}...")
     geometry_data = []
     
-    # Load space geometry
-    with open(space_geometry_path, 'r') as f:
-        space_geometry = json.load(f)
-        geometry_data.extend(space_geometry)
+    # Check for required geometry files
+    geometry_dir = Path(geometry_dir)
+    required_files = {
+        'IfcSpace_geometry.json': 'space',
+        'IfcDoor_geometry.json': 'door',
+        'IfcWindow_geometry.json': 'window'
+    }
     
-    # Load door geometry
-    with open(door_geometry_path, 'r') as f:
-        door_geometry = json.load(f)
-        geometry_data.extend(door_geometry)
+    missing_files = []
+    for file_name, element_type in required_files.items():
+        if not (geometry_dir / file_name).exists():
+            missing_files.append(f"{file_name} (required for {element_type} visualization)")
+    
+    if missing_files:
+        raise FileNotFoundError(
+            f"Missing required geometry files in {geometry_dir}:\n" +
+            "\n".join(f"- {file}" for file in missing_files)
+        )
+    
+    # Load all geometry files in the directory
+    for geometry_file in geometry_dir.glob("*_geometry.json"):
+        print(f"Loading geometry from {geometry_file}")
+        with open(geometry_file, 'r') as f:
+            geometry = json.load(f)
+            geometry_data.extend(geometry)
     
     # Load properties
     with open(properties_path, 'r') as f:
@@ -478,11 +495,13 @@ def _add_single_space_to_plot(
     # Get the space name and area from properties
     space_name = None
     space_area = None
+    is_gfa = False
     if 'properties' in space:
         if 'LongName' in space['properties']:
             space_name = space['properties']['LongName']
         if 'Qto_SpaceBaseQuantities.NetFloorArea' in space['properties']:
             space_area = space['properties']['Qto_SpaceBaseQuantities.NetFloorArea']
+            is_gfa = True
     elif 'LongName' in space:
         space_name = space['LongName']
     elif 'name' in space:
@@ -500,8 +519,8 @@ def _add_single_space_to_plot(
             name=legend_name,
             fillcolor=color,
             line=dict(
-                color=color,  # Use same color as fill for the line
-                width=0,  # Set line width to 0 to hide it
+                color='black' if is_gfa else color,  # Black border only for GFA spaces
+                width=1 if is_gfa else 0,  # Border width only for GFA spaces
                 shape='linear'  # This ensures sharp corners
             ),
             mode='none',  # Don't show lines or markers
@@ -581,6 +600,7 @@ def _add_geometry_to_plot(
     # Parse the filter to get the element type
     if 'type=' in filter_str:
         element_type = filter_str.split('type=')[1].split()[0]
+        print(f"Processing {element_type} in 2D view")  # Debug log
     else:
         return  # No type specified in filter
     
@@ -590,12 +610,64 @@ def _add_geometry_to_plot(
         view = '3d'
     
     # Special handling for doors and windows in 2D view
-    if view == '2d' and element_type in ['IfcDoor', 'IfcWindow']:
-        print(f"Processing {element_type} in 2D view")  # Debug log
+    if view == '2d':
         if element_type == 'IfcDoor':
             _add_door_to_plot(fig, loader, element_config, plot_settings, storey_name, plot_config)
         elif element_type == 'IfcWindow':
-            pass  # Window visualization not implemented
+            print("Starting window visualization")  # Debug log
+            _add_window_to_plot(fig, loader, element_config, plot_settings, storey_name, plot_config)
+            print("Window visualization completed")  # Debug log
+
+def _create_door_symbol(
+    width: float,
+    height: float,
+    center_x: float,
+    center_y: float,
+    line_width: float = 1,
+    line_extension: float = 2.5
+) -> Tuple[List[float], List[float], List[float], List[float]]:
+    """Create coordinates for a door symbol with a white square and a perpendicular line.
+    
+    Args:
+        width: Width of the door
+        height: Height of the door
+        center_x: X coordinate of the door center
+        center_y: Y coordinate of the door center
+        line_width: Width of the line (default: 1)
+        line_extension: Factor to extend the line beyond the door (default: 2.5)
+        
+    Returns:
+        Tuple of (rect_x, rect_y, line_x, line_y) coordinates
+    """
+    # Create square vertices
+    rect_x = [
+        center_x - width/2,
+        center_x + width/2,
+        center_x + width/2,
+        center_x - width/2,
+        center_x - width/2
+    ]
+    rect_y = [
+        center_y - height/2,
+        center_y - height/2,
+        center_y + height/2,
+        center_y + height/2,
+        center_y - height/2
+    ]
+    
+    # Create perpendicular line coordinates
+    if width > height:
+        # Horizontal door - draw vertical line
+        line_length = height * line_extension
+        line_x = [center_x, center_x]
+        line_y = [center_y - line_length/2, center_y + line_length/2]
+    else:
+        # Vertical door - draw horizontal line
+        line_length = width * line_extension
+        line_x = [center_x - line_length/2, center_x + line_length/2]
+        line_y = [center_y, center_y]
+    
+    return rect_x, rect_y, line_x, line_y
 
 def _add_door_to_plot(
     fig: go.Figure,
@@ -645,14 +717,17 @@ def _add_door_to_plot(
         width = max_x - min_x
         height = max_y - min_y
         
-        # Create door rectangle vertices
-        door_rect_x = [min_x, max_x, max_x, min_x, min_x]
-        door_rect_y = [min_y, min_y, max_y, max_y, min_y]
+        # Calculate center point
+        center_x = (min_x + max_x) / 2
+        center_y = (min_y + max_y) / 2
+        
+        # Create door symbol
+        rect_x, rect_y, line_x, line_y = _create_door_symbol(width, height, center_x, center_y)
         
         # Add the door rectangle without border
         fig.add_trace(go.Scatter(
-            x=door_rect_x,
-            y=door_rect_y,
+            x=rect_x,
+            y=rect_y,
             fill='toself',
             fillcolor='white',
             line=dict(width=0),  # Remove border
@@ -661,26 +736,150 @@ def _add_door_to_plot(
             zorder=2
         ))
         
-        # Calculate center point
-        center_x = (min_x + max_x) / 2
-        center_y = (min_y + max_y) / 2
-        
-        # Determine door orientation and draw perpendicular line
-        if width > height:
-            # Horizontal door - draw vertical line
-            line_length = height * 2.5  # Extend further beyond door thickness
-            line_x = [center_x, center_x]
-            line_y = [center_y - line_length/2, center_y + line_length/2]
-        else:
-            # Vertical door - draw horizontal line
-            line_length = width * 2.5  # Extend further beyond door thickness
-            line_x = [center_x - line_length/2, center_x + line_length/2]
-            line_y = [center_y, center_y]
-            
+        # Add the perpendicular line
         fig.add_trace(go.Scatter(
             x=line_x,
             y=line_y,
             line=dict(color='black', width=1),
+            mode='lines',
+            showlegend=False,
+            zorder=2
+        ))
+
+def _create_window_symbol(
+    width: float,
+    height: float,
+    center_x: float,
+    center_y: float,
+    line_width: float = 2
+) -> Tuple[List[float], List[float], List[float], List[float]]:
+    """Create coordinates for a window symbol with a white rectangle and a centered line.
+    
+    Args:
+        width: Width of the window
+        height: Height of the window
+        center_x: X coordinate of the window center
+        center_y: Y coordinate of the window center
+        line_width: Width of the line (default: 2)
+        
+    Returns:
+        Tuple of (rect_x, rect_y, line_x, line_y) coordinates
+    """
+    # Create rectangle vertices
+    rect_x = [
+        center_x - width/2,
+        center_x + width/2,
+        center_x + width/2,
+        center_x - width/2,
+        center_x - width/2
+    ]
+    rect_y = [
+        center_y - height/2,
+        center_y - height/2,
+        center_y + height/2,
+        center_y + height/2,
+        center_y - height/2
+    ]
+    
+    # Create line coordinates
+    if width > height:
+        # Horizontal window - draw horizontal line
+        line_x = [center_x - width/2, center_x + width/2]
+        line_y = [center_y, center_y]
+    else:
+        # Vertical window - draw vertical line
+        line_x = [center_x, center_x]
+        line_y = [center_y - height/2, center_y + height/2]
+    
+    return rect_x, rect_y, line_x, line_y
+
+def _add_window_to_plot(
+    fig: go.Figure,
+    loader: IfcJsonLoader,
+    element_config: Dict,
+    plot_settings: Dict,
+    storey_name: Optional[str] = None,
+    plot_config: Optional[Dict] = None
+) -> None:
+    """Add windows to the plot as white squares with a single thick line inside."""
+    # Get all window elements
+    window_ids = loader.by_type_index.get('IfcWindow', [])
+    print(f"Found {len(window_ids)} windows in by_type_index")
+    
+    for window_id in window_ids:
+        print(f"Processing window with ID {window_id}")
+        # Get the window element using the numeric ID
+        window = loader.properties['elements'].get(str(window_id))
+        if not window:
+            print(f"No window properties found for ID {window_id}")
+            continue
+            
+        # Get geometry using the numeric ID
+        geometry = loader.get_geometry(str(window_id))
+        if not geometry:
+            print(f"No geometry found for window {window_id}")
+            continue
+        if 'vertices' not in geometry:
+            print(f"No vertices found for window {window_id}")
+            continue
+            
+        # Get the window's storey using the numeric ID
+        if storey_name:
+            window_storey = loader.get_storey_for_element(str(window_id))
+            if window_storey and window_storey != storey_name:
+                print(f"Window {window_id} not in storey {storey_name}")
+                continue
+            
+        # Get window vertices and calculate dimensions
+        vertices = geometry['vertices']
+        
+        # For 2D view, we'll use all vertices and project them to 2D
+        # We'll use the vertices with the most common z-coordinate
+        z_coords = [v[2] for v in vertices]
+        most_common_z = max(set(z_coords), key=z_coords.count)
+        
+        # Filter vertices to those with the most common z-coordinate
+        x_coords = []
+        y_coords = []
+        for v in vertices:
+            if abs(v[2] - most_common_z) < 0.1:  # Allow small tolerance
+                x_coords.append(v[0])
+                y_coords.append(v[1])
+        
+        if not x_coords or not y_coords:
+            print(f"No valid 2D vertices found for window {window_id}")
+            continue
+            
+        # Calculate window center and dimensions
+        min_x, max_x = min(x_coords), max(x_coords)
+        min_y, max_y = min(y_coords), max(y_coords)
+        width = max_x - min_x
+        height = max_y - min_y
+        
+        # Calculate center point
+        center_x = (min_x + max_x) / 2
+        center_y = (min_y + max_y) / 2
+        
+        # Create window symbol
+        rect_x, rect_y, line_x, line_y = _create_window_symbol(width, height, center_x, center_y)
+        
+        # Add the window rectangle without border
+        fig.add_trace(go.Scatter(
+            x=rect_x,
+            y=rect_y,
+            fill='toself',
+            fillcolor='white',
+            line=dict(width=0),  # No border
+            mode='lines',
+            showlegend=False,
+            zorder=2
+        ))
+        
+        # Add the line
+        fig.add_trace(go.Scatter(
+            x=line_x,
+            y=line_y,
+            line=dict(color='black', width=2),  # Thicker line
             mode='lines',
             showlegend=False,
             zorder=2
@@ -725,4 +924,4 @@ def _find_point_inside_polygon(poly: List[List[float]]) -> List[float]:
                 return [x, y]
     
     # If no point found in grid, return the first vertex
-    return poly[0] 
+    return poly[0]
