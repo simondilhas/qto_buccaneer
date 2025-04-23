@@ -134,43 +134,48 @@ def _add_scale_bar(fig: go.Figure, x_range: List[float], y_range: List[float]) -
     scale_lengths = [1, 2, 5, 10, 20, 50, 100]
     scale_length = next(l for l in scale_lengths if l > desired_scale_length)
     
-    # Position the scale bar at the absolute bottom
-    padding = plot_width * 0.03
-    scale_x_start = max(x_range) - scale_length - padding
-    scale_y = min(y_range) - padding * 3  # Move scale bar further down
+    # Calculate scale bar length in paper coordinates
+    paper_scale_length = (scale_length / plot_width) * 0.9  # 90% of plot width
     
-    # Add the scale bar line
-    fig.add_trace(go.Scatter(
-        x=[scale_x_start, scale_x_start + scale_length],
-        y=[scale_y, scale_y],
-        mode='lines',
-        line=dict(color='black', width=1),  # Thinner line
-        showlegend=False,
-        zorder=10000  # Very high zorder to ensure it's always on top
-    ))
+    # Add the scale bar line using paper coordinates
+    fig.add_shape(
+        type="line",
+        x0=0.05,  # 5% from left edge
+        x1=0.05 + paper_scale_length,  # Scale length in paper coordinates
+        y0=0.05,  # 5% from bottom edge
+        y1=0.05,  # 5% from bottom edge
+        xref="paper",
+        yref="paper",
+        line=dict(color="black", width=2),
+        layer="above"
+    )
     
-    # Add small vertical lines at ends
-    tick_height = padding * 0.3  # Smaller ticks
-    for x in [scale_x_start, scale_x_start + scale_length]:
-        fig.add_trace(go.Scatter(
-            x=[x, x],
-            y=[scale_y - tick_height/2, scale_y + tick_height/2],
-            mode='lines',
-            line=dict(color='black', width=1),  # Thinner line
-            showlegend=False,
-            zorder=10000  # Very high zorder to ensure it's always on top
-        ))
+    # Add small vertical lines at ends using paper coordinates
+    tick_height = 0.01  # 1% of plot height
+    for x in [0.05, 0.05 + paper_scale_length]:
+        fig.add_shape(
+            type="line",
+            x0=x,
+            x1=x,
+            y0=0.05 - tick_height/2,
+            y1=0.05 + tick_height/2,
+            xref="paper",
+            yref="paper",
+            line=dict(color="black", width=2),
+            layer="above"
+        )
     
-    # Add text label below the scale bar
-    fig.add_trace(go.Scatter(
-        x=[scale_x_start + scale_length/2],
-        y=[scale_y - tick_height],
-        text=[f"{scale_length}m"],
-        mode='text',
-        textposition='bottom center',
-        showlegend=False,
-        zorder=10000  # Very high zorder to ensure it's always on top
-    ))
+    # Add text label using paper coordinates
+    fig.add_annotation(
+        x=0.05 + paper_scale_length/2,  # Center of scale bar
+        y=0.05,  # Same y as scale bar
+        xref="paper",
+        yref="paper",
+        text=f"{scale_length}m",
+        showarrow=False,
+        font=dict(size=12),
+        yshift=-20  # Shift text down by 20 pixels
+    )
 
 def _calculate_optimal_layout(x_coords: List[float], y_coords: List[float], max_size: int = 1200) -> Dict:
     """Calculate optimal layout settings based on geometry."""
@@ -346,32 +351,9 @@ def _add_spaces_to_plot(
     plot_config: Optional[Dict] = None
 ) -> None:
     """Add spaces to the plot with consistent coloring."""
-    # Get color_by setting from element config
-    color_by = element_config.get('color_by', 'LongName')
-    
-    # First collect all unique space types across ALL storeys
-    all_space_types = set()
-    for space_id in loader.by_type_index.get('IfcSpace', []):
-        space = loader.properties['elements'].get(str(space_id))
-        if space:
-            # Get the value to group by
-            group_value = None
-            if color_by in space.get('properties', {}):
-                group_value = space['properties'][color_by]
-            elif color_by in space:
-                group_value = space[color_by]
-            
-            if group_value:
-                all_space_types.add(group_value)
-    
-    # Create a consistent color mapping for ALL space types
-    colors = [
-        'lightblue', 'lightgreen', 'lightcoral', 'lightyellow', 
-        'lightpink', 'lightskyblue', 'lightseagreen', 'lightsteelblue',
-        'lightgoldenrodyellow', 'lightcyan', 'lightgray'
-    ]
-    color_mapping = {space_type: colors[i % len(colors)] 
-                    for i, space_type in enumerate(sorted(all_space_types))}
+    # Get color settings from element config
+    color_by = element_config.get('color_by')
+    fixed_color = element_config.get('color')
     
     # Group spaces by their type for the current storey and calculate total areas
     grouped_spaces = {}
@@ -386,12 +368,16 @@ def _add_spaces_to_plot(
                 if space_storey != storey_name:
                     continue
             
-            # Get the value to group by
+            # Get the value to group by if using color_by
             group_value = None
-            if color_by in space.get('properties', {}):
-                group_value = space['properties'][color_by]
-            elif color_by in space:
-                group_value = space[color_by]
+            if color_by:
+                if color_by in space.get('properties', {}):
+                    group_value = space['properties'][color_by]
+                elif color_by in space:
+                    group_value = space[color_by]
+            else:
+                # If not using color_by, use the element name as group
+                group_value = element_config.get('name', 'Unknown')
             
             if group_value:
                 if group_value not in grouped_spaces:
@@ -407,8 +393,17 @@ def _add_spaces_to_plot(
     
     # Add each group of spaces with consistent coloring
     for group_value, space_group in grouped_spaces.items():
-        # Get color from our consistent mapping
-        color = color_mapping.get(group_value, 'lightgray')
+        # Get color from fixed color or create a consistent mapping
+        if fixed_color:
+            color = fixed_color
+        else:
+            # Create a consistent color mapping for space types
+            colors = [
+                'lightblue', 'lightgreen', 'lightcoral', 'lightyellow', 
+                'lightpink', 'lightskyblue', 'lightseagreen', 'lightsteelblue',
+                'lightgoldenrodyellow', 'lightcyan', 'lightgray'
+            ]
+            color = colors[hash(group_value) % len(colors)]
         
         # Format the legend name with total area
         total_area = total_areas.get(group_value, 0.0)

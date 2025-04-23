@@ -78,6 +78,10 @@ plots:
     description: "2D floor plan showing spaces"
     
     elements:
+      - name: "Background / Walls & GFA"
+        filter: "type=IfcSpace AND PredefinedType=GFA"
+        color: "darkgrey"
+        label: none
       - name: "Spaces"
         filter: "type=IfcSpace AND (PredefinedType=INTERNAL OR PredefinedType=EXTERNAL)" #AND, OR, NOT, ()
         color_by: "LongName"
