@@ -172,10 +172,29 @@ def _process_plot_creation(
     storey_name: Optional[str] = None
 ) -> None:
     """Process plot creation based on configuration."""
-    # Apply general layout settings
-    defaults = plot_settings['defaults']
+    # Apply layout settings
+    _apply_layout_settings(fig, plot_settings)
     
-    # Convert font settings to Plotly format with minimal margins
+    # Calculate bounds for layout and scale bar
+    all_x_coords, all_y_coords = _get_all_space_coordinates(loader)
+    current_x_coords, current_y_coords = _get_current_storey_coordinates(loader, storey_name, plot_config)
+    
+    # Update layout with calculated bounds
+    if all_x_coords and all_y_coords:
+        optimal_layout = _calculate_optimal_layout(all_x_coords, all_y_coords)
+        fig.update_layout(**optimal_layout)
+    
+    # Process each element in the plot configuration
+    for element_config in plot_config.get('elements', []):
+        _process_element(fig, loader, element_config, plot_settings, storey_name, plot_config)
+    
+    # Add scale bar for 2D plots
+    if plot_config.get('mode') == 'floor_plan' and current_x_coords and current_y_coords:
+        _add_scale_bar(fig, [min(current_x_coords), max(current_x_coords)], [min(current_y_coords), max(current_y_coords)])
+
+def _apply_layout_settings(fig: go.Figure, plot_settings: Dict) -> None:
+    """Apply general layout settings to the figure."""
+    defaults = plot_settings['defaults']
     layout_settings = {
         'font': {
             'family': defaults.get('font_family', 'Arial'),
@@ -207,245 +226,215 @@ def _process_plot_creation(
         },
         'autosize': False
     }
-    
-    # First find the bounds of ALL storeys to maintain consistent scale
-    all_x_coords = []
-    all_y_coords = []
-    
-    # Collect coordinates from all spaces in all storeys
+    fig.update_layout(**layout_settings)
+
+def _get_all_space_coordinates(loader: IfcJsonLoader) -> Tuple[List[float], List[float]]:
+    """Get coordinates from all spaces for layout calculation."""
+    x_coords = []
+    y_coords = []
     for space_id in loader.by_type_index.get('IfcSpace', []):
         space = loader.properties['elements'].get(str(space_id))
         if space:
             geometry = loader.get_geometry(str(space_id))
             if geometry:
-                all_x_coords.extend([v[0] for v in geometry['vertices']])
-                all_y_coords.extend([v[1] for v in geometry['vertices']])
-    
-    if all_x_coords and all_y_coords:
-        # Calculate layout based on ALL storeys
-        optimal_layout = _calculate_optimal_layout(all_x_coords, all_y_coords)
-        layout_settings.update(optimal_layout)
-    
-    fig.update_layout(**layout_settings)
-    
-    # Now collect coordinates for the current storey (for scale bar)
-    current_x_coords = []
-    current_y_coords = []
-    
+                x_coords.extend([v[0] for v in geometry['vertices']])
+                y_coords.extend([v[1] for v in geometry['vertices']])
+    return x_coords, y_coords
+
+def _get_current_storey_coordinates(
+    loader: IfcJsonLoader,
+    storey_name: Optional[str],
+    plot_config: Dict
+) -> Tuple[List[float], List[float]]:
+    """Get coordinates from current storey for scale bar."""
+    x_coords = []
+    y_coords = []
     if plot_config.get('mode') == 'floor_plan':
         for space_id in loader.by_type_index.get('IfcSpace', []):
             space = loader.properties['elements'].get(str(space_id))
             if space and (not storey_name or loader.get_storey_for_space(str(space_id)) == storey_name):
                 geometry = loader.get_geometry(str(space_id))
                 if geometry:
-                    current_x_coords.extend([v[0] for v in geometry['vertices']])
-                    current_y_coords.extend([v[1] for v in geometry['vertices']])
-    
-    # Process each element in the plot configuration
-    for i, element_config in enumerate(plot_config.get('elements', [])):
-        filter_str = element_config.get('filter', '')
-        if 'type=IfcSpace' in filter_str:
-            _add_spaces_to_plot(fig, loader, element_config, plot_settings, storey_name, plot_config)
-        elif 'type=IfcBuildingStorey' in filter_str:
-            pass  # Storey visualization not implemented
-        else:
-            _add_geometry_to_plot(
-                fig, loader, element_config, plot_settings, storey_name, plot_config, i, 'type=' in filter_str
-            )
-    
-    # Add scale bar for 2D plots using current storey bounds for positioning
-    if plot_config.get('mode') == 'floor_plan' and current_x_coords and current_y_coords:
-        _add_scale_bar(fig, [min(current_x_coords), max(current_x_coords)], [min(current_y_coords), max(current_y_coords)])
+                    x_coords.extend([v[0] for v in geometry['vertices']])
+                    y_coords.extend([v[1] for v in geometry['vertices']])
+    return x_coords, y_coords
 
-def _add_scale_bar(fig: go.Figure, x_range: List[float], y_range: List[float]) -> None:
-    """Add a scale bar to the plot that scales with zooming."""
-    # Calculate plot dimensions in real-world units
-    plot_width = max(x_range) - min(x_range)
+def _process_element(
+    fig: go.Figure,
+    loader: IfcJsonLoader,
+    element_config: Dict,
+    plot_settings: Dict,
+    storey_name: Optional[str],
+    plot_config: Dict
+) -> None:
+    """Process a single element from the configuration."""
+    filter_str = element_config.get('filter', '')
+    element_type, conditions = _parse_filter(filter_str)
     
-    # Calculate a nice round length for the scale bar (e.g., 5m or 10m)
-    # Scale bar should be ~15% of the plot width
-    desired_scale_length = plot_width * 0.15
-    
-    # Round to a nice number (1, 2, 5, 10, etc.)
-    scale_lengths = [1, 2, 5, 10, 20, 50, 100]
-    scale_length = next(l for l in scale_lengths if l > desired_scale_length)
-    
-    # Position in paper coordinates (bottom left)
-    # Use fixed paper coordinates (0-1) for positioning
-    paper_x = 0.05  # 5% from left edge
-    paper_y = 0.05  # 5% from bottom edge
-    paper_width = 0.1  # 10% of paper width
-    paper_height = 0.01  # 1% of paper height
-    
-    # Add the scale bar line using paper coordinates
-    fig.add_shape(
-        type="line",
-        x0=paper_x,
-        x1=paper_x + paper_width,
-        y0=paper_y,
-        y1=paper_y,
-        line=dict(color="black", width=2),
-        layer="above",
-        xref="paper",
-        yref="paper"
-    )
-    
-    # Add small vertical lines at ends
-    for x in [paper_x, paper_x + paper_width]:
-        fig.add_shape(
-            type="line",
-            x0=x,
-            x1=x,
-            y0=paper_y - paper_height/2,
-            y1=paper_y + paper_height/2,
-            line=dict(color="black", width=2),
-            layer="above",
-            xref="paper",
-            yref="paper"
-        )
-    
-    # Add text label
-    fig.add_annotation(
-        x=paper_x + paper_width/2,
-        y=paper_y,
-        text=f"{scale_length}m",
-        showarrow=False,
-        font=dict(size=12),
-        yshift=-20,  # Shift text down by 20 pixels
-        xref="paper",
-        yref="paper"
-    )
-
-def _calculate_optimal_layout(x_coords: List[float], y_coords: List[float]) -> Dict:
-    """Calculate optimal layout settings based on geometry."""
-    # Calculate bounds
-    x_min, x_max = min(x_coords), max(x_coords)
-    y_min, y_max = min(y_coords), max(y_coords)
-    
-    # Calculate dimensions
-    width = x_max - x_min
-    height = y_max - y_min
-    
-    # Fixed dimensions for A4-like size
-    base_width = 1000  # pixels
-    base_height = 600  # pixels
-    
-    # Calculate the aspect ratios
-    content_ratio = width / height
-    target_ratio = base_width / base_height
-    
-    # Calculate the scaling factor to fit the content
-    if content_ratio > target_ratio:
-        # Content is wider than target, scale to width
-        scale = base_width / width
+    if element_type == 'IfcSpace':
+        _add_spaces_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
+    elif element_type == 'IfcDoor':
+        _add_door_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
+    elif element_type == 'IfcWindow':
+        _add_window_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
+    elif element_type == 'IfcBuildingStorey':
+        pass  # Storey visualization not implemented
     else:
-        # Content is taller than target, scale to height
-        scale = base_height / height
+        _add_geometry_to_plot(
+            fig, loader, element_config, element_type, conditions, plot_settings,
+            storey_name, plot_config, element_type == 'IfcSpace'
+        )
+
+def _parse_filter(filter_str: str) -> Tuple[Optional[str], List[List[str]]]:
+    """Parse filter string into element type and conditions.
     
-    # Calculate the centered ranges
-    center_x = (x_max + x_min) / 2
-    center_y = (y_max + y_min) / 2
+    Args:
+        filter_str: Filter string in format "type=IfcType AND (condition1 OR condition2)"
+        
+    Returns:
+        Tuple of (element_type, conditions) where conditions is a list of lists of strings.
+        Each inner list represents an OR group, and the outer list represents AND groups.
+    """
+    # First extract the type
+    type_part = None
+    if 'type=' in filter_str:
+        type_part = filter_str.split('type=')[1].split()[0]
+        # Remove the type part from the filter
+        filter_str = filter_str.replace(f"type={type_part}", "").strip()
+        # Remove any leading AND/OR
+        if filter_str.startswith("AND "):
+            filter_str = filter_str[4:].strip()
+        elif filter_str.startswith("OR "):
+            filter_str = filter_str[3:].strip()
     
-    # Calculate the range that will fill the space
-    half_width = (base_width / scale) / 2
-    half_height = (base_height / scale) / 2
+    # Split into individual conditions
+    conditions = []
+    if filter_str:
+        # Split by AND first
+        and_parts = [p.strip() for p in filter_str.split(" AND ")]
+        
+        for part in and_parts:
+            # Handle parentheses for OR conditions
+            if '(' in part and ')' in part:
+                start = part.find('(')
+                end = part.rfind(')')
+                inner = part[start+1:end].strip()
+                # Split by OR
+                or_conditions = [c.strip() for c in inner.split(" OR ")]
+                conditions.append(or_conditions)
+            else:
+                # Single condition
+                conditions.append([part.strip()])
     
-    x_range = [center_x - half_width, center_x + half_width]
-    y_range = [center_y - half_height, center_y + half_height]
+    return type_part, conditions
+
+def _space_matches_conditions(space: Dict, element_type: Optional[str], conditions: List[List[str]]) -> bool:
+    """Check if a space matches all filter conditions.
     
-    return {
-        'width': base_width,
-        'height': base_height,
-        'xaxis': {
-            'range': x_range,
-            'showgrid': False,
-            'zeroline': False,
-            'showticklabels': False,
-            'showline': False,
-            'scaleanchor': 'y',
-            'scaleratio': 1,
-            'domain': [0.01, 0.99]  # Use 98% of the width
-        },
-        'yaxis': {
-            'range': y_range,
-            'showgrid': False,
-            'zeroline': False,
-            'showticklabels': False,
-            'showline': False,
-            'scaleanchor': 'x',
-            'scaleratio': 1,
-            'domain': [0.01, 0.99]  # Use 98% of the height
-        }
-    }
+    Args:
+        space: Space dictionary containing properties
+        element_type: Required element type (e.g., 'IfcSpace')
+        conditions: List of lists of conditions. Each inner list represents an OR group,
+                   and the outer list represents AND groups.
+        
+    Returns:
+        True if space matches all conditions, False otherwise
+    """
+    # First check the type
+    if element_type and space.get('type') != element_type:
+        return False
+    
+    # Then check other conditions
+    for or_group in conditions:
+        # At least one condition in the OR group must be true
+        or_group_matched = False
+        for condition in or_group:
+            # Split condition into key and value
+            if '=' in condition:
+                key, value = condition.split('=', 1)
+                key = key.strip()
+                value = value.strip()
+                
+                # Check if the condition is met
+                if key in space.get('properties', {}):
+                    if str(space['properties'][key]) == value:
+                        or_group_matched = True
+                        break
+                elif key in space:
+                    if str(space[key]) == value:
+                        or_group_matched = True
+                        break
+        
+        # If no condition in the OR group matched, the whole AND fails
+        if not or_group_matched:
+            return False
+    
+    # All conditions passed
+    return True
+
+def _get_matching_spaces(
+    loader: IfcJsonLoader,
+    element_type: Optional[str],
+    filter_conditions: List[List[str]],
+    storey_name: Optional[str]
+) -> List[Dict]:
+    """Get spaces that match the filter conditions.
+    
+    Args:
+        loader: IfcJsonLoader instance
+        element_type: Required element type (e.g., 'IfcSpace')
+        filter_conditions: List of lists of conditions to filter by
+        storey_name: Optional storey name to filter by
+        
+    Returns:
+        List of matching space dictionaries
+    """
+    matching_spaces = []
+    
+    for space_id in loader.by_type_index.get('IfcSpace', []):
+        space = loader.properties['elements'].get(str(space_id))
+        if not space:
+            continue
+            
+        # Check storey filter
+        if storey_name:
+            space_storey = loader.get_storey_for_space(str(space_id))
+            if space_storey != storey_name:
+                continue
+        
+        # Check filter conditions
+        if _space_matches_conditions(space, element_type, filter_conditions):
+            matching_spaces.append(space)
+    
+    return matching_spaces
 
 def _add_spaces_to_plot(
     fig: go.Figure,
     loader: IfcJsonLoader,
     element_config: Dict,
+    element_type: Optional[str],
+    conditions: List[List[str]],
     plot_settings: Dict,
     storey_name: Optional[str] = None,
     plot_config: Optional[Dict] = None
 ) -> None:
     """Add spaces to the plot with consistent coloring."""
-    # Get color settings from element config
+    # Get color settings
     color_by = element_config.get('color_by')
     fixed_color = element_config.get('color')
     
-    # Group spaces by their type for the current storey and calculate total areas
-    grouped_spaces = {}
-    total_areas = {}
+    # Get spaces that match the filter conditions
+    matching_spaces = _get_matching_spaces(loader, element_type, conditions, storey_name)
     
-    for space_id in loader.by_type_index.get('IfcSpace', []):
-        space = loader.properties['elements'].get(str(space_id))
-        if space:
-            # Check storey filter if specified
-            if storey_name:
-                space_storey = loader.get_storey_for_space(str(space_id))
-                if space_storey != storey_name:
-                    continue
-            
-            # Get the value to group by if using color_by
-            group_value = None
-            if color_by:
-                if color_by in space.get('properties', {}):
-                    group_value = space['properties'][color_by]
-                elif color_by in space:
-                    group_value = space[color_by]
-            else:
-                # If not using color_by, use the element name as group
-                group_value = element_config.get('name', 'Unknown')
-            
-            if group_value:
-                if group_value not in grouped_spaces:
-                    grouped_spaces[group_value] = []
-                    total_areas[group_value] = 0.0
-                grouped_spaces[group_value].append(space)
-                
-                # Add to total area for this group
-                if 'properties' in space and 'Qto_SpaceBaseQuantities.NetFloorArea' in space['properties']:
-                    area = space['properties']['Qto_SpaceBaseQuantities.NetFloorArea']
-                    if isinstance(area, (int, float)):
-                        total_areas[group_value] += area
+    # Group spaces and calculate areas
+    grouped_spaces, total_areas = _group_spaces(matching_spaces, color_by, element_config)
     
-    # Add each group of spaces with consistent coloring
+    # Add each group to the plot
     for group_value, space_group in grouped_spaces.items():
-        # Get color from fixed color or create a consistent mapping
-        if fixed_color:
-            color = fixed_color
-        else:
-            # Create a consistent color mapping for space types
-            colors = [
-                'lightblue', 'lightgreen', 'lightcoral', 'lightyellow', 
-                'lightpink', 'lightskyblue', 'lightseagreen', 'lightsteelblue',
-                'lightgoldenrodyellow', 'lightcyan', 'lightgray'
-            ]
-            color = colors[hash(group_value) % len(colors)]
-        
-        # Format the legend name with total area
+        color = fixed_color or _get_color_for_group(group_value)
         total_area = total_areas.get(group_value, 0.0)
         legend_name = f"{group_value} ({total_area:.1f} m²)"
         
-        # Add all spaces in this group with the same color
         for i, space in enumerate(space_group):
             _add_single_space_to_plot(
                 fig=fig,
@@ -455,11 +444,55 @@ def _add_spaces_to_plot(
                 color=color,
                 view='2d' if plot_config and plot_config.get('mode') == 'floor_plan' else '3d',
                 plot_settings=plot_settings,
-                group_name=legend_name if i == 0 else None,  # Only show total area in first entry
-                show_in_legend=(i == 0),  # Only show first space in legend
-                legendgroup=group_value,  # Group legend items by space type
-                element_index=i  # Pass element index
+                group_name=legend_name if i == 0 else None,
+                show_in_legend=(i == 0),
+                legendgroup=group_value,
+                element_index=i
             )
+
+def _group_spaces(
+    spaces: List[Dict],
+    color_by: Optional[str],
+    element_config: Dict
+) -> Tuple[Dict[str, List[Dict]], Dict[str, float]]:
+    """Group spaces and calculate their total areas."""
+    grouped_spaces = {}
+    total_areas = {}
+    
+    for space in spaces:
+        # Get group value
+        group_value = None
+        if color_by:
+            if color_by in space.get('properties', {}):
+                group_value = space['properties'][color_by]
+            elif color_by in space:
+                group_value = space[color_by]
+        else:
+            group_value = element_config.get('name', 'Unknown')
+        
+        if group_value:
+            if group_value not in grouped_spaces:
+                grouped_spaces[group_value] = []
+                total_areas[group_value] = 0.0
+            
+            grouped_spaces[group_value].append(space)
+            
+            # Add to total area
+            if 'properties' in space and 'Qto_SpaceBaseQuantities.NetFloorArea' in space['properties']:
+                area = space['properties']['Qto_SpaceBaseQuantities.NetFloorArea']
+                if isinstance(area, (int, float)):
+                    total_areas[group_value] += area
+    
+    return grouped_spaces, total_areas
+
+def _get_color_for_group(group_value: str) -> str:
+    """Get a consistent color for a group value."""
+    colors = [
+        'lightblue', 'lightgreen', 'lightcoral', 'lightyellow', 
+        'lightpink', 'lightskyblue', 'lightseagreen', 'lightsteelblue',
+        'lightgoldenrodyellow', 'lightcyan', 'lightgray'
+    ]
+    return colors[hash(group_value) % len(colors)]
 
 def _add_single_space_to_plot(
     fig: go.Figure,
@@ -587,10 +620,11 @@ def _add_geometry_to_plot(
     fig: go.Figure,
     loader: IfcJsonLoader,
     element_config: Dict,
+    element_type: Optional[str],
+    conditions: List[List[str]],
     plot_settings: Dict,
     storey_name: Optional[str] = None,
     plot_config: Optional[Dict] = None,
-    element_index: Optional[int] = None,
     is_space: bool = False
 ) -> None:
     """Add doors and windows to the plot with special visualization."""
@@ -612,10 +646,10 @@ def _add_geometry_to_plot(
     # Special handling for doors and windows in 2D view
     if view == '2d':
         if element_type == 'IfcDoor':
-            _add_door_to_plot(fig, loader, element_config, plot_settings, storey_name, plot_config)
+            _add_door_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
         elif element_type == 'IfcWindow':
             print("Starting window visualization")  # Debug log
-            _add_window_to_plot(fig, loader, element_config, plot_settings, storey_name, plot_config)
+            _add_window_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
             print("Window visualization completed")  # Debug log
 
 def _create_door_symbol(
@@ -673,6 +707,8 @@ def _add_door_to_plot(
     fig: go.Figure,
     loader: IfcJsonLoader,
     element_config: Dict,
+    element_type: Optional[str],
+    conditions: List[List[str]],
     plot_settings: Dict,
     storey_name: Optional[str] = None,
     plot_config: Optional[Dict] = None
@@ -797,6 +833,8 @@ def _add_window_to_plot(
     fig: go.Figure,
     loader: IfcJsonLoader,
     element_config: Dict,
+    element_type: Optional[str],
+    conditions: List[List[str]],
     plot_settings: Dict,
     storey_name: Optional[str] = None,
     plot_config: Optional[Dict] = None
@@ -925,3 +963,124 @@ def _find_point_inside_polygon(poly: List[List[float]]) -> List[float]:
     
     # If no point found in grid, return the first vertex
     return poly[0]
+
+def _calculate_optimal_layout(x_coords: List[float], y_coords: List[float]) -> Dict:
+    """Calculate optimal layout settings based on geometry."""
+    # Calculate bounds
+    x_min, x_max = min(x_coords), max(x_coords)
+    y_min, y_max = min(y_coords), max(y_coords)
+    
+    # Calculate dimensions
+    width = x_max - x_min
+    height = y_max - y_min
+    
+    # Fixed dimensions for A4-like size
+    base_width = 1000  # pixels
+    base_height = 600  # pixels
+    
+    # Calculate the aspect ratios
+    content_ratio = width / height
+    target_ratio = base_width / base_height
+    
+    # Calculate the scaling factor to fit the content
+    if content_ratio > target_ratio:
+        # Content is wider than target, scale to width
+        scale = base_width / width
+    else:
+        # Content is taller than target, scale to height
+        scale = base_height / height
+    
+    # Calculate the centered ranges
+    center_x = (x_max + x_min) / 2
+    center_y = (y_max + y_min) / 2
+    
+    # Calculate the range that will fill the space
+    half_width = (base_width / scale) / 2
+    half_height = (base_height / scale) / 2
+    
+    x_range = [center_x - half_width, center_x + half_width]
+    y_range = [center_y - half_height, center_y + half_height]
+    
+    return {
+        'width': base_width,
+        'height': base_height,
+        'xaxis': {
+            'range': x_range,
+            'showgrid': False,
+            'zeroline': False,
+            'showticklabels': False,
+            'showline': False,
+            'scaleanchor': 'y',
+            'scaleratio': 1,
+            'domain': [0.01, 0.99]  # Use 98% of the width
+        },
+        'yaxis': {
+            'range': y_range,
+            'showgrid': False,
+            'zeroline': False,
+            'showticklabels': False,
+            'showline': False,
+            'scaleanchor': 'x',
+            'scaleratio': 1,
+            'domain': [0.01, 0.99]  # Use 98% of the height
+        }
+    }
+
+def _add_scale_bar(fig: go.Figure, x_range: List[float], y_range: List[float]) -> None:
+    """Add a scale bar to the plot that scales with zooming."""
+    # Calculate plot dimensions in real-world units
+    plot_width = max(x_range) - min(x_range)
+    
+    # Calculate a nice round length for the scale bar (e.g., 5m or 10m)
+    # Scale bar should be ~15% of the plot width
+    desired_scale_length = plot_width * 0.15
+    
+    # Round to a nice number (1, 2, 5, 10, etc.)
+    scale_lengths = [1, 2, 5, 10, 20, 50, 100]
+    scale_length = next(l for l in scale_lengths if l > desired_scale_length)
+    
+    # Position in paper coordinates (bottom left)
+    # Use fixed paper coordinates (0-1) for positioning
+    paper_x = 0.05  # 5% from left edge
+    paper_y = 0.05  # 5% from bottom edge
+    paper_width = 0.1  # 10% of paper width
+    paper_height = 0.01  # 1% of paper height
+    
+    # Add the scale bar line using paper coordinates
+    fig.add_shape(
+        type="line",
+        x0=paper_x,
+        x1=paper_x + paper_width,
+        y0=paper_y,
+        y1=paper_y,
+        line=dict(color="black", width=2),
+        layer="above",
+        xref="paper",
+        yref="paper"
+    )
+    
+    # Add small vertical lines at ends
+    for x in [paper_x, paper_x + paper_width]:
+        fig.add_shape(
+            type="line",
+            x0=x,
+            x1=x,
+            y0=paper_y - paper_height/2,
+            y1=paper_y + paper_height/2,
+            line=dict(color="black", width=2),
+            layer="above",
+            xref="paper",
+            yref="paper"
+        )
+    
+    # Add text label
+    fig.add_annotation(
+        x=paper_x + paper_width/2,
+        y=paper_y,
+        text=f"{scale_length}m",
+        showarrow=False,
+        font=dict(size=12),
+        yshift=-20,  # Shift text down by 20 pixels
+        xref="paper",
+        yref="paper"
+    )
