@@ -63,12 +63,12 @@ plots:
       - name: "Windows"
         # Simple filter syntax for beginners
         filter: "type=IfcWindow AND Pset_WindowCommon.IsExternal=true" #AND, OR, NOT, ()
-        color: "skyblue"
+        color: "black"
         
       - name: "External Walls"
         filter: "type=IfcCovering AND Pset_CoveringCommon.IsExternal=true"
         # Color by a property value
-        color: "light grey"
+        color: "lightgrey"
         label: none
   
   # Another example plot

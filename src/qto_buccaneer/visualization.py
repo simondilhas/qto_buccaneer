@@ -582,24 +582,67 @@ def _add_single_space_to_plot(
         point_inside = _find_point_inside_polygon(poly)
         text_x, text_y = point_inside
         
+        # Calculate room dimensions
+        min_x, max_x = min(x), max(x)
+        min_y, max_y = min(y), max(y)
+        room_width = max_x - min_x
+        room_height = max_y - min_y
+        
         # Build label text with individual space area
         label_text = [space_name]
         if space_area:
             label_text.append(f"{space_area:.1f} m²")
         
+        # Estimate text dimensions based on character count and font size
+        text = '\n'.join(label_text)
+        char_count = max(len(line) for line in label_text)
+        line_count = len(label_text)
+        font_size = plot_settings['defaults']['text_size']
+        
+        # More realistic text dimension estimation
+        # Assuming each character is ~0.5 units wide and line height is ~1.2 units
+        text_width = char_count * 0.5
+        text_height = line_count * 1.2
+        
+        # First check if room is long enough to consider rotation
+        is_long_room = room_height > room_width * 1.5
+        
+        # Then check if text would fit better rotated
+        fits_horizontally = text_width < room_width * 0.8
+        fits_vertically = text_height < room_width * 0.8
+        
+        # Only rotate if:
+        # 1. Room is long enough AND
+        # 2. Text fits better vertically than horizontally
+        needs_rotation = is_long_room and (not fits_horizontally or fits_vertically)
+        
+        # Debug information
+        print(f"Room dimensions: {room_width:.1f}x{room_height:.1f}")
+        print(f"Text dimensions: {text_width:.1f}x{text_height:.1f}")
+        print(f"Is long room: {is_long_room}")
+        print(f"Fits horizontally: {fits_horizontally}")
+        print(f"Fits vertically: {fits_vertically}")
+        print(f"Rotation needed: {needs_rotation}")
+        print(f"Height/Width ratio: {room_height/room_width:.2f}")
+        print(f"Text width/room width: {text_width/room_width:.2f}")
+        print(f"Text height/room width: {text_height/room_width:.2f}")
+        
         if view == '2d':
             # For 2D view, position text at the guaranteed inside point
-            fig.add_trace(go.Scatter(
-                x=[text_x],
-                y=[text_y],
-                text=['\n'.join(label_text)],
-                mode='text',
-                showlegend=False,
-                textfont=dict(
+            rotation = -90 if needs_rotation else 0  # Rotate text by 180 degrees if room is longer than wide
+            fig.add_annotation(
+                x=text_x,
+                y=text_y,
+                text=text,
+                showarrow=False,
+                font=dict(
                     size=plot_settings['defaults']['text_size'],
                     family=plot_settings['defaults']['font_family']
-                )
-            ))
+                ),
+                textangle=rotation,
+                xanchor='center',
+                yanchor='middle'
+            )
         else:
             # For 3D view, use the same x,y coordinates and the average z
             center_z = sum(z) / len(z)
