@@ -152,3 +152,18 @@ plots:
       - name: "Windows"
         filter: "type=IfcWindow"
         label: none
+  walls_by_relationships:
+    mode: "floor_plan"
+    title: "Walls by Relationships"
+    description: "2D floor plan showing walls by relationships"
+    
+    elements:
+      - name: "Walls"
+        filter: "type=IfcWallStandardCase"
+        color_by: "ePset_abstractBIM.SpacesLongName"
+        label: none
+
+      - name: "Spaces"
+        filter: "type=IfcSpace"
+        color: "white"
+        label: "LongName"

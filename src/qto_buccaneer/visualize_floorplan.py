@@ -16,7 +16,8 @@ def create_floorplan_per_storey(
     geometry_dir: str,
     properties_path: str,
     config_path: str,
-    output_dir: str
+    output_dir: str,
+    plot_name: str,
 ) -> Dict[str, str]:
     """Create floor plan visualizations for each storey.
     
@@ -25,9 +26,10 @@ def create_floorplan_per_storey(
         properties_path: Path to properties JSON file
         config_path: Path to plot configuration YAML file
         output_dir: Output directory for the visualizations
-        
+        plot_name: Name of the plot to create
+
     Returns:
-        Dictionary mapping storey names to their output HTML file paths
+        Dictionary mapping storey names to their output HTML, png, and json file paths
 
     Raises:
         FileNotFoundError: If required geometry files are missing
@@ -82,7 +84,7 @@ def create_floorplan_per_storey(
         geometry_json=geometry_data,
         properties_json=properties_data,
         config=config,
-        plot_name="floor_layout_by_name",
+        plot_name=plot_name,
         file_info=file_info
     )
     
@@ -92,7 +94,7 @@ def create_floorplan_per_storey(
 
     storey_to_output_path = {}
     for storey_name, plot in plots.items():
-        output_path = output_dir / f"floor_layout_{storey_name}.html"
+        output_path = output_dir / f"{plot_name}_{storey_name}.html"
         plot.write_html(str(output_path))
         plot.write_json(str(output_path.with_suffix('.json')))
         plot.write_image(str(output_path.with_suffix('.png')))
@@ -286,6 +288,10 @@ def _process_element(
         _add_window_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
     elif element_type == 'IfcBuildingStorey':
         pass  # Storey visualization not implemented
+    elif element_type == 'IfcWallStandardCase':
+        print("Starting wall visualization")  # Debug log
+        _add_wall_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
+        print("Wall visualization completed")  # Debug log
     else:
         _add_geometry_to_plot(
             fig, loader, element_config, element_type, conditions, plot_settings,
@@ -658,6 +664,10 @@ def _add_geometry_to_plot(
             print("Starting window visualization")  # Debug log
             _add_window_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
             print("Window visualization completed")  # Debug log
+        elif element_type == 'IfcWallStandardCase':
+            print("Starting wall visualization")  # Debug log
+            _add_wall_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
+            print("Wall visualization completed")  # Debug log
 
 def _create_door_symbol(
     width: float,
@@ -989,19 +999,24 @@ def _calculate_optimal_layout(x_coords: List[float], y_coords: List[float]) -> D
     content_ratio = width / height
     target_ratio = base_width / base_height
     
-    # Calculate the scaling factor to fit the content
+    # Add padding around content (20% on each side)
+    padding_factor = 0.2
+    padded_width = width * (1 + 2 * padding_factor)
+    padded_height = height * (1 + 2 * padding_factor)
+    
+    # Calculate the scaling factor to fit the padded content
     if content_ratio > target_ratio:
         # Content is wider than target, scale to width
-        scale = base_width / width
+        scale = base_width / padded_width
     else:
         # Content is taller than target, scale to height
-        scale = base_height / height
+        scale = base_height / padded_height
     
-    # Calculate the centered ranges
+    # Calculate the centered ranges with padding
     center_x = (x_max + x_min) / 2
     center_y = (y_max + y_min) / 2
     
-    # Calculate the range that will fill the space
+    # Calculate the range that will fill the space with padding
     half_width = (base_width / scale) / 2
     half_height = (base_height / scale) / 2
     
@@ -1037,8 +1052,9 @@ def _add_scale_bar(fig: go.Figure, x_range: List[float], y_range: List[float]) -
     """Add a scale bar to the plot that scales with zooming."""
     # Calculate plot dimensions in real-world units
     plot_width = max(x_range) - min(x_range)
+    plot_height = max(y_range) - min(y_range)
     
-    # Calculate a nice round length for the scale bar (e.g., 5m or 10m)
+    # Choose a nice round length for the scale bar (e.g., 5m or 10m)
     # Scale bar should be ~15% of the plot width
     desired_scale_length = plot_width * 0.15
     
@@ -1046,48 +1062,181 @@ def _add_scale_bar(fig: go.Figure, x_range: List[float], y_range: List[float]) -
     scale_lengths = [1, 2, 5, 10, 20, 50, 100]
     scale_length = next(l for l in scale_lengths if l > desired_scale_length)
     
-    # Position in paper coordinates (bottom left)
-    # Use fixed paper coordinates (0-1) for positioning
-    paper_x = 0.05  # 5% from left edge
-    paper_y = 0.05  # 5% from bottom edge
-    paper_width = 0.1  # 10% of paper width
-    paper_height = 0.01  # 1% of paper height
+    # Position relative to content
+    # Place in bottom left corner with some margin from the content
+    x_start = min(x_range) + plot_width * 0.05  # 5% from left edge of content
+    y_pos = min(y_range) - plot_height * 0.05  # 5% below bottom of content
     
-    # Add the scale bar line using paper coordinates
+    # Add the scale bar line
     fig.add_shape(
         type="line",
-        x0=paper_x,
-        x1=paper_x + paper_width,
-        y0=paper_y,
-        y1=paper_y,
+        x0=x_start,
+        x1=x_start + scale_length,
+        y0=y_pos,
+        y1=y_pos,
         line=dict(color="black", width=2),
-        layer="above",
-        xref="paper",
-        yref="paper"
+        layer="above"
     )
     
     # Add small vertical lines at ends
-    for x in [paper_x, paper_x + paper_width]:
+    for x in [x_start, x_start + scale_length]:
         fig.add_shape(
             type="line",
             x0=x,
             x1=x,
-            y0=paper_y - paper_height/2,
-            y1=paper_y + paper_height/2,
+            y0=y_pos - plot_height * 0.01,  # 1% of plot height
+            y1=y_pos + plot_height * 0.01,
             line=dict(color="black", width=2),
-            layer="above",
-            xref="paper",
-            yref="paper"
+            layer="above"
         )
     
     # Add text label
     fig.add_annotation(
-        x=paper_x + paper_width/2,
-        y=paper_y,
+        x=x_start + scale_length/2,
+        y=y_pos,
         text=f"{scale_length}m",
         showarrow=False,
         font=dict(size=12),
         yshift=-20,  # Shift text down by 20 pixels
-        xref="paper",
-        yref="paper"
+        bgcolor="white",  # Add white background to make text more visible
+        borderpad=2
     )
+
+def _add_wall_to_plot(
+    fig: go.Figure,
+    loader: IfcJsonLoader,
+    element_config: Dict,
+    element_type: Optional[str],
+    conditions: List[List[str]],
+    plot_settings: Dict,
+    storey_name: Optional[str] = None,
+    plot_config: Optional[Dict] = None
+) -> None:
+    """Add walls to the plot as filled rectangles."""
+    # Get all wall elements
+    wall_ids = loader.by_type_index.get('IfcWallStandardCase', [])
+    print(f"Found {len(wall_ids)} walls in by_type_index")
+    
+    # Group walls by color_by property if specified
+    color_by = element_config.get('color_by')
+    grouped_walls = {}
+    
+    for wall_id in wall_ids:
+        print(f"Processing wall with ID {wall_id}")
+        # Get the wall element using the numeric ID
+        wall = loader.properties['elements'].get(str(wall_id))
+        if not wall:
+            print(f"No wall properties found for ID {wall_id}")
+            continue
+            
+        # Get geometry using the numeric ID
+        geometry = loader.get_geometry(str(wall_id))
+        if not geometry:
+            print(f"No geometry found for wall {wall_id}")
+            continue
+        if 'vertices' not in geometry:
+            print(f"No vertices found for wall {wall_id}")
+            continue
+            
+        # Get the wall's storey using the numeric ID
+        if storey_name:
+            wall_storey = loader.get_storey_for_element(str(wall_id))
+            if wall_storey and wall_storey != storey_name:
+                print(f"Wall {wall_id} not in storey {storey_name}")
+                continue
+        
+        # Get the color group value
+        group_value = None
+        if color_by:
+            if color_by in wall.get('properties', {}):
+                group_value = wall['properties'][color_by]
+            elif color_by in wall:
+                group_value = wall[color_by]
+        else:
+            group_value = element_config.get('name', 'Unknown')
+        
+        if not group_value:
+            group_value = 'Unknown'
+            
+        if group_value not in grouped_walls:
+            grouped_walls[group_value] = {
+                'walls': [],
+                'total_area': 0.0
+            }
+            
+        # Calculate wall area
+        area = 0.0
+        if 'properties' in wall and 'Qto_WallBaseQuantities.NetSideArea' in wall['properties']:
+            try:
+                area = float(wall['properties']['Qto_WallBaseQuantities.NetSideArea'])
+            except (ValueError, TypeError):
+                pass
+                
+        grouped_walls[group_value]['walls'].append((wall, geometry))
+        grouped_walls[group_value]['total_area'] += area
+    
+    # Add each group of walls to the plot
+    for group_value, group_data in grouped_walls.items():
+        walls = group_data['walls']
+        total_area = group_data['total_area']
+        
+        # Get color for this group
+        color = _get_color_for_group(group_value)
+        
+        # Create legend name with total area
+        legend_name = f"{group_value} ({total_area:.1f} m²)"
+        
+        # First add a dummy trace for the legend with no line
+        fig.add_trace(go.Scatter(
+            x=[None],
+            y=[None],
+            mode='markers',
+            marker=dict(
+                color=color,
+                size=10,
+                symbol='square'
+            ),
+            name=legend_name,
+            showlegend=True,
+            legendgroup=group_value
+        ))
+        
+        # Add each wall as a separate trace but with the same legend name
+        for i, (wall, geometry) in enumerate(walls):
+            # Get wall vertices and calculate dimensions
+            vertices = geometry['vertices']
+            
+            # For 2D view, we'll use all vertices and project them to 2D
+            # We'll use the vertices with the most common z-coordinate
+            z_coords = [v[2] for v in vertices]
+            most_common_z = max(set(z_coords), key=z_coords.count)
+            
+            # Filter vertices to those with the most common z-coordinate
+            x_coords = []
+            y_coords = []
+            for v in vertices:
+                if abs(v[2] - most_common_z) < 0.1:  # Allow small tolerance
+                    x_coords.append(v[0])
+                    y_coords.append(v[1])
+            
+            if not x_coords or not y_coords:
+                print(f"No valid 2D vertices found for wall {wall.get('id')}")
+                continue
+                
+            # Calculate wall bounds
+            min_x, max_x = min(x_coords), max(x_coords)
+            min_y, max_y = min(y_coords), max(y_coords)
+            
+            # Add the wall rectangle
+            fig.add_trace(go.Scatter(
+                x=[min_x, max_x, max_x, min_x, min_x],  # Close the rectangle
+                y=[min_y, min_y, max_y, max_y, min_y],  # Close the rectangle
+                fill='toself',
+                fillcolor=color,
+                line=dict(color='black', width=1),
+                mode='lines',
+                name=None,  # No name for actual walls
+                showlegend=False,  # Don't show in legend
+                legendgroup=group_value,  # Group with the dummy trace
+                zorder=1
+            ))

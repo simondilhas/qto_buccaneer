@@ -5,5 +5,6 @@ if __name__ == "__main__":
         geometry_dir='examples/ifc_json_data/geometry',
         properties_path='examples/ifc_json_data/metadata/test_metadata.json',
         config_path='src/qto_buccaneer/configs/plot_config.yaml',
-        output_dir='output/visualizations'
+        output_dir='output/visualizations',
+        plot_name='floor_layout_by_name'
     ) 
