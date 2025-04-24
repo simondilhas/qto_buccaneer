@@ -37,12 +37,12 @@ def create_3d_visualization(
     # Check for required geometry files
     geometry_dir = Path(geometry_dir)
     required_files = {
-        'IfcWindow_geometry.json': 'window',
-        'IfcCovering_geometry.json': 'covering',
-        'IfcWallStandardCase_geometry.json': 'wall',
-        'IfcSlab_geometry.json': 'slab',
-        'IfcDoor_geometry.json': 'door',
-        'IfcOpeningElement_geometry.json': 'opening'
+        'IfcWindow.json': 'window',
+        'IfcCovering.json': 'covering',
+        'IfcWallStandardCase.json': 'wall',
+        'IfcSlab.json': 'slab',
+        'IfcDoor.json': 'door',
+        'IfcOpeningElement.json': 'opening'
     }
     
     missing_files = []
@@ -57,7 +57,9 @@ def create_3d_visualization(
         )
     
     # Load all geometry files in the directory
-    for geometry_file in geometry_dir.glob("*_geometry.json"):
+    for geometry_file in geometry_dir.glob("*.json"):
+        if geometry_file.name in ['metadata.json', 'error.json']:
+            continue
         print(f"Loading geometry from {geometry_file}")
         with open(geometry_file, 'r') as f:
             geometry = json.load(f)

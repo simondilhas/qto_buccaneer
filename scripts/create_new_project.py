@@ -2,6 +2,7 @@ import sys
 import argparse
 from pathlib import Path
 from typing import List, Union
+from datetime import datetime
 
 # Get the absolute path to the project root
 PROJECT_ROOT = Path(__file__).parent.parent.absolute()
@@ -9,12 +10,15 @@ PROJECT_ROOT = Path(__file__).parent.parent.absolute()
 TEMPLATE = [
     "input",
     "output/00_abstractBIM",
-    "output/01_enriched_models",
-    "output/02_json_data",
+    "output/01_enriched",
+    "output/02_above_below_ground",
     "output/03_quantities",
-    "output/04_figures",
-    "output/05_reports"
+    "output/04_json_geometry (optional)",
+    "output/05_plots (optional)",
+    "output/06_reports"
 ]
+
+from .project_utils import save_project_data
 
 def get_project_base(name: str, is_private: bool) -> Path:
     """Get the base directory for projects based on privacy setting.
@@ -46,13 +50,26 @@ def create_project(name: str, is_private: bool = False) -> bool:
     if base.exists():
         print(f"[!] Project '{name}' already exists at {base}")
         return False
-
-    # Create base directory first
-    base.parent.mkdir(exist_ok=True)
     
     for path in TEMPLATE:
         dir_path = base / path
         dir_path.mkdir(parents=True, exist_ok=True)
+
+    # Create project_data.yaml
+    project_data = {
+        "metadata": {
+            "name": name,
+            "description": "",  # To be filled in by user
+            "created_at": datetime.now().isoformat(),
+            "is_private": is_private
+        },
+        "settings": {
+            "address": "",  # To be filled in by user
+            "ifc_file": ""  # To be filled in by user
+        }
+    }
+    
+    save_project_data(base, project_data)
 
     # Create notes.md
     notes_content = [
@@ -67,10 +84,14 @@ def create_project(name: str, is_private: bool = False) -> bool:
     (base / "run_qto.py").write_text(
         f"""# Starter script for {name}
 from pathlib import Path
-from qto_buccaneer import QtoCalculator
+from scripts.project_utils import load_project_data
 
 project_dir = Path(__file__).parent
-ifc_path = project_dir / "input" / "model.ifc"
+
+# Load project data
+project_data = load_project_data(project_dir)
+
+ifc_path = project_dir / "input" / project_data["settings"]["ifc_file"]
 
 # TODO: replace with actual logic
 if ifc_path.exists():
@@ -91,7 +112,14 @@ def create_projects_from_list(projects: List[str], is_private: bool = False) -> 
     failed = 0
     
     for project in projects:
-        if create_project(project.strip(), is_private):
+        # Skip empty strings or whitespace-only strings
+        if not project or not project.strip():
+            print(f"[!] Skipping empty project name")
+            failed += 1
+            continue
+            
+        project = project.strip()
+        if create_project(project, is_private):
             successful += 1
         else:
             failed += 1

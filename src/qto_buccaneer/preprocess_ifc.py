@@ -13,7 +13,9 @@ from qto_buccaneer.enrich import enrich_ifc_with_df
 def add_spatial_data_to_ifc(
     ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
     pset_name: str = "Pset_SpatialData",
-    ifc_entity: Optional[str] = None
+    ifc_entity: Optional[str] = None,
+    output_dir: Optional[str] = None,
+    file_postfix: str = "_sd" # spatial data
 ) -> str:
     """
     Add spatial relationship data to IFC elements as a new property set.
@@ -22,6 +24,9 @@ def add_spatial_data_to_ifc(
         ifc_file: Either a file path, IfcLoader instance, or ifcopenshell model
         pset_name: Name of the property set to create
         ifc_entity: Optional filter for specific IFC entity types
+        output_dir: Optional output directory for the enriched IFC file. If not specified,
+                   the enriched file will be saved in the same directory as the input file.
+        file_postfix: Optional postfix to add to the output filename (default: "sp")
         
     Returns:
         str: Path to the enriched IFC file
@@ -42,20 +47,19 @@ def add_spatial_data_to_ifc(
         return loader.file_path or "no_spatial_data.ifc"
     
     print(f"Found {len(spatial_df)} elements with spatial data")
-    
-    # Only keep necessary columns for enrichment
-    #columns_to_keep = ['GlobalId', 'Building.Story', 'Story.Elevation']
-    #spatial_df = spatial_df[columns_to_keep]
     print(spatial_df)
     
     print("Starting enrichment")
     try:
+        # Since we already have the loader and spatial_df, we can pass them directly
+        # to enrich_ifc_with_df to avoid redundant operations
         result = enrich_ifc_with_df(
             ifc_file=loader,  # Pass the loader directly
             df_for_ifc_enrichment=spatial_df,
-            key="GlobalId",
+            key="GlobalId",  # We know spatial_df has GlobalId
             pset_name=pset_name,
-            file_postfix="sp"
+            file_postfix=file_postfix,  # Use the provided file_postfix
+            output_dir=output_dir  # Use output_dir for the output location
         )
         print("Enrichment complete")
         return result

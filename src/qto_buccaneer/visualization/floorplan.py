@@ -22,7 +22,7 @@ def create_floorplan_per_storey(
     """Create floor plan visualizations for each storey.
     
     Args:
-        geometry_dir: Directory containing geometry JSON files (e.g., IfcSpace_geometry.json, IfcDoor_geometry.json)
+        geometry_dir: Directory containing geometry JSON files (e.g., IfcSpace.json, IfcDoor.json)
         properties_path: Path to properties JSON file
         config_path: Path to plot configuration YAML file
         output_dir: Output directory for the visualizations
@@ -41,9 +41,9 @@ def create_floorplan_per_storey(
     # Check for required geometry files
     geometry_dir = Path(geometry_dir)
     required_files = {
-        'IfcSpace_geometry.json': 'space',
-        'IfcDoor_geometry.json': 'door',
-        'IfcWindow_geometry.json': 'window'
+        'IfcSpace.json': 'space',
+        'IfcDoor.json': 'door',
+        'IfcWindow.json': 'window'
     }
     
     missing_files = []
@@ -58,11 +58,12 @@ def create_floorplan_per_storey(
         )
     
     # Load all geometry files in the directory
-    for geometry_file in geometry_dir.glob("*_geometry.json"):
-        print(f"Loading geometry from {geometry_file}")
-        with open(geometry_file, 'r') as f:
-            geometry = json.load(f)
-            geometry_data.extend(geometry)
+    for geometry_file in geometry_dir.glob("*.json"):
+        if geometry_file.name != 'metadata.json' and geometry_file.name != 'error.json':
+            print(f"Loading geometry from {geometry_file}")
+            with open(geometry_file, 'r') as f:
+                geometry = json.load(f)
+                geometry_data.extend(geometry)
     
     # Load properties
     with open(properties_path, 'r') as f:

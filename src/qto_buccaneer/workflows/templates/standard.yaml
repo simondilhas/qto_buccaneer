@@ -1,0 +1,39 @@
+name: "Standard Workflow"
+description: "Standard workflow for QTO Buccaneer projects"
+
+steps:
+  - name: "enrich"
+    script: "01_enrich.py"
+    input_dir: "00_abstractBIM"
+    output_dir: "01_enriched"
+    required: true
+
+  - name: "spatial"
+    script: "02_above_below_ground.py"
+    input_dir: "01_enriched"
+    output_dir: "02_above_below_ground"
+    required: true
+
+  - name: "quantities"
+    script: "03_quantities.py"
+    input_dir: "02_above_below_ground"
+    output_dir: "03_quantities"
+    required: true
+
+  - name: "reports"
+    script: "06_create_pdf_report.py"
+    input_dir: "03_quantities"
+    output_dir: "06_reports"
+    required: true
+
+  - name: "geometry"
+    script: "04_json_geometry.py"
+    input_dir: "03_quantities"
+    output_dir: "04_json_geometry"
+    required: false
+
+  - name: "plots"
+    script: "05_create_all_plots.py"
+    input_dir: "03_quantities"
+    output_dir: "05_plots"
+    required: false 

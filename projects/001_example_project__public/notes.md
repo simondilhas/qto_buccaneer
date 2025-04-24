@@ -3,5 +3,4 @@
 Visibility: Public
 
 ## Project Notes
-
-Project notes go here.
+This project utilized abstractBIM data to showcase the whole workflow step by step

@@ -1,0 +1,32 @@
+# config.yaml at project root
+workflow:
+  steps:
+    - name: "enrich"
+      input_dir: "00_abstractBIM"
+      output_dir: "01_enriched"
+    - name: "spatial"
+      input_dir: "01_enriched"
+      output_dir: "02_above_below_ground"
+    - name: "quantities"
+      input_dir: "02_above_below_ground"
+      output_dir: "03_quantities"
+      # The optional steps are necessary for vizualizations in the report
+    - name: "geometry"
+      input_dir: "03_quantities"
+      output_dir: "04_json_geometry (optional)"
+    - name: "plots"
+      input_dir: "03_quantities"
+      output_dir: "05_plots (optional)"
+      # End of optional steps
+    - name: "reports"
+      input_dir: "03_quantities"
+      output_dir: "06_reports"
+
+defaults:
+  enrichment:
+    key: "LongName"
+    pset_name: "Pset_AdditionalData"
+  metrics:
+    config_file: "src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml"
+  reports:
+    output_name: "qto_buccaneer_report"

@@ -29,7 +29,8 @@ def enrich_ifc_with_df(ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
                        df_for_ifc_enrichment: pd.DataFrame,
                        key: str = "LongName",
                        pset_name: str = "Pset_Enrichment",
-                       file_postfix: str = "_enriched") -> str:
+                       file_postfix: str = "_enriched",
+                       output_dir: Optional[str] = None) -> str:
     """
     Enrich IFC elements with data from a DataFrame.
 
@@ -38,6 +39,9 @@ def enrich_ifc_with_df(ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
         df_for_ifc_enrichment: DataFrame containing enrichment data
         key: Attribute name to match IFC elements (e.g. "LongName", "GlobalId")
         pset_name: Name for the property set storing enriched data
+        file_postfix: Postfix to add to the output filename
+        output_dir: Optional output directory for the enriched IFC file. If not specified,
+                   the file will be saved in the same directory as the input file.
 
     Returns:
         str: Path to the enriched IFC file
@@ -68,10 +72,17 @@ def enrich_ifc_with_df(ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
 
     # Create new file path
     if loader.file_path:
-        output_path = Path(loader.file_path)
-        new_ifc_path = str(output_path.parent / f"{output_path.stem}_{file_postfix}{output_path.suffix}")
+        input_path = Path(loader.file_path)
+        if output_dir:
+            output_path = Path(output_dir) / f"{input_path.stem}{file_postfix}{input_path.suffix}"
+        else:
+            output_path = input_path.parent / f"{input_path.stem}{file_postfix}{input_path.suffix}"
     else:
-        new_ifc_path = "enriched.ifc"
+        output_path = Path("enriched.ifc")
+
+    # Create output directory if it doesn't exist
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    new_ifc_path = str(output_path)
 
     # Copy the model
     loader.model.write(new_ifc_path)
