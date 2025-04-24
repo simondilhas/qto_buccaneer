@@ -1,4 +1,6 @@
 """
+QTO Buccaneer - A tool for quantity takeoff from IFC files.
+
 This package provides tools for exploring, extracting, and calculating quantities 
 from IFC models. It's designed for construction, architecture, and BIM professionals 
 who need automated quantity takeoffs.

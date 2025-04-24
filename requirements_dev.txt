@@ -1,3 +1,12 @@
+# Development setup
+# 1. Create and activate virtual environment
+# python -m venv .venv
+# source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+
+# 2. Install development dependencies
+# pip install --upgrade pip setuptools wheel
+# pip install -e .
+
 alabaster==1.0.0
 asttokens==3.0.0
 attrs==25.3.0

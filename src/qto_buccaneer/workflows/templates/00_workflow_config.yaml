@@ -1,0 +1,24 @@
+project_name: "add_your_project_name_here"
+
+steps:
+  - script: "run_collect_data.py"
+    folder: "00_original_input_data"
+  - script: "run_create_abstractBIM.py"
+    folder: "01_abstractbim_model"
+  - script: "run_calculate_above_below_ground.py"
+    folder: "02_ground_separation_data"
+  - script: "run_enrich_ifc_with_metadata.py"
+    folder: "03_enriched_ifc"
+  - script: "run_calculate_metrics.py"
+    folder: "04_metrics_data"
+  - script: "run_create_json_geometry.py"
+    folder: "05_geometry_json"
+  - script: "run_create_all_plots.py"
+    folder: "06_visualizations"
+  - script: "run_create_pdf_report.py"
+    folder: "07_pdf_report"
+
+buildings:
+  - "add_your_building_name_here" #new line for each building e.g. - "building_001"
+
+

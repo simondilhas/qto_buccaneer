@@ -9,7 +9,14 @@ Ahoy! This Python library is your toolkit for exploring, extracting, and calcula
 - [Designed for IFC, optimized for abstractBIM Data](#-designed-for-abstractbim-data)
 - [Quick Start](#-quick-start)
   - [Tutorial for Programming Landlubbers](#tutorial-for-programming-landlubbers)
+  - [The Workflow System](#the-workflow-system)
+    - [Project Structure](#-project-structure-1)
+    - [How It Works](#-how-it-works)
+    - [Getting Started with Projects](#-getting-started-with-projects)
+    - [Example Workflow Config](#-example-workflow-config)
+    - [Key Benefits](#-key-benefits)
   - [Installation](#installation-for-non-landlubbers)
+  - [Development Setup](#development-setup)
   - [Usage Examples](#usage-examples)
     - [Calculate Metrics](#calculate-metrics)
     - [Enrich IFC Model](#enrich-ifc-model)
@@ -44,7 +51,7 @@ Everything you need to calculate metrics, enrich models, and create reports is i
 
 Our compass points to **open standards**, **hands-on knowledge**, and **giving you full control** over your quantity takeoffs.
 
-> True pirates don’t depend on kings.  
+> True pirates don't depend on kings.  
 > They build their own ships — and borrow a map when it saves time.
 
 ---
@@ -127,14 +134,87 @@ Once the notebook is open, you're in the captain's seat. You'll:
 - Calculate quantity metrics using the general tools of panda.
 - Open a BIM model and use the built-in **QTO Buccaneer shortcuts** to speed up your takeoff workflow.
 
+### The Workflow System
 
- Great job! So grab your keyboard cutlass and dive in! Follow the flow of the notebook...
+For those ready to set sail with their own projects, QTO Buccaneer provides a structured workflow system:
 
+#### Project Structure
 
-### You need more support to get started?
+```
+projects/
+├── my_project__public/                   # Your project folder e.g. all the models of a competition
+│   ├── building1/                        # First building
+│   │   ├── 01_abstractbim_model/         # Step 1 results
+│   │   ├── 02_ground_separation_data/    # Step 2 results
+│   │   └── ...                           # More steps
+│   ├── building2/                        # Second building
+│   │   ├── 01_abstractbim_model/
+│   │   ├── 02_ground_separation_data/
+│   │   └── ...
+│   └── workflows/                        # Your workflow instructions
+│       ├── 00_workflow_config.yaml       # What steps to run
+│       ├── 90_run_all_steps.py           # Run everything
+│       └── 91_iterate_over_buildings.py  # Run one step for all buildings
+```
 
-Check out the QTO Buccaneer page for more information:
+#### How It Works
 
+1. **Projects** are like containers for your work:
+   - They group related buildings together
+   - They share the same workflow rules
+   - They can be public or private (private means no snc to github)
+
+2. **Buildings** are your actual models:
+   - Each building gets processed the same way
+   - Results are stored in step folders
+   - You can add as many buildings as you need
+
+3. **Workflows** are your automation recipes:
+   - Defined in `00_workflow_config.yaml`
+   - List all the steps to run
+   - Each step has a script (what to do) and a folder (where to put results)
+
+#### Getting Started with Projects
+
+1. **Create a Project**:
+   ```bash
+   python projects/00_run_create_new_project.py -n "my_project"
+   ```
+
+2. **Add Buildings**:
+   ```bash
+   cd projects/my_project__public/workflows
+   python 01_run_create_new_building.py -n "building1"
+   ```
+
+3. **Run the Workflow**:
+   ```bash
+   # Run all steps for all buildings
+   python 90_run_all_steps.py
+   
+   # Or run one step for all buildings
+   python 91_iterate_over_buildings.py create_abstractBIM.py
+   ```
+
+#### Example Workflow Config
+
+```yaml
+steps:
+  - script: "create_abstractBIM.py"    # What to do
+    folder: "01_abstractbim_model"     # Where to put results
+  - script: "calculate_metrics.py"
+    folder: "02_metrics_data"
+  - script: "create_report.py"
+    folder: "03_reports"
+```
+
+#### Key Benefits
+
+1. **Consistency**: Same rules applied to all buildings
+2. **Automation**: One click to process everything
+3. **Organization**: Clear structure for results
+4. **Flexibility**: Easy to modify workflows
+5. **Reproducibility**: Same steps every time
 
 
 ### Installation (for non landlubbers)
@@ -149,7 +229,44 @@ pip install -r requirements.txt
 pip install git+https://github.com/simondilhas/qto-buccaneer.git
 ```
 
+### Development Setup
 
+For developers who want to work on the codebase:
+
+1. Clone the repository:
+```bash
+git clone https://github.com/simondilhas/qto-buccaneer.git
+cd qto-buccaneer
+```
+
+2. Create and activate a virtual environment:
+```bash
+# Create virtual environment
+python -m venv .venv
+
+# Activate it
+# On Linux/Mac:
+source .venv/bin/activate
+# On Windows:
+.venv\Scripts\activate
+```
+
+3. Install development dependencies:
+```bash
+# Upgrade pip and install build tools
+pip install --upgrade pip setuptools wheel
+
+# Install the package in development mode
+pip install -e .
+
+# Install development dependencies
+pip install -r requirements_dev.txt
+```
+
+Now you can:
+- Import the package from anywhere in your code: `from qto_buccaneer import ...`
+- Make changes to the code and see them reflected immediately
+- Run tests and contribute to the project
 
 ### Usage Examples
 

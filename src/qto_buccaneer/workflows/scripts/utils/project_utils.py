@@ -1,6 +1,7 @@
 import yaml
 from pathlib import Path
 from typing import Dict, Optional, List
+import sys
 
 def load_project_data(project_path: Path) -> Dict:
     """Load project data from YAML file.
@@ -41,25 +42,35 @@ def save_project_data(project_path: Path, data: Dict) -> None:
     with open(config_path, 'w') as f:
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
-def load_workflow(project_path: Path, workflow_name: str = "standard") -> Dict:
+def save_building_data(building_path: Path, data: Dict) -> None:
+    """Save building data to YAML file.
+    
+    Args:
+        building_path: Path to the building directory
+        data: Building data to save
+    """
+    config_path = building_path / "building_data.yaml"
+    with open(config_path, 'w') as f:
+        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+
+def load_workflow(config_name: str) -> Dict:
     """Load workflow configuration.
     
-    First tries to load from project's workflows directory,
-    then falls back to default templates.
+    Args:
+        config_name: Name of the workflow config file (e.g. '00_workflow_config.yaml')
+        
+    Returns:
+        Dict: Workflow configuration
     """
-    # Try project-specific workflow first
-    project_workflow = project_path / "workflows" / f"{workflow_name}.yaml"
-    if project_workflow.exists():
-        with open(project_workflow, 'r') as f:
+    # Get the directory where the calling script is located
+    script_dir = Path(sys.argv[0]).parent
+    config_path = script_dir / config_name
+    
+    if config_path.exists():
+        with open(config_path, 'r') as f:
             return yaml.safe_load(f)
-    
-    # Fall back to default template
-    template_path = Path(__file__).parent.parent / "src" / "qto_buccaneer" / "workflows" / "templates" / f"{workflow_name}.yaml"
-    if not template_path.exists():
-        raise FileNotFoundError(f"Workflow template not found: {workflow_name}")
-    
-    with open(template_path, 'r') as f:
-        return yaml.safe_load(f)
+            
+    raise FileNotFoundError(f"Workflow config not found: {config_path}")
 
 def get_workflow_steps(workflow: Dict, include_optional: bool = False) -> List[Dict]:
     """Get list of workflow steps, optionally including optional steps."""
