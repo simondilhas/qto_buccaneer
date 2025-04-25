@@ -45,7 +45,7 @@ el.replaceWith(d);
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="qto_buccaneer.preprocess_ifc.add_spatial_data_to_ifc"><code class="name flex">
-<span>def <span class="ident">add_spatial_data_to_ifc</span></span>(<span>ifc_file: str | <a title="qto_buccaneer.utils.ifc_loader.IfcLoader" href="utils/ifc_loader.html#qto_buccaneer.utils.ifc_loader.IfcLoader">IfcLoader</a> | ForwardRef('ifcopenshell.file'),<br>pset_name: str = 'Pset_SpatialData',<br>ifc_entity: str | None = None) ‑> str</span>
+<span>def <span class="ident">add_spatial_data_to_ifc</span></span>(<span>ifc_file: str | <a title="qto_buccaneer.utils.ifc_loader.IfcLoader" href="utils/ifc_loader.html#qto_buccaneer.utils.ifc_loader.IfcLoader">IfcLoader</a> | ForwardRef('ifcopenshell.file'),<br>pset_name: str = 'Pset_SpatialData',<br>ifc_entity: str | None = None,<br>output_dir: str | None = None,<br>file_postfix: str = '_sd') ‑> str</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -55,7 +55,9 @@ el.replaceWith(d);
 <pre><code class="python">def add_spatial_data_to_ifc(
     ifc_file: Union[str, IfcLoader, &#39;ifcopenshell.file&#39;],
     pset_name: str = &#34;Pset_SpatialData&#34;,
-    ifc_entity: Optional[str] = None
+    ifc_entity: Optional[str] = None,
+    output_dir: Optional[str] = None,
+    file_postfix: str = &#34;_sd&#34; # spatial data
 ) -&gt; str:
     &#34;&#34;&#34;
     Add spatial relationship data to IFC elements as a new property set.
@@ -64,6 +66,9 @@ el.replaceWith(d);
         ifc_file: Either a file path, IfcLoader instance, or ifcopenshell model
         pset_name: Name of the property set to create
         ifc_entity: Optional filter for specific IFC entity types
+        output_dir: Optional output directory for the enriched IFC file. If not specified,
+                   the enriched file will be saved in the same directory as the input file.
+        file_postfix: Optional postfix to add to the output filename (default: &#34;sp&#34;)
         
     Returns:
         str: Path to the enriched IFC file
@@ -84,20 +89,19 @@ el.replaceWith(d);
         return loader.file_path or &#34;no_spatial_data.ifc&#34;
     
     print(f&#34;Found {len(spatial_df)} elements with spatial data&#34;)
-    
-    # Only keep necessary columns for enrichment
-    #columns_to_keep = [&#39;GlobalId&#39;, &#39;Building.Story&#39;, &#39;Story.Elevation&#39;]
-    #spatial_df = spatial_df[columns_to_keep]
     print(spatial_df)
     
     print(&#34;Starting enrichment&#34;)
     try:
+        # Since we already have the loader and spatial_df, we can pass them directly
+        # to enrich_ifc_with_df to avoid redundant operations
         result = enrich_ifc_with_df(
             ifc_file=loader,  # Pass the loader directly
             df_for_ifc_enrichment=spatial_df,
-            key=&#34;GlobalId&#34;,
+            key=&#34;GlobalId&#34;,  # We know spatial_df has GlobalId
             pset_name=pset_name,
-            file_postfix=&#34;sp&#34;
+            file_postfix=file_postfix,  # Use the provided file_postfix
+            output_dir=output_dir  # Use output_dir for the output location
         )
         print(&#34;Enrichment complete&#34;)
         return result
@@ -114,6 +118,11 @@ el.replaceWith(d);
 <dd>Name of the property set to create</dd>
 <dt><strong><code>ifc_entity</code></strong></dt>
 <dd>Optional filter for specific IFC entity types</dd>
+<dt><strong><code>output_dir</code></strong></dt>
+<dd>Optional output directory for the enriched IFC file. If not specified,
+the enriched file will be saved in the same directory as the input file.</dd>
+<dt><strong><code>file_postfix</code></strong></dt>
+<dd>Optional postfix to add to the output filename (default: "sp")</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>

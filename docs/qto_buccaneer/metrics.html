@@ -45,14 +45,14 @@ el.replaceWith(d);
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="qto_buccaneer.metrics.calculate_all_metrics"><code class="name flex">
-<span>def <span class="ident">calculate_all_metrics</span></span>(<span>config: Dict, ifc_path: str, file_info: dict | None = None) ‑> pandas.core.frame.DataFrame</span>
+<span>def <span class="ident">calculate_all_metrics</span></span>(<span>config: Dict,<br>ifc_path: str,<br>file_info: dict | None = None,<br>output_dir: str | None = None) ‑> pandas.core.frame.DataFrame</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def calculate_all_metrics(config: Dict, ifc_path: str, file_info: Optional[dict] = None) -&gt; pd.DataFrame:
+<pre><code class="python">def calculate_all_metrics(config: Dict, ifc_path: str, file_info: Optional[dict] = None, output_dir: Optional[str] = None) -&gt; pd.DataFrame:
     &#34;&#34;&#34;
     Calculate all metrics (base, relationship-based, derived, space-based, and grouped) defined in the configuration.
 
@@ -398,130 +398,76 @@ print(result[[&quot;metric_name&quot;, &quot;value&quot;, &quot;unit&quot;]])
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def calculate_single_grouped_metric(ifc_path: str, config: dict, metric_name: str, file_info: Optional[dict] = None) -&gt; pd.DataFrame:
-    &#34;&#34;&#34;
-    Calculate a single metric grouped by an attribute value from the IFC model.
-
-    This function calculates quantities for building elements and groups them based on
-    a specified attribute (e.g., direction, material, level). It enables dynamic analysis
-    based on the actual attribute values present in the IFC model.
-
-    Args:
-        ifc_path (str): Path to the IFC file to analyze
-        config (dict): Configuration dictionary containing the metric definition.
-                      Must include grouped_by_attribute_metrics section.
-        metric_name (str): Name of the grouped metric to calculate
-        file_info (Optional[dict]): Additional file metadata. Defaults to None.
-
-    Returns:
-        pd.DataFrame: DataFrame containing the calculated metrics grouped by the
-                     specified attribute, with columns:
-            - metric_name: Name of the metric
-            - group: Value of the grouping attribute
-            - value: Calculated numeric value
-            - unit: Unit of measurement (m², m³, count)
-            - category: Type of measurement
-            - description: Description of what is being measured
-            - calculation_time: When the metric was calculated
-            - status: Calculation status (success/error)
-
-    Example:
-        ```python
-        from qto_buccaneer.utils.config import load_config
-
-        # Load configuration
-        config = load_config(&#34;src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml&#34;)
-
-        # Calculate facade area grouped by orientation
-        results = calculate_single_grouped_metric(
-            ifc_path=&#34;path/to/model.ifc&#34;,
-            config=config,
-            metric_name=&#34;facade_net_area_by_direction&#34;,
-            file_info={&#34;project_name&#34;: &#34;Office Building&#34;}
-        )
-
-        print(results[[&#34;metric_name&#34;, &#34;group&#34;, &#34;value&#34;, &#34;unit&#34;]])
-        # Example output:
-        #   metric_name                  group    value  unit
-        # 0 facade_net_area_by_direction North    150.5   m²
-        # 1 facade_net_area_by_direction South    142.3   m²
-        # 2 facade_net_area_by_direction East     98.7    m²
-        # 3 facade_net_area_by_direction West     95.2    m²
-
-        # Another example: windows area by direction
-        results = calculate_single_grouped_metric(
-            ifc_path=&#34;path/to/model.ifc&#34;,
-            config=config,
-            metric_name=&#34;windows_area_by_direction&#34;
-        )
-
-        print(results[[&#34;metric_name&#34;, &#34;group&#34;, &#34;value&#34;, &#34;unit&#34;]])
-        # Example output:
-        #   metric_name              group    value  unit
-        # 0 windows_area_by_direction   90     45.2   m²
-        # 1 windows_area_by_direction  180     52.8   m²
-        # 2 windows_area_by_direction  -90     28.4   m²
-        # 3 windows_area_by_direction -180     25.6   m²
-        ```
-
-    Note:
-        - The metric must be defined in the grouped_by_attribute_metrics section of config
-        - Required configuration fields:
-          - ifc_entity: Type of element to measure
-          - grouping_attribute: Attribute to group by (e.g., &#34;Pset_abstractBIM.Normal&#34;)
-          - pset_name: Property set containing the quantity
-          - prop_name: Name of the quantity property
-        - Optional filters can be used to include/exclude specific elements
-        - Groups are created dynamically based on unique attribute values in the model
-        - Elements without the specified attribute will be excluded
-    &#34;&#34;&#34;
+<pre><code class="python">def calculate_single_grouped_metric(
+    ifc_path: str,
+    config: dict,
+    metric_name: str,
+    file_info: Optional[dict] = None,
+) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;Calculate a single grouped metric.&#34;&#34;&#34;
     if metric_name not in config.get(&#39;grouped_by_attribute_metrics&#39;, {}):
         return pd.DataFrame([create_result_dict(
             metric_name=metric_name,
             error_message=&#34;Metric not found in grouped metrics configuration&#34;,
             **file_info or {}
         )])
-
+    
     loader = IfcLoader(ifc_path)
     qto = QtoCalculator(loader)
     metric_config = config[&#39;grouped_by_attribute_metrics&#39;][metric_name]
     
     try:
-        # Get grouped values using the new method
+        ifc_entity = metric_config[&#34;ifc_entity&#34;]
+        grouping_attribute = metric_config.get(&#34;grouping_attribute&#34;)
+        grouping_pset = metric_config.get(&#34;grouping_pset&#34;)
+        pset_name = metric_config.get(&#34;pset_name&#34;)
+        prop_name = metric_config.get(&#34;prop_name&#34;)
+        include_filter = metric_config.get(&#34;include_filter&#34;)
+        include_filter_logic = metric_config.get(&#34;include_filter_logic&#34;, &#34;AND&#34;)
+        subtract_filter = metric_config.get(&#34;subtract_filter&#34;)
+        subtract_filter_logic = metric_config.get(&#34;subtract_filter_logic&#34;, &#34;AND&#34;)
+        quantity_type = metric_config.get(&#34;quantity_type&#34;, &#34;area&#34;)
+
+        # Get grouped values
         grouped_values = qto._get_elements_by_attribute(
-            ifc_entity=metric_config[&#34;ifc_entity&#34;],
-            grouping_attribute=metric_config[&#34;grouping_attribute&#34;],
-            include_filter=metric_config.get(&#34;include_filter&#34;),
-            include_filter_logic=metric_config.get(&#34;include_filter_logic&#34;, &#34;AND&#34;),
-            subtract_filter=metric_config.get(&#34;subtract_filter&#34;),
-            subtract_filter_logic=metric_config.get(&#34;subtract_filter_logic&#34;, &#34;OR&#34;),
-            pset_name=metric_config.get(&#34;pset_name&#34;),
-            prop_name=metric_config.get(&#34;prop_name&#34;)
+            ifc_entity=ifc_entity,
+            grouping_attribute=grouping_attribute,
+            grouping_pset=grouping_pset,
+            include_filter=include_filter,
+            include_filter_logic=include_filter_logic,
+            subtract_filter=subtract_filter,
+            subtract_filter_logic=subtract_filter_logic,
+            pset_name=pset_name,
+            prop_name=prop_name,
         )
 
         # Create results for each group
         results = []
         for group_value, value in grouped_values.items():
-            # Convert the group value to string and clean it
+            # Clean up the group value for use in metric name
             clean_group_value = str(group_value).replace(&#34; &#34;, &#34;_&#34;).lower()
+            # Create the metric name with the group value appended
+            full_metric_name = f&#34;{metric_name}_{clean_group_value}&#34;
             
-            results.append(create_result_dict(
-                metric_name=f&#34;{metric_name}_{clean_group_value}&#34;,
-                value=value,
-                unit=_determine_unit(metric_config.get(&#34;quantity_type&#34;, &#34;area&#34;)),
-                category=metric_config.get(&#34;quantity_type&#34;, &#34;area&#34;),
-                description=metric_config.get(&#34;description&#34;, &#34;&#34;),
-                **file_info or {}
-            ))
+            results.append({
+                &#34;metric_name&#34;: full_metric_name,
+                &#34;value&#34;: value,
+                &#34;unit&#34;: &#34;m²&#34; if quantity_type == &#34;area&#34; else &#34;m³&#34; if quantity_type == &#34;volume&#34; else &#34;count&#34;,
+                &#34;category&#34;: quantity_type,
+                &#34;description&#34;: metric_config[&#34;description&#34;],
+                &#34;calculation_time&#34;: datetime.now(),
+                &#34;status&#34;: &#34;success&#34;,
+                **(file_info or {})
+            })
 
-        if results:
-            return pd.DataFrame(results)
-        else:
+        if not results:
             return pd.DataFrame([create_result_dict(
                 metric_name=metric_name,
                 error_message=&#34;No results calculated&#34;,
                 **file_info or {}
             )])
+
+        return pd.DataFrame(results)
 
     except Exception as e:
         return pd.DataFrame([create_result_dict(
@@ -530,85 +476,7 @@ print(result[[&quot;metric_name&quot;, &quot;value&quot;, &quot;unit&quot;]])
             **file_info or {}
         )])</code></pre>
 </details>
-<div class="desc"><p>Calculate a single metric grouped by an attribute value from the IFC model.</p>
-<p>This function calculates quantities for building elements and groups them based on
-a specified attribute (e.g., direction, material, level). It enables dynamic analysis
-based on the actual attribute values present in the IFC model.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>ifc_path</code></strong> :&ensp;<code>str</code></dt>
-<dd>Path to the IFC file to analyze</dd>
-<dt><strong><code>config</code></strong> :&ensp;<code>dict</code></dt>
-<dd>Configuration dictionary containing the metric definition.
-Must include grouped_by_attribute_metrics section.</dd>
-<dt><strong><code>metric_name</code></strong> :&ensp;<code>str</code></dt>
-<dd>Name of the grouped metric to calculate</dd>
-<dt><strong><code>file_info</code></strong> :&ensp;<code>Optional[dict]</code></dt>
-<dd>Additional file metadata. Defaults to None.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>pd.DataFrame</code></dt>
-<dd>DataFrame containing the calculated metrics grouped by the
-specified attribute, with columns:
-- metric_name: Name of the metric
-- group: Value of the grouping attribute
-- value: Calculated numeric value
-- unit: Unit of measurement (m², m³, count)
-- category: Type of measurement
-- description: Description of what is being measured
-- calculation_time: When the metric was calculated
-- status: Calculation status (success/error)</dd>
-</dl>
-<h2 id="example">Example</h2>
-<pre><code class="language-python">from qto_buccaneer.utils.config import load_config
-
-# Load configuration
-config = load_config(&quot;src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml&quot;)
-
-# Calculate facade area grouped by orientation
-results = calculate_single_grouped_metric(
-    ifc_path=&quot;path/to/model.ifc&quot;,
-    config=config,
-    metric_name=&quot;facade_net_area_by_direction&quot;,
-    file_info={&quot;project_name&quot;: &quot;Office Building&quot;}
-)
-
-print(results[[&quot;metric_name&quot;, &quot;group&quot;, &quot;value&quot;, &quot;unit&quot;]])
-# Example output:
-#   metric_name                  group    value  unit
-# 0 facade_net_area_by_direction North    150.5   m²
-# 1 facade_net_area_by_direction South    142.3   m²
-# 2 facade_net_area_by_direction East     98.7    m²
-# 3 facade_net_area_by_direction West     95.2    m²
-
-# Another example: windows area by direction
-results = calculate_single_grouped_metric(
-    ifc_path=&quot;path/to/model.ifc&quot;,
-    config=config,
-    metric_name=&quot;windows_area_by_direction&quot;
-)
-
-print(results[[&quot;metric_name&quot;, &quot;group&quot;, &quot;value&quot;, &quot;unit&quot;]])
-# Example output:
-#   metric_name              group    value  unit
-# 0 windows_area_by_direction   90     45.2   m²
-# 1 windows_area_by_direction  180     52.8   m²
-# 2 windows_area_by_direction  -90     28.4   m²
-# 3 windows_area_by_direction -180     25.6   m²
-</code></pre>
-<h2 id="note">Note</h2>
-<ul>
-<li>The metric must be defined in the grouped_by_attribute_metrics section of config</li>
-<li>Required configuration fields:</li>
-<li>ifc_entity: Type of element to measure</li>
-<li>grouping_attribute: Attribute to group by (e.g., "Pset_abstractBIM.Normal")</li>
-<li>pset_name: Property set containing the quantity</li>
-<li>prop_name: Name of the quantity property</li>
-<li>Optional filters can be used to include/exclude specific elements</li>
-<li>Groups are created dynamically based on unique attribute values in the model</li>
-<li>Elements without the specified attribute will be excluded</li>
-</ul></div>
+<div class="desc"><p>Calculate a single grouped metric.</p></div>
 </dd>
 <dt id="qto_buccaneer.metrics.calculate_single_metric"><code class="name flex">
 <span>def <span class="ident">calculate_single_metric</span></span>(<span>ifc_path: str, config: dict, metric_name: str, file_info: dict | None = None) ‑> pandas.core.frame.DataFrame</span>
@@ -769,45 +637,6 @@ Expected format:
             - description: Description of what is being measured
             - calculation_time: When the metric was calculated
             - status: Calculation status (success/error)
-
-    Example:
-        ```python
-        from qto_buccaneer.utils.config import load_config
-        
-        # Load configuration
-        config = load_config(&#34;src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml&#34;)
-
-        # File information
-        file_info = {
-            &#34;project_name&#34;: &#34;Office Building&#34;,
-            &#34;date&#34;: &#34;2024-01-15&#34;
-        }
-
-        # Calculate windows area by room
-        results = calculate_single_metric_by_space(
-            ifc_path=&#34;path/to/model.ifc&#34;,
-            config=config,
-            metric_name=&#34;windows_area_by_room&#34;,
-            file_info=file_info
-        )
-
-        print(results[[&#34;metric_name&#34;, &#34;space_name&#34;, &#34;value&#34;, &#34;unit&#34;]])
-        # Example output:
-        #   metric_name           space_name  value unit
-        # 0 windows_area_by_room  Office 101   5.2   m²
-        # 1 windows_area_by_room  Office 102   3.8   m²
-        # 2 windows_area_by_room  Meeting 201  8.5   m²
-        ```
-
-    Note:
-        - The metric must be defined in the room_based_metrics section of the config
-        - The metric definition must include:
-          - ifc_entity: The type of element to measure
-          - grouping_attribute: The space attribute to group by
-          - pset_name: Property set containing the quantity
-          - prop_name: Name of the quantity property
-        - Spaces without the specified elements will not appear in the results
-        - The elements must be associated with a space through a space reference attribute
     &#34;&#34;&#34;
     
     if metric_name not in config.get(&#39;room_based_metrics&#39;, {}):
@@ -820,46 +649,14 @@ Expected format:
     loader = IfcLoader(ifc_path)
     qto = QtoCalculator(loader)
     metric_config = config[&#39;room_based_metrics&#39;][metric_name]
-    grouping_attribute = metric_config.get(&#34;grouping_attribute&#34;, &#34;LongName&#34;)
-    metric_by_group = f&#34;{metric_name}_by_{grouping_attribute.lower()}&#34;
 
     try:
-        room_values = qto._get_elements_by_space(
-            ifc_entity=metric_config[&#34;ifc_entity&#34;],
-            grouping_attribute=grouping_attribute,
-            room_reference_attribute_guid=metric_config.get(&#34;room_reference_attribute_guid&#34;, &#34;ePset_abstractBIM.Spaces&#34;),
-            include_filter=metric_config.get(&#34;include_filter&#34;),
-            include_filter_logic=metric_config.get(&#34;include_filter_logic&#34;, &#34;AND&#34;),
-            subtract_filter=metric_config.get(&#34;subtract_filter&#34;),
-            subtract_filter_logic=metric_config.get(&#34;subtract_filter_logic&#34;, &#34;OR&#34;),
-            pset_name=metric_config.get(&#34;pset_name&#34;, &#34;Qto_BaseQuantities&#34;),
-            prop_name=metric_config.get(&#34;prop_name&#34;, &#34;NetArea&#34;)
-        )
-
-        # Create results for each room/space
-        results = []
-        for room_name, value in room_values.items():
-            results.append(create_result_dict(
-                metric_name=f&#34;{metric_by_group}_{room_name}&#34;,
-                value=value,
-                unit=&#34;m³&#34; if metric_config.get(&#34;quantity_type&#34;) == &#34;volume&#34; else &#34;m²&#34;,
-                category=metric_config.get(&#34;quantity_type&#34;, &#34;area&#34;),
-                description=metric_config.get(&#34;description&#34;, &#34;&#34;),
-                **file_info
-            ))
-
-        if results:
-            return pd.DataFrame(results)
-        else:
-            return pd.DataFrame([create_result_dict(
-                metric_name=metric_by_group,
-                error_message=&#34;No results calculated&#34;,
-                **file_info
-            )])
-
+        # Use the relationship calculation method for room-based metrics
+        results = _process_space_relationship_calculation(qto, metric_name, metric_config, file_info)
+        return pd.DataFrame(results)
     except Exception as e:
         return pd.DataFrame([create_result_dict(
-            metric_name=metric_by_group,
+            metric_name=metric_name,
             error_message=str(e),
             **file_info
         )])</code></pre>
@@ -893,45 +690,7 @@ with columns:
 - description: Description of what is being measured
 - calculation_time: When the metric was calculated
 - status: Calculation status (success/error)</dd>
-</dl>
-<h2 id="example">Example</h2>
-<pre><code class="language-python">from qto_buccaneer.utils.config import load_config
-
-# Load configuration
-config = load_config(&quot;src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml&quot;)
-
-# File information
-file_info = {
-    &quot;project_name&quot;: &quot;Office Building&quot;,
-    &quot;date&quot;: &quot;2024-01-15&quot;
-}
-
-# Calculate windows area by room
-results = calculate_single_metric_by_space(
-    ifc_path=&quot;path/to/model.ifc&quot;,
-    config=config,
-    metric_name=&quot;windows_area_by_room&quot;,
-    file_info=file_info
-)
-
-print(results[[&quot;metric_name&quot;, &quot;space_name&quot;, &quot;value&quot;, &quot;unit&quot;]])
-# Example output:
-#   metric_name           space_name  value unit
-# 0 windows_area_by_room  Office 101   5.2   m²
-# 1 windows_area_by_room  Office 102   3.8   m²
-# 2 windows_area_by_room  Meeting 201  8.5   m²
-</code></pre>
-<h2 id="note">Note</h2>
-<ul>
-<li>The metric must be defined in the room_based_metrics section of the config</li>
-<li>The metric definition must include:</li>
-<li>ifc_entity: The type of element to measure</li>
-<li>grouping_attribute: The space attribute to group by</li>
-<li>pset_name: Property set containing the quantity</li>
-<li>prop_name: Name of the quantity property</li>
-<li>Spaces without the specified elements will not appear in the results</li>
-<li>The elements must be associated with a space through a space reference attribute</li>
-</ul></div>
+</dl></div>
 </dd>
 <dt id="qto_buccaneer.metrics.calculate_single_room_metric"><code class="name flex">
 <span>def <span class="ident">calculate_single_room_metric</span></span>(<span>ifc_path: str, config: dict, metric_name: str, file_info: dict) ‑> pandas.core.frame.DataFrame</span>
@@ -967,46 +726,6 @@ print(results[[&quot;metric_name&quot;, &quot;space_name&quot;, &quot;value&quot
             - description: Description of what is being measured
             - calculation_time: When the metric was calculated
             - status: Calculation status (success/error)
-
-    Example:
-        ```python
-        from qto_buccaneer.utils.config import load_config
-
-        # Load configuration
-        config = load_config(&#34;src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml&#34;)
-
-        # File information
-        file_info = {
-            &#34;project_name&#34;: &#34;Office Building&#34;,
-            &#34;date&#34;: &#34;2024-01-15&#34;
-        }
-
-        # Calculate net floor areas by room type
-        results = calculate_single_room_metric(
-            ifc_path=&#34;path/to/model.ifc&#34;,
-            config=config,
-            metric_name=&#34;net_floor_area_by_room_type&#34;,
-            file_info=file_info
-        )
-
-        print(results[[&#34;metric_name&#34;, &#34;room_type&#34;, &#34;room_name&#34;, &#34;value&#34;, &#34;unit&#34;]])
-        # Example output:
-        #   metric_name                 room_type  room_name  value  unit
-        # 0 net_floor_area_by_room_type Office     Room 101   25.5   m²
-        # 1 net_floor_area_by_room_type Office     Room 102   28.3   m²
-        # 2 net_floor_area_by_room_type Meeting    Room 201   35.0   m²
-        # 3 net_floor_area_by_room_type Corridor   C-1F       45.2   m²
-        ```
-
-    Note:
-        - The metric must be defined in the room_based_metrics section of the config
-        - Required configuration fields:
-          - ifc_entity: Usually &#34;IfcSpace&#34;
-          - pset_name: Property set containing the quantity (e.g., &#34;Qto_SpaceBaseQuantities&#34;)
-          - prop_name: Name of the quantity property (e.g., &#34;NetFloorArea&#34;)
-          - grouping_attribute: Room attribute to group by (optional)
-        - Optional filters can be used to include/exclude specific rooms
-        - Results include all rooms that match the filter criteria
     &#34;&#34;&#34;
     
     if metric_name not in config.get(&#39;room_based_metrics&#39;, {}):
@@ -1016,27 +735,24 @@ print(results[[&quot;metric_name&quot;, &quot;space_name&quot;, &quot;value&quot
     qto = QtoCalculator(loader)
     metric_config = config[&#39;room_based_metrics&#39;][metric_name]
     
-    grouping_attribute = metric_config.get(&#34;grouping_attribute&#34;, &#34;LongName&#34;)
-    metric_by_group = f&#34;{metric_name}_by_{grouping_attribute.lower()}&#34;
-    
     try:
+        # Get the room values using _get_elements_by_space
         room_values = qto._get_elements_by_space(
             ifc_entity=metric_config[&#34;ifc_entity&#34;],
-            grouping_attribute=grouping_attribute,
-            room_reference_attribute_guid=metric_config.get(&#34;room_reference_attribute_guid&#34;, &#34;ePset_abstractBIM.Spaces&#34;),
+            pset_name=metric_config[&#34;pset_name&#34;],
+            prop_name=metric_config[&#34;prop_name&#34;],
+            grouping_attribute=metric_config[&#34;grouping_attribute&#34;],
+            room_reference_attribute_guid=metric_config[&#34;room_reference_attribute_guid&#34;],
             include_filter=metric_config.get(&#34;include_filter&#34;),
-            include_filter_logic=metric_config.get(&#34;include_filter_logic&#34;, &#34;AND&#34;),
-            subtract_filter=metric_config.get(&#34;subtract_filter&#34;),
-            subtract_filter_logic=metric_config.get(&#34;subtract_filter_logic&#34;, &#34;OR&#34;),
-            pset_name=metric_config.get(&#34;pset_name&#34;, &#34;Qto_BaseQuantities&#34;),
-            prop_name=metric_config.get(&#34;prop_name&#34;, &#34;NetArea&#34;)
+            include_filter_logic=metric_config.get(&#34;include_filter_logic&#34;, &#34;AND&#34;)
         )
         
         # Create results for each room/space
         results = []
         for room_name, value in room_values.items():
             results.append({
-                &#34;metric_name&#34;: f&#34;{metric_by_group}_{room_name}&#34;,
+                &#34;metric_name&#34;: metric_name,
+                &#34;room_name&#34;: room_name,
                 &#34;value&#34;: round(value, 2) if value is not None else None,
                 &#34;unit&#34;: &#34;m³&#34; if metric_config.get(&#34;quantity_type&#34;) == &#34;volume&#34; else &#34;m²&#34;,
                 &#34;category&#34;: metric_config.get(&#34;quantity_type&#34;, &#34;area&#34;),
@@ -1049,9 +765,9 @@ print(results[[&quot;metric_name&quot;, &quot;space_name&quot;, &quot;value&quot
         if results:
             return pd.DataFrame(results)
         else:
-            return _create_error_df(metric_by_group, &#34;No results calculated&#34;, file_info)
+            return _create_error_df(metric_name, &#34;No results calculated&#34;, file_info)
     except Exception as e:
-        return _create_error_df(metric_by_group, str(e), file_info)</code></pre>
+        return _create_error_df(metric_name, str(e), file_info)</code></pre>
 </details>
 <div class="desc"><p>Calculate a single room-based metric for analyzing room/space properties.</p>
 <p>This function calculates quantities specifically for rooms/spaces in the IFC model.
@@ -1082,46 +798,7 @@ Must include room_based_metrics section.</dd>
 - description: Description of what is being measured
 - calculation_time: When the metric was calculated
 - status: Calculation status (success/error)</dd>
-</dl>
-<h2 id="example">Example</h2>
-<pre><code class="language-python">from qto_buccaneer.utils.config import load_config
-
-# Load configuration
-config = load_config(&quot;src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml&quot;)
-
-# File information
-file_info = {
-    &quot;project_name&quot;: &quot;Office Building&quot;,
-    &quot;date&quot;: &quot;2024-01-15&quot;
-}
-
-# Calculate net floor areas by room type
-results = calculate_single_room_metric(
-    ifc_path=&quot;path/to/model.ifc&quot;,
-    config=config,
-    metric_name=&quot;net_floor_area_by_room_type&quot;,
-    file_info=file_info
-)
-
-print(results[[&quot;metric_name&quot;, &quot;room_type&quot;, &quot;room_name&quot;, &quot;value&quot;, &quot;unit&quot;]])
-# Example output:
-#   metric_name                 room_type  room_name  value  unit
-# 0 net_floor_area_by_room_type Office     Room 101   25.5   m²
-# 1 net_floor_area_by_room_type Office     Room 102   28.3   m²
-# 2 net_floor_area_by_room_type Meeting    Room 201   35.0   m²
-# 3 net_floor_area_by_room_type Corridor   C-1F       45.2   m²
-</code></pre>
-<h2 id="note">Note</h2>
-<ul>
-<li>The metric must be defined in the room_based_metrics section of the config</li>
-<li>Required configuration fields:</li>
-<li>ifc_entity: Usually "IfcSpace"</li>
-<li>pset_name: Property set containing the quantity (e.g., "Qto_SpaceBaseQuantities")</li>
-<li>prop_name: Name of the quantity property (e.g., "NetFloorArea")</li>
-<li>grouping_attribute: Room attribute to group by (optional)</li>
-<li>Optional filters can be used to include/exclude specific rooms</li>
-<li>Results include all rooms that match the filter criteria</li>
-</ul></div>
+</dl></div>
 </dd>
 </dl>
 </section>
