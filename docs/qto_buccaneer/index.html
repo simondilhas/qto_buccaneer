@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.6">
 <title>qto_buccaneer API documentation</title>
-<meta name="description" content="QTO Buccaneer - A tool for quantity takeoff from IFC files …">
+<meta name="description" content="QTO Buccaneer - Quantity Takeoff tools for data-savvy BIM rebels …">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -36,38 +36,58 @@ el.replaceWith(d);
 <h1 class="title">Package <code>qto_buccaneer</code></h1>
 </header>
 <section id="section-intro">
-<p>QTO Buccaneer - A tool for quantity takeoff from IFC files.</p>
-<p>This package provides tools for exploring, extracting, and calculating quantities
-from IFC models. It's designed for construction, architecture, and BIM professionals
-who need automated quantity takeoffs.</p>
-<h3 id="main-components">Main Components</h3>
+<p>QTO Buccaneer - Quantity Takeoff tools for data-savvy BIM rebels.</p>
+<p>A Python-powered toolkit for exploring, extracting, and calculating quantities from IFC models.
+Built for architects, engineers, and construction pros who know their way around Excel more than Python.</p>
+<h3 id="main-features">Main Features</h3>
+<ul>
+<li>Calculate project-wide metrics based on your own definitions</li>
+<li>Calculate metrics per room or space</li>
+<li>Benchmark different projects to spot trends and outliers</li>
+<li>Export results to Excel and other report formats used by your team</li>
+<li>Create beautiful reports with plans, making information visible and manageable</li>
+<li>Define metric logic using a user-friendly YAML config file — no need to write code</li>
+<li>Enrich and clean up IFC files more easily than working directly with raw ifcopenshell</li>
+<li>Repair IFC Models based on rules</li>
+<li>Build up project specific workflows and apply the same rules consecutive to the models</li>
+</ul>
+<h3 id="package-structure">Package Structure</h3>
 <ul>
 <li>metrics: Core metrics calculation functionality</li>
-<li>enrich: Enrich and clean up IFC files—friendlier than raw ifcopenshell</li>
+<li>enrich: IFC model enrichment and data cleaning</li>
 <li>reports: Export and reporting utilities</li>
+<li>plots: Visualization and plotting tools</li>
 <li>utils: Helper functions for IFC handling and quantity calculations</li>
 <li>configs: Configuration files and settings</li>
+<li>repairs: IFC model repair functionality</li>
 </ul>
-<h3 id="with-this-toolkit-you-can">With this toolkit, you can</h3>
-<ul>
-<li>Calculate project-wide metrics based on your definitions</li>
-<li>Calculate metrics per room or space</li>
-<li>Calculate metrics and group them by your own custom definitions</li>
-<li>Enrich and clean up IFC files—friendlier than raw ifcopenshell</li>
-<li>Export results to Excel and other report formats</li>
-<li>Define metric logic using a YAML config file, instead of having to deal with code or clicking through the UI</li>
-</ul>
-<p><strong>Designed for IFC, optimized for abstractBIM Data</strong></p>
+<h3 id="designed-for-ifc-optimized-for-abstractbim-data">Designed for IFC, Optimized for abstractBIM Data</h3>
 <p>This library works with any well-structured IFC file, but it shines brightest when used with clean, consistent data.
-And that's why it's optimized for abstractBIM Data in the presets. </p>
-<p>Because abstractBIM gives you:</p>
+The toolkit is optimized for abstractBIM Data in the presets, providing:</p>
 <ul>
 <li>Consistent naming</li>
 <li>Predictable geometry</li>
 <li>Clean data structure</li>
 </ul>
 <p>Which means less time debugging, more time automating.</p>
-<p>Yes, you can still use raw IFC + ifcopenshell, but you'll want to be comfortable with model quirks. We will added some helpers and examples to ease the pain&hellip;</p>
+<p>While you can use raw IFC + ifcopenshell, the toolkit includes helpers and examples to ease the pain
+of working with less structured models.</p>
+<h3 id="quick-start">Quick Start</h3>
+<pre><code class="language-python">from qto_buccaneer.metrics import calculate_all_metrics
+import yaml
+
+# Load config
+with open(&quot;path/to/metrics_config.yaml&quot;, &quot;r&quot;) as f:
+    config = yaml.safe_load(f)
+
+# Calculate metrics
+metrics_df = calculate_all_metrics(
+    config=config,
+    ifc_path=&quot;path/to/your/model.ifc&quot;
+)
+</code></pre>
+<p>For more examples and detailed usage, check the README.md file or visit:
+<a href="https://simondilhas.github.io/qto_buccaneer/qto_buccaneer/index.html">https://simondilhas.github.io/qto_buccaneer/qto_buccaneer/index.html</a></p>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
@@ -94,7 +114,7 @@ And that's why it's optimized for abstractBIM Data in the presets. </p>
 </dd>
 <dt><code class="name"><a title="qto_buccaneer.plots_utils" href="plots_utils/index.html">qto_buccaneer.plots_utils</a></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Plotting utilities for QTO Buccaneer …</p></div>
 </dd>
 <dt><code class="name"><a title="qto_buccaneer.preprocess_ifc" href="preprocess_ifc.html">qto_buccaneer.preprocess_ifc</a></code></dt>
 <dd>
@@ -132,8 +152,10 @@ And that's why it's optimized for abstractBIM Data in the presets. </p>
 <nav id="sidebar">
 <div class="toc">
 <ul>
-<li><a href="#main-components">Main Components</a></li>
-<li><a href="#with-this-toolkit-you-can">With this toolkit, you can</a></li>
+<li><a href="#main-features">Main Features</a></li>
+<li><a href="#package-structure">Package Structure</a></li>
+<li><a href="#designed-for-ifc-optimized-for-abstractbim-data">Designed for IFC, Optimized for abstractBIM Data</a></li>
+<li><a href="#quick-start">Quick Start</a></li>
 </ul>
 </div>
 <ul id="index">
