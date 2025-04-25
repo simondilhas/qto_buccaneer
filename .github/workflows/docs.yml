@@ -23,6 +23,8 @@ jobs:
           python -m pip install --upgrade pip
           # Install the package with docs extras
           pip install -e .[docs]
+          # Ensure pdoc3 is installed
+          pip install pdoc3
           
       - name: Generate documentation
         run: |

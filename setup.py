@@ -14,5 +14,12 @@ setup(
         "pyyaml",
         "pdoc3",
     ],
+    extras_require={
+        "docs": [
+            "pdoc3>=0.11.6",
+            "sphinx>=8.2.3",
+            "sphinx-rtd-theme>=3.0.2",
+        ],
+    },
     python_requires=">=3.8",
 ) 
