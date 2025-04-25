@@ -21,12 +21,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Install core dependencies first
-          pip install ifcopenshell
-          # Install the package with docs extras
-          pip install -e .[docs]
-          # Ensure pdoc3 is installed
-          pip install pdoc3
+          # Install all dependencies from requirements.txt
+          pip install -r requirements.txt
+          # Install the package in development mode
+          pip install -e .
           
       - name: Generate documentation
         run: |
