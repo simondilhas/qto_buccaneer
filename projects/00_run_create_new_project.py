@@ -17,7 +17,7 @@ from qto_buccaneer.scripts.create_new_project import create_new_project
 
 # List of projects to create
 PROJECTS_TO_CREATE = [
-    "003_test_project",
+    "003_example_repair",
 ]
 
 # Create all projects in the list

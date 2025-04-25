@@ -1,6 +1,6 @@
 # define the project structure and workflow steps, based on this the folder structure will be created
 
-project_name: "003_test_project__public"
+project_name: "003_example_repair__public"
 project_description: "This is a test project to test the workflow"
 
 buildings:

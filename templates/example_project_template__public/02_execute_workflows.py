@@ -15,20 +15,21 @@ SCRIPT_DIR = Path(__file__).parent
 # Load configuration
 config = load_config(SCRIPT_DIR / "00_workflow_config.yaml")
 project_name = config["project_name"]
-buildings_list = config["buildings"]
+buildings = config["buildings"]  # List of building dictionaries with 'name' and 'repairs' fields
 
 # Define relative paths
 BUILDINGS_DIR = SCRIPT_DIR / "buildings"
 CONFIG_DIR = SCRIPT_DIR / "config"
 
 
-def process_building(building_name: str) -> None:
+def process_building(building: dict) -> None:
     """
     Process a single building through the workflow steps.
     
     Args:
-        building_name: Name of the building to process
+        building: Building configuration dictionary with 'name' and 'repairs' fields
     """
+    building_name = building['name']
     # Set up building-specific paths
     building_dir = BUILDINGS_DIR / building_name
 
@@ -37,10 +38,6 @@ def process_building(building_name: str) -> None:
     #--------------------------------
     # Step 01: set up the buildings directoories
     #--------------------------------
-
-    
-
-
 
     #--------------------------------
     # Step 02: Add spatial data to IFC
@@ -95,7 +92,6 @@ def process_building(building_name: str) -> None:
     # Step 05: Calculate geometry json for graph visualization
     #--------------------------------
 
-
     geometry_json_dir = calculate_geometry_json_via_api(
         ifc_path=enriched_ifc_path,
         output_dir=str(building_dir / "05_geometry_json")
@@ -115,7 +111,6 @@ def process_building(building_name: str) -> None:
     )
 
     print(f"✓ Plots created: {plots_path}")
-
 
     #--------------------------------
     # Step 07: Create PDF report
@@ -142,8 +137,8 @@ def main():
     BUILDINGS_DIR.mkdir(parents=True, exist_ok=True)
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     
-    for building_name in buildings_list:
-        process_building(building_name)
+    for building in buildings:
+        process_building(building)
     
     print("\nWorkflow completed!")
 

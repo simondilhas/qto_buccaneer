@@ -1,0 +1,46 @@
+# define the project structure and workflow steps, based on this the folder structure will be created
+
+project_name: "003_example_repair__public"
+project_description: "This is a test project to test the workflow"
+
+buildings:
+  - name: "repair_change_value"
+    repairs:
+      - name: "Normalize PredefinedType casing"
+        filter: "type=IfcSpace AND LongName=TRH"
+        actions:
+          - change_value:
+              field: LongName
+              value: "HHHH"
+      - name: "test second rule"
+        filter: "type=IfcDoor"
+        actions:
+          - change_value:
+              field: "Name"
+              value: "XxxXX"
+      - name: "test third rule"
+        filter: "type=IfcCovering AND PredefinedType=CLADDING"
+        actions:
+          - change_value:
+              field: "ePset_abstractBIM.IsExternal"
+              value: false
+      #- name: ePset_Simplebim
+      #  filter: "type=IfcDoor"
+      #  actions:
+      #    - change_value:
+      #        field: "ePset_Simplebim.Assembly Level"
+      #        value: "XXX"
+  - name: "repair_change_value_3"
+    repairs: []
+  - name: "repair_change_value_4"
+
+building_folder:
+  - "00_original_input_data"
+
+
+
+
+
+
+
+

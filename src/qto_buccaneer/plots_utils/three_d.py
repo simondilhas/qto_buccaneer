@@ -6,7 +6,7 @@ from datetime import datetime
 import json
 
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
-from qto_buccaneer.utils.visualization_utils import apply_layout_settings
+from qto_buccaneer.utils.plots_utils import apply_layout_settings
 
 def create_3d_visualization(
     geometry_dir: str,

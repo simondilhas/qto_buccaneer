@@ -63,6 +63,12 @@ def add_building_to_project(project_name: str, building_name: str):
         
         # Create building directory and subfolders
         building_path = project_path / "buildings" / building_name
+        
+        # Check if building already exists
+        if building_path.exists():
+            print(f"Building '{building_name}' already exists, skipping...")
+            return
+        
         building_path.mkdir(parents=True, exist_ok=True)
         
         # Create all required subfolders
@@ -75,8 +81,24 @@ def add_building_to_project(project_name: str, building_name: str):
         if 'buildings' not in config:
             config['buildings'] = []
         
-        if building_name not in config['buildings']:
-            config['buildings'].append(building_name)
+        # Check if building is already in config
+        building_exists = False
+        for building in config['buildings']:
+            if isinstance(building, dict) and building.get('name') == building_name:
+                building_exists = True
+                break
+        
+        if not building_exists:
+            # Add building with empty repairs list
+            new_building = {'name': building_name}
+            # Only add repairs field if it exists in the original config
+            for original_building in buildings:
+                if isinstance(original_building, dict) and original_building.get('name') == building_name:
+                    if 'repairs' in original_building:
+                        new_building['repairs'] = original_building['repairs']
+                    break
+            
+            config['buildings'].append(new_building)
             with open(workflow_config_path, 'w') as f:
                 yaml.dump(config, f, default_flow_style=False)
             print(f"Added building '{building_name}' to workflow configuration")
@@ -88,17 +110,16 @@ def add_building_to_project(project_name: str, building_name: str):
         print(f"Error: {e}", file=sys.stderr)
         raise
 
-def add_new_building_to_project_from_list(project_name: str, building_names: list[str]  ):
+def add_new_building_to_project_from_list(project_name: str, buildings: list[str]):
     """
     Add multiple buildings to an existing project.
     Creates the necessary folder structure for each building.
     
     Args:
         project_name (str): Name of the project (with __public or __private tag)
-        building_names (list[str]): List of names for the new buildings to add
+        buildings (list[str]): List of building names to add
     """
-
-    for building_name in building_names:
+    for building_name in buildings:
         add_building_to_project(project_name, building_name)
 
 
