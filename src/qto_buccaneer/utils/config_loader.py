@@ -121,4 +121,27 @@ def validate_top_level_structure(config: Dict) -> bool:
         raise ValueError(f"Missing required sections in config: {missing}")
     return True
 
+def validate_config(config: Dict) -> Tuple[bool, List[str]]:
+    """
+    Validate the configuration file.
+    
+    Args:
+        config: Configuration dictionary
+        
+    Returns:
+        Tuple[bool, List[str]]: (is_valid, validation_messages)
+    """
+    messages = []
+    is_valid = True
+    
+    try:
+        # Validate top-level structure
+        validate_top_level_structure(config)
+        messages.append("✓ Top-level structure is valid")
+    except ValueError as e:
+        is_valid = False
+        messages.append(f"❌ {str(e)}")
+    
+    return is_valid, messages
+
 # ... rest of the validation functions ... 
