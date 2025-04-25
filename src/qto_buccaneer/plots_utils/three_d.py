@@ -39,16 +39,14 @@ def create_3d_visualization(
     required_files = {
         'IfcWindow.json': 'window',
         'IfcCovering.json': 'covering',
-        'IfcWallStandardCase.json': 'wall',
         'IfcSlab.json': 'slab',
-        'IfcDoor.json': 'door',
-        'IfcOpeningElement.json': 'opening'
+        'IfcDoor.json': 'door'
     }
     
     missing_files = []
-    for file_name, element_type in required_files.items():
-        if not (geometry_dir / file_name).exists():
-            missing_files.append(f"{file_name} (required for {element_type} visualization)")
+    for file_pattern, element_type in required_files.items():
+        if not list(geometry_dir.glob(file_pattern)):
+            missing_files.append(f"{file_pattern} (required for {element_type} visualization)")
     
     if missing_files:
         raise FileNotFoundError(
@@ -93,14 +91,13 @@ def create_3d_visualization(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    output_path = output_dir / f"3d_view_{plot_name}.html"
+    # Use the plot name directly as the output file name
+    output_path = output_dir / f"{plot_name}.html"
     plots['default'].write_html(str(output_path))
     plots['default'].write_json(str(output_path.with_suffix('.json')))
     plots['default'].write_image(str(output_path.with_suffix('.png')))
     print(f"Saved 3D visualization to {output_path}")
-
-    print("\n3D visualization complete!")
-
+    
     return str(output_path)
 
 def load_plot_config(config_path: str) -> Dict:
