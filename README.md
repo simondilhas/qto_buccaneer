@@ -3,6 +3,8 @@
 
 Ahoy! Tired of manual takeoffs and spreadsheet gymnastics? QTO Buccaneer is your Python-powered toolkit for exploring, extracting, and calculating quantities from IFC models. Built for architects, engineers, and construction pros who know their way around Excel more than Python. If you've wrangled a spreadsheet before — you're already 80% there. The rest? This library will help you plunder it with ease.
 
+[![YouTube](https://img.shields.io/badge/Watch%20Demo-YouTube-red)](https://www.youtube.com/watch?v=O9jkSgPl_Hg)
+
 
 ## 📑 Table of Contents
 - [What This Is](#-what-this-is)
