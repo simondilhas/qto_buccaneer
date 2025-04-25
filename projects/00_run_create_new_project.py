@@ -12,7 +12,7 @@ with a standard beginner workflow to add buildings to the project.
 
 import sys
 from pathlib import Path
-from qto_buccaneer.workflows.scripts.create_new_project import create_projects_from_list
+from qto_buccaneer.scripts.create_new_project import create_new_project
 
 
 # List of projects to create
@@ -21,5 +21,5 @@ PROJECTS_TO_CREATE = [
 ]
 
 # Create all projects in the list
-create_projects_from_list(PROJECTS_TO_CREATE, is_private=False)
+create_new_project(PROJECTS_TO_CREATE, is_private=False)
 

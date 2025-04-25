@@ -1,0 +1,169 @@
+# Main configuration settings for plotly graphs
+plot_settings:
+  # Default styling applied to all plots unless overridden
+  defaults:
+    title: "Default Plot Title"
+    font_family: "Arial"
+    title_size: 24
+    text_size: 12
+    legend_size: 14
+    show_legend: false
+    background_color: "white" #"white"
+    margin:
+      left: 50
+      right: 50
+      top: 50
+      bottom: 50
+  
+  # Predefined visualization modes that can be referenced in plots
+  modes:
+    3d_view:
+      type: "3d"
+      opacity: 1.0
+      line_color: "black"
+      line_width: 0.8
+      view_angle:
+        x: 1.5
+        y: 1.5
+        z: 1.5
+      scene:
+        xaxis:
+          visible: false
+          showgrid: false
+          zeroline: false
+          showticklabels: false
+          showline: false
+          showbackground: false
+          showspikes: false
+          gridcolor: "rgba(0,0,0,0)"
+          zerolinecolor: "rgba(0,0,0,0)"
+          linecolor: "rgba(0,0,0,0)"
+        yaxis:
+          visible: false
+          showgrid: false
+          zeroline: false
+          showticklabels: false
+          showline: false
+          showbackground: false
+          showspikes: false
+          gridcolor: "rgba(0,0,0,0)"
+          zerolinecolor: "rgba(0,0,0,0)"
+          linecolor: "rgba(0,0,0,0)"
+        zaxis:
+          visible: false
+          showgrid: false
+          zeroline: false
+          showticklabels: false
+          showline: false
+          showbackground: false
+          showspikes: false
+          gridcolor: "rgba(0,0,0,0)"
+          zerolinecolor: "rgba(0,0,0,0)"
+          linecolor: "rgba(0,0,0,0)"
+        camera:
+          up:
+            x: 0
+            y: 0
+            z: 1
+          center:
+            x: 0
+            y: 0
+            z: 0
+          eye:
+            x: 1.5
+            y: 1.5
+            z: 1.5
+        aspectmode: "data"
+        bgcolor: "rgba(0,0,0,0)"
+    
+    floor_plan:
+      type: "2d"
+      opacity: 0.8
+      line_color: "gray"
+      line_width: 0.5
+      view: "top"
+
+  # Color mappings for consistent coloring across plots
+  color_mappings:
+    space_types:
+      "Office": "lightblue"
+      "Meeting Room": "lightgreen"
+      "Corridor": "lightgray"
+      "Staircase": "lightcoral"
+      "Elevator": "lightpink"
+      "Restroom": "lightyellow"
+      "Kitchen": "lightskyblue"
+      "Storage": "lightseagreen"
+      "Technical Room": "lightsteelblue"
+      "External": "lightgoldenrodyellow"
+      "Unknown": "lightcyan"
+
+# Plot definitions - each key is a unique plot identifier
+plots:
+  # Example plot: External elements visualization
+  exterior_view:
+    # Reference to a predefined mode
+    mode: "3d_view"
+    title: "External Coverings"
+    description: "3D view showing external facade elements"
+    
+    # Elements to include in this plot
+    elements:
+      - name: "External Coverings"
+        filter: "type=IfcCovering AND Pset_CoveringCommon.IsExternal=true AND PredefinedType=CLADDING"
+        color: "#f2f2f2"
+        label: none
+      - name: "Slabs"
+        filter: "type=IfcSlab"
+        color: "#f2f2f2"
+        label: none
+      - name: "Windows"
+        filter: "type=IfcWindow AND Pset_WindowCommon.IsExternal=true"
+        color: "Black"
+        label: none
+      - name: "Doors"
+        filter: "type=IfcDoor AND Pset_DoorCommon.IsExternal=true"
+        color: "darkgrey"
+        label: none
+  # Another example plot
+  floor_layout_by_name:
+    mode: "floor_plan"
+    title: "Floor Plan by Level"
+    description: "2D floor plan showing spaces"
+    
+    elements:
+      - name: "Background / Walls & GFA"
+        filter: "type=IfcSpace AND PredefinedType=GFA"
+        color: "black"
+        label: none
+      - name: "Spaces"
+        filter: "type=IfcSpace AND (PredefinedType=INTERNAL OR PredefinedType=EXTERNAL)" #AND, OR, NOT, ()
+        color_by: "LongName"
+        # Show labels on elements
+        labels:
+          show: true
+          properties: 
+            - "LongName"
+            - "Qto_SpaceBaseQuantities.NetFloorArea"
+          size: 10
+      - name: "Doors"
+        filter: "type=IfcDoor"
+        label: none
+      - name: "Windows"
+        filter: "type=IfcWindow"
+        label: none
+  walls_by_relationships:
+    mode: "floor_plan"
+    title: "Walls by Relationships"
+    description: "2D floor plan showing walls by relationships"
+    
+    elements:
+      - name: "Walls"
+        filter: "type=IfcWallStandardCase"
+        color_by: "ePset_abstractBIM.SpacesLongName"
+        label: none
+
+      - name: "Spaces"
+        filter: "type=IfcSpace"
+        color: "white"
+        label: "LongName"

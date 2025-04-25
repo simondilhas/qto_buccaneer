@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 import plotly.graph_objects as go
 
-from qto_buccaneer.visualization import (
+from qto_buccaneer.plots_utils import (
     load_plot_config,
     create_single_plot,
     create_all_plots

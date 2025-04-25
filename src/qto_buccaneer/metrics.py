@@ -79,7 +79,7 @@ def calculate_single_metric(ifc_path: str, config: dict, metric_name: str, file_
             **file_info or {}
         )])
 
-def calculate_all_metrics(config: Dict, ifc_path: str, file_info: Optional[dict] = None) -> pd.DataFrame:
+def calculate_all_metrics(config: Dict, ifc_path: str, file_info: Optional[dict] = None, output_dir: Optional[str] = None) -> pd.DataFrame:
     """
     Calculate all metrics (base, relationship-based, derived, space-based, and grouped) defined in the configuration.
 

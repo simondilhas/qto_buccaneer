@@ -1,6 +1,6 @@
 """Example script showing how to create a 3D visualization."""
 
-from qto_buccaneer.visualization import create_3d_visualization
+from qto_buccaneer.plots_utils import create_3d_visualization
 import yaml
 from pathlib import Path
 import os

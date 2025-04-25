@@ -1,6 +1,6 @@
 """Example script showing how to create a floor plan visualization."""
 
-from qto_buccaneer.visualization import create_floorplan_per_storey
+from qto_buccaneer.plots_utils import create_floorplan_per_storey
 from pathlib import Path
 
 def main():

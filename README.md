@@ -1,7 +1,7 @@
 # QTO Buccaneer  
 *Quantity Takeoff tools for data-savvy BIM rebels*
 
-Ahoy! This Python library is your toolkit for exploring, extracting, and calculating quantities from IFC models—ideal for anyone in construction, architecture, or BIM who's tired of manual takeoffs and spreadsheet acrobatics.
+Ahoy! Tired of manual takeoffs and spreadsheet gymnastics? QTO Buccaneer is your Python-powered toolkit for exploring, extracting, and calculating quantities from IFC models. Built for architects, engineers, and construction pros who know their way around Excel more than Python. If you've wrangled a spreadsheet before — you're already 80% there. The rest? This library will help you plunder it with ease.
 
 
 ## 📑 Table of Contents
@@ -13,8 +13,6 @@ Ahoy! This Python library is your toolkit for exploring, extracting, and calcula
     - [Project Structure](#-project-structure-1)
     - [How It Works](#-how-it-works)
     - [Getting Started with Projects](#-getting-started-with-projects)
-    - [Example Workflow Config](#-example-workflow-config)
-    - [Key Benefits](#-key-benefits)
   - [Installation](#installation-for-non-landlubbers)
   - [Development Setup](#development-setup)
   - [Usage Examples](#usage-examples)
@@ -34,14 +32,21 @@ Ahoy! This Python library is your toolkit for exploring, extracting, and calcula
 
 A general-purpose Python library for calculating and managing quantity takeoffs from IFC models using open standards and open-source tools.
 
-With this toolkit, you can:
+What QTO Buccaneer lets you do:
 
-- Calculate project-wide metrics based on your definitions
+- Calculate project-wide metrics based on your own definition- 
 - Calculate metrics per room or space
-- Benchmark different projects
-- Export results to Excel and other report formats
-- Define metric logic using a userfriendly YAML config file, instead of having to deal with code or clicking in projecsoftware tools
-- Enrich and clean up IFC files—friendlier than raw ifcopenshell
+- Benchmark different projects to spot trends and outlier- 
+- Export results to Excel and other report formats used by your team 
+- Create beautiful reports with plans, making information visible and manageable 
+- Define metric logic using a user-friendly YAML config file — no need to write code or click through complex software 
+- Enrich and clean up IFC files more easily than working directly with raw ifcopenshell
+- Build up project specific workflows and apply the same rules consecutive to the models. E.g. 
+   - For architectural competitions
+   - Benchmarking Portfolios
+   - Calculating costs in different project phases / times
+   - Doing design to cost
+
 
 ## 🧭 Philosophy: Independence First — Tools for the Bold
 
@@ -81,6 +86,9 @@ While QTO Buccaneer is fully independent, some parts of the journey can be rough
 
 👉 [Try abstractBIM](www.abstractBIM.com)
 
+*Alternative:* 
+*- Good modeling practice that provides consistent clean data.*
+
 ---
 
 ### 📡 IFC-to-JSON Web Service
@@ -90,6 +98,9 @@ While QTO Buccaneer is fully independent, some parts of the journey can be rough
 
 👉 [Contact Simon Dilhas for access to the api](mailto:simon.dilhas@abstract.build) 
 
+*Alternative:*
+*- Set up your own, converter with IfcOpenshell Geom modul.*
+*- BlenderBIM -> dotBIM -> to expected Json format (converter will come)*
 
 ## 🚀 Quick Start
 
@@ -134,88 +145,8 @@ Once the notebook is open, you're in the captain's seat. You'll:
 - Calculate quantity metrics using the general tools of panda.
 - Open a BIM model and use the built-in **QTO Buccaneer shortcuts** to speed up your takeoff workflow.
 
-### The Workflow System
 
-For those ready to set sail with their own projects, QTO Buccaneer provides a structured workflow system:
-
-#### Project Structure
-
-```
-projects/
-├── my_project__public/                   # Your project folder e.g. all the models of a competition
-│   ├── building1/                        # First building
-│   │   ├── 01_abstractbim_model/         # Step 1 results
-│   │   ├── 02_ground_separation_data/    # Step 2 results
-│   │   └── ...                           # More steps
-│   ├── building2/                        # Second building
-│   │   ├── 01_abstractbim_model/
-│   │   ├── 02_ground_separation_data/
-│   │   └── ...
-│   └── workflows/                        # Your workflow instructions
-│       ├── 00_workflow_config.yaml       # What steps to run
-│       ├── 90_run_all_steps.py           # Run everything
-│       └── 91_iterate_over_buildings.py  # Run one step for all buildings
-```
-
-#### How It Works
-
-1. **Projects** are like containers for your work:
-   - They group related buildings together
-   - They share the same workflow rules
-   - They can be public or private (private means no snc to github)
-
-2. **Buildings** are your actual models:
-   - Each building gets processed the same way
-   - Results are stored in step folders
-   - You can add as many buildings as you need
-
-3. **Workflows** are your automation recipes:
-   - Defined in `00_workflow_config.yaml`
-   - List all the steps to run
-   - Each step has a script (what to do) and a folder (where to put results)
-
-#### Getting Started with Projects
-
-1. **Create a Project**:
-   ```bash
-   python projects/00_run_create_new_project.py -n "my_project"
    ```
-
-2. **Add Buildings**:
-   ```bash
-   cd projects/my_project__public/workflows
-   python 01_run_create_new_building.py -n "building1"
-   ```
-
-3. **Run the Workflow**:
-   ```bash
-   # Run all steps for all buildings
-   python 90_run_all_steps.py
-   
-   # Or run one step for all buildings
-   python 91_iterate_over_buildings.py create_abstractBIM.py
-   ```
-
-#### Example Workflow Config
-
-```yaml
-steps:
-  - script: "create_abstractBIM.py"    # What to do
-    folder: "01_abstractbim_model"     # Where to put results
-  - script: "calculate_metrics.py"
-    folder: "02_metrics_data"
-  - script: "create_report.py"
-    folder: "03_reports"
-```
-
-#### Key Benefits
-
-1. **Consistency**: Same rules applied to all buildings
-2. **Automation**: One click to process everything
-3. **Organization**: Clear structure for results
-4. **Flexibility**: Easy to modify workflows
-5. **Reproducibility**: Same steps every time
-
 
 ### Installation (for non landlubbers)
 
@@ -267,6 +198,33 @@ Now you can:
 - Import the package from anywhere in your code: `from qto_buccaneer import ...`
 - Make changes to the code and see them reflected immediately
 - Run tests and contribute to the project
+
+## Project Creation Scripts
+
+The repository includes scripts to help you create new projects based on templates. To set up these scripts:
+
+1. Make the setup script executable and run it:
+   ```bash
+   chmod +x setup_scripts.sh
+   ./setup_scripts.sh
+   ```
+
+2. This will:
+   - Make the project creation scripts executable
+   - Set up a virtual environment if one doesn't exist
+   - Install required dependencies
+
+3. You can then create new projects using:
+   ```bash
+   ./create_project my_new_project
+   ```
+   
+   Or specify a different template:
+   ```bash
+   ./create_project my_new_project --template custom_template
+   ```
+
+The script will create a new project in the `projects` directory based on the specified template.
 
 ### Usage Examples
 
@@ -358,59 +316,48 @@ For more examples and detailed configuration options, check the `configs/` direc
 
 ## 📁 Project Structure
 
-create a new tree
 ```bash
-tree -a --dirsfirst -L 3 -I '.venv|docs|__pycache__|*.pyc|.git|.pytest_cache|.coverage|*.egg-info|__init__.py'
-
 qto-buccaneer/
 ├── src/
 │   └── qto_buccaneer/
 │       ├── configs/                                  # Configuration files
-│       │   ├── enrichment_config_abstractBIM.yaml
-│       │   ├── enrichment_space_table.xlsx
-│       │   ├── metrics_config_abstractBIM.yaml
-│       │   └── report_templat.tex
+│       ├── plots_utils/                              # Plotting utilities
+│       ├── scripts/                                  # Utility scripts
 │       ├── utils/                                    # Utility functions
-│       │   ├── config_loader.py                      # Configuration loading utilities
-│       │   ├── config.py                             # Configuration management
-│       │   ├── ifc_loader.py                         # IFC file loading and filtering
-│       │   └── qto_calculator.py                     # Core quantity calculation methods
-│       ├── enrich.py                                 # IFC enrichment functionality
-│       ├── metrics.py                                # Main metrics calculation interface
-│       ├── preprocess_ifc.py                         # IFC preprocessing utilities
-│       ├── reports.py                                # Report generation
-│       ├── validate_config_file.py                   # Configuration validation
-│       └── _version.py                               # Version information
-├── examples/                                         # Example scripts and data
-│   ├── data/
-│   ├── calculate_all_metrics.py
-│   ├── calculate_metric_grouped_by.py
-│   ├── calculate_metric.py
-│   ├── calculate_metrics_by_relationship.py
-│   ├── calculate_metrics_by_room.py
-│   ├── calculate_single_derived_metric.py
-│   ├── create_report_excel_project_metrics_overview.py
-│   ├── create_room_program_comparison.py
-│   ├── enriche_ifc_with_spatial_data.py
-│   ├── enrich_ifc_with_df_by_room.py
-│   └── enrich_ifc_with_df.py
-├── templates/                                         # Template files for configuration
-│   ├── enrichment_config_abstractBIM.yaml
-│   ├── enrichment_space_table.xlsx
-│   └── target_room_program.xlsx
-├── tests/                                             # Test files
-│   ├── help.py
-│   ├── test_data.yaml
-│   ├── test_model_1.ifc
-│   └── test_qto_calculator.py
-├── scripts/                                           # Development scripts
-│   ├── generate_docs.py
-│   └── serve_docs.py
-├── requirements.txt                                   # Project dependencies
-├── setup.py                                           # Package installation configuration
-├── LICENSE.md                                         # License information
-└── README.md                                          # Project documentation
-
+│       ├── __init__.py                              # Package initialization
+│       ├── _version.py                              # Version information
+│       ├── enrich.py                                # IFC enrichment functionality
+│       ├── geometry.py                              # Geometry processing
+│       ├── metrics.py                               # Main metrics calculation interface
+│       ├── plots.py                                 # Plotting functionality
+│       ├── preprocess_ifc.py                        # IFC preprocessing utilities
+│       ├── reports.py                               # Report generation
+│       └── test.py                                  # Test utilities
+├── projects/                                        # Project directories
+│   ├── 00_run_create_new_project.py                # Project creation script
+│   ├── 002_example_project__public/                # Example project
+│   └── __init__                                    # Package marker
+├── templates/                                       # Template files
+├── tests/                                          # Test files
+├── tutorial/                                       # Tutorial materials
+├── docs/                                           # Documentation
+├── examples/                                       # Example scripts
+├── .github/                                        # GitHub configuration
+├── .vscode/                                        # VS Code configuration
+├── .env                                            # Environment variables
+├── .env.example                                    # Example environment variables
+├── .gitignore                                      # Git ignore rules
+├── CONTRIBUTING.md                                 # Contribution guidelines
+├── LICENSE.md                                      # License information
+├── README.md                                       # Project documentation
+├── add_building                                    # Building addition script
+├── create_project                                  # Project creation script
+├── pyproject.toml                                  # Project configuration
+├── pytest.ini                                      # Pytest configuration
+├── requirements.txt                                # Project dependencies
+├── requirements_dev.txt                            # Development dependencies
+├── setup.py                                        # Package installation configuration
+└── setup_scripts.sh                                # Setup scripts
 ```
 
 ## Dependencies
