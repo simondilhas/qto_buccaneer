@@ -281,123 +281,63 @@ el.replaceWith(d);
 
     def get_elements(
         self,
+        ifc_entity: str,
         filters: Optional[dict] = None,
         filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;AND&#34;,
-        ifc_entity: str = None
-    ) -&gt; List[Any]:
-        &#34;&#34;&#34;Get elements from the IFC file that match the given filters.
+    ) -&gt; List[IfcElement]:
+        &#34;&#34;&#34;Get elements of a specific type with optional filters.&#34;&#34;&#34;
+        elements = self.model.by_type(ifc_entity)
         
-        Args:
-            filters: Dictionary of property filters
-            filter_logic: How to combine filters (&#34;AND&#34; or &#34;OR&#34;)
-            ifc_entity: IFC entity type to filter for (e.g., &#34;IfcSpace&#34;, &#34;IfcWall&#34;)
-        
-        Returns:
-            List of matching IFC elements
-        &#34;&#34;&#34;
-        # Get all elements of the specified type
-        if ifc_entity:
-            elements = self.model.by_type(ifc_entity)
-        else:
-            elements = self.model.by_type(&#34;IfcProduct&#34;)
-        
-        # If no filters, return all elements
         if not filters:
             return elements
+            
+        print(f&#34;\nFiltering {len(elements)} {ifc_entity} elements with:&#34;)
+        print(f&#34;Filters: {filters}&#34;)
+        print(f&#34;Filter logic: {filter_logic}&#34;)
         
-        # Filter elements
         filtered_elements = []
         for element in elements:
             matches = []
-            
             for key, value in filters.items():
-                # Handle direct attribute comparison
-                if not &#34;.&#34; in key:
-                    element_value = getattr(element, key, None)
-                    matches.append(self._compare_values(element_value, value))
-                    continue
+                # Get the attribute value
+                attr_value = getattr(element, key, None)
+                print(f&#34;\nElement: {element}&#34;)
+                print(f&#34;Checking filter {key}: {value}&#34;)
+                print(f&#34;Element has {key}: {attr_value}&#34;)
                 
-                # Handle property set values
-                pset_name, prop_name = key.split(&#34;.&#34;)
-                prop_value = None
-                
-                # Check IfcPropertySet and IfcElementQuantity
-                for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
-                    definition = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
-                    if not definition:
-                        continue
-                        
-                    if definition.is_a(&#34;IfcPropertySet&#34;) and definition.Name == pset_name:
-                        for prop in definition.HasProperties:
-                            if prop.Name == prop_name:
-                                prop_value = getattr(prop, &#34;NominalValue&#34;, None)
-                                if prop_value:
-                                    prop_value = prop_value.wrappedValue
-                                break
-                
-                    # Check IfcElementQuantity
-                    elif definition.is_a(&#34;IfcElementQuantity&#34;) and definition.Name == pset_name:
-                        for quantity in definition.Quantities:
-                            if quantity.Name == prop_name:
-                                if quantity.is_a(&#34;IfcQuantityArea&#34;):
-                                    prop_value = quantity.AreaValue
-                                elif quantity.is_a(&#34;IfcQuantityLength&#34;):
-                                    prop_value = quantity.LengthValue
-                                elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
-                                    prop_value = quantity.VolumeValue
-                                break
-                
-                matches.append(self._compare_values(prop_value, value))
+                # Handle different types of filter values
+                if isinstance(value, list):
+                    # For list values, check if any match
+                    if isinstance(value[0], tuple) and len(value[0]) == 2:
+                        # Handle comparison operators
+                        op, val = value[0]
+                        if op == &#34;&gt;&#34;:
+                            matches.append(attr_value &gt; val)
+                        elif op == &#34;&gt;=&#34;:
+                            matches.append(attr_value &gt;= val)
+                        elif op == &#34;&lt;&#34;:
+                            matches.append(attr_value &lt; val)
+                        elif op == &#34;&lt;=&#34;:
+                            matches.append(attr_value &lt;= val)
+                        elif op == &#34;=&#34;:
+                            matches.append(attr_value == val)
+                    else:
+                        # For simple list values, check if any match
+                        matches.append(attr_value in value)
+                else:
+                    # For single values, check exact match
+                    matches.append(attr_value == value)
             
-            # Add element if it matches according to filter logic
-            if filter_logic == &#34;AND&#34; and all(matches):
-                filtered_elements.append(element)
-            elif filter_logic == &#34;OR&#34; and any(matches):
-                filtered_elements.append(element)
+            # Apply filter logic
+            if filter_logic == &#34;AND&#34;:
+                if all(matches):
+                    filtered_elements.append(element)
+            else:  # OR
+                if any(matches):
+                    filtered_elements.append(element)
         
+        print(f&#34;Found {len(filtered_elements)} matching elements&#34;)
         return filtered_elements
-
-    def _compare_values(self, actual_value: Any, filter_value: Any) -&gt; bool:
-        # Handle string operators like &#34;&lt;=0.15&#34;
-        if isinstance(filter_value, str):
-            operators = [&#34;&gt;=&#34;, &#34;&lt;=&#34;, &#34;!=&#34;, &#34;=&#34;, &#34;&gt;&#34;, &#34;&lt;&#34;]
-            for op in operators:
-                if filter_value.startswith(op):
-                    try:
-                        value = float(filter_value[len(op):])
-                        actual_value = float(actual_value)
-                        return {
-                            &#34;&gt;&#34;: actual_value &gt; value,
-                            &#34;&lt;&#34;: actual_value &lt; value,
-                            &#34;=&#34;: actual_value == value,
-                            &#34;!=&#34;: actual_value != value,
-                            &#34;&lt;=&#34;: actual_value &lt;= value,
-                            &#34;&gt;=&#34;: actual_value &gt;= value
-                        }[op]
-                    except (TypeError, ValueError):
-                        return False
-        
-        # Handle list with operator and value
-        elif isinstance(filter_value, list) and len(filter_value) == 2:
-            operator, value = filter_value
-            try:
-                actual_value = float(actual_value)
-                value = float(value)
-                return {
-                    &#34;&gt;&#34;: actual_value &gt; value,
-                    &#34;&lt;&#34;: actual_value &lt; value,
-                    &#34;=&#34;: actual_value == value,
-                    &#34;!=&#34;: actual_value != value,
-                    &#34;&lt;=&#34;: actual_value &lt;= value,
-                    &#34;&gt;=&#34;: actual_value &gt;= value
-                }[operator]
-            except (TypeError, ValueError):
-                return False
-        # Handle regular list membership
-        elif isinstance(filter_value, list):
-            return actual_value in filter_value
-        
-        return actual_value == filter_value
 
     def get_project_info(self) -&gt; dict:
         &#34;&#34;&#34;
@@ -609,7 +549,7 @@ IfcRelContainedInSpatialStructure) and aggregated elements like spaces (through 
 </dl></div>
 </dd>
 <dt id="qto_buccaneer.utils.ifc_loader.IfcLoader.get_elements"><code class="name flex">
-<span>def <span class="ident">get_elements</span></span>(<span>self,<br>filters: dict | None = None,<br>filter_logic: Literal['AND', 'OR'] = 'AND',<br>ifc_entity: str = None) ‑> List[Any]</span>
+<span>def <span class="ident">get_elements</span></span>(<span>self,<br>ifc_entity: str,<br>filters: dict | None = None,<br>filter_logic: Literal['AND', 'OR'] = 'AND') ‑> List[Any]</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -618,94 +558,65 @@ IfcRelContainedInSpatialStructure) and aggregated elements like spaces (through 
 </summary>
 <pre><code class="python">def get_elements(
     self,
+    ifc_entity: str,
     filters: Optional[dict] = None,
     filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;AND&#34;,
-    ifc_entity: str = None
-) -&gt; List[Any]:
-    &#34;&#34;&#34;Get elements from the IFC file that match the given filters.
+) -&gt; List[IfcElement]:
+    &#34;&#34;&#34;Get elements of a specific type with optional filters.&#34;&#34;&#34;
+    elements = self.model.by_type(ifc_entity)
     
-    Args:
-        filters: Dictionary of property filters
-        filter_logic: How to combine filters (&#34;AND&#34; or &#34;OR&#34;)
-        ifc_entity: IFC entity type to filter for (e.g., &#34;IfcSpace&#34;, &#34;IfcWall&#34;)
-    
-    Returns:
-        List of matching IFC elements
-    &#34;&#34;&#34;
-    # Get all elements of the specified type
-    if ifc_entity:
-        elements = self.model.by_type(ifc_entity)
-    else:
-        elements = self.model.by_type(&#34;IfcProduct&#34;)
-    
-    # If no filters, return all elements
     if not filters:
         return elements
+        
+    print(f&#34;\nFiltering {len(elements)} {ifc_entity} elements with:&#34;)
+    print(f&#34;Filters: {filters}&#34;)
+    print(f&#34;Filter logic: {filter_logic}&#34;)
     
-    # Filter elements
     filtered_elements = []
     for element in elements:
         matches = []
-        
         for key, value in filters.items():
-            # Handle direct attribute comparison
-            if not &#34;.&#34; in key:
-                element_value = getattr(element, key, None)
-                matches.append(self._compare_values(element_value, value))
-                continue
+            # Get the attribute value
+            attr_value = getattr(element, key, None)
+            print(f&#34;\nElement: {element}&#34;)
+            print(f&#34;Checking filter {key}: {value}&#34;)
+            print(f&#34;Element has {key}: {attr_value}&#34;)
             
-            # Handle property set values
-            pset_name, prop_name = key.split(&#34;.&#34;)
-            prop_value = None
-            
-            # Check IfcPropertySet and IfcElementQuantity
-            for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
-                definition = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
-                if not definition:
-                    continue
-                    
-                if definition.is_a(&#34;IfcPropertySet&#34;) and definition.Name == pset_name:
-                    for prop in definition.HasProperties:
-                        if prop.Name == prop_name:
-                            prop_value = getattr(prop, &#34;NominalValue&#34;, None)
-                            if prop_value:
-                                prop_value = prop_value.wrappedValue
-                            break
-            
-                # Check IfcElementQuantity
-                elif definition.is_a(&#34;IfcElementQuantity&#34;) and definition.Name == pset_name:
-                    for quantity in definition.Quantities:
-                        if quantity.Name == prop_name:
-                            if quantity.is_a(&#34;IfcQuantityArea&#34;):
-                                prop_value = quantity.AreaValue
-                            elif quantity.is_a(&#34;IfcQuantityLength&#34;):
-                                prop_value = quantity.LengthValue
-                            elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
-                                prop_value = quantity.VolumeValue
-                            break
-            
-            matches.append(self._compare_values(prop_value, value))
+            # Handle different types of filter values
+            if isinstance(value, list):
+                # For list values, check if any match
+                if isinstance(value[0], tuple) and len(value[0]) == 2:
+                    # Handle comparison operators
+                    op, val = value[0]
+                    if op == &#34;&gt;&#34;:
+                        matches.append(attr_value &gt; val)
+                    elif op == &#34;&gt;=&#34;:
+                        matches.append(attr_value &gt;= val)
+                    elif op == &#34;&lt;&#34;:
+                        matches.append(attr_value &lt; val)
+                    elif op == &#34;&lt;=&#34;:
+                        matches.append(attr_value &lt;= val)
+                    elif op == &#34;=&#34;:
+                        matches.append(attr_value == val)
+                else:
+                    # For simple list values, check if any match
+                    matches.append(attr_value in value)
+            else:
+                # For single values, check exact match
+                matches.append(attr_value == value)
         
-        # Add element if it matches according to filter logic
-        if filter_logic == &#34;AND&#34; and all(matches):
-            filtered_elements.append(element)
-        elif filter_logic == &#34;OR&#34; and any(matches):
-            filtered_elements.append(element)
+        # Apply filter logic
+        if filter_logic == &#34;AND&#34;:
+            if all(matches):
+                filtered_elements.append(element)
+        else:  # OR
+            if any(matches):
+                filtered_elements.append(element)
     
+    print(f&#34;Found {len(filtered_elements)} matching elements&#34;)
     return filtered_elements</code></pre>
 </details>
-<div class="desc"><p>Get elements from the IFC file that match the given filters.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filters</code></strong></dt>
-<dd>Dictionary of property filters</dd>
-<dt><strong><code>filter_logic</code></strong></dt>
-<dd>How to combine filters ("AND" or "OR")</dd>
-<dt><strong><code>ifc_entity</code></strong></dt>
-<dd>IFC entity type to filter for (e.g., "IfcSpace", "IfcWall")</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>List of matching IFC elements</p></div>
+<div class="desc"><p>Get elements of a specific type with optional filters.</p></div>
 </dd>
 <dt id="qto_buccaneer.utils.ifc_loader.IfcLoader.get_project_info"><code class="name flex">
 <span>def <span class="ident">get_project_info</span></span>(<span>self) ‑> dict</span>

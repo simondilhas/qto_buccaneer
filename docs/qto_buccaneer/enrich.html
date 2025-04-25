@@ -84,7 +84,7 @@ The key is the column name that is used to merge the two DataFrames.</p>
 </dl></div>
 </dd>
 <dt id="qto_buccaneer.enrich.enrich_ifc_with_df"><code class="name flex">
-<span>def <span class="ident">enrich_ifc_with_df</span></span>(<span>ifc_file: str | <a title="qto_buccaneer.utils.ifc_loader.IfcLoader" href="utils/ifc_loader.html#qto_buccaneer.utils.ifc_loader.IfcLoader">IfcLoader</a> | ForwardRef('ifcopenshell.file'),<br>df_for_ifc_enrichment: pandas.core.frame.DataFrame,<br>key: str = 'LongName',<br>pset_name: str = 'Pset_Enrichment',<br>file_postfix: str = '_enriched') ‑> str</span>
+<span>def <span class="ident">enrich_ifc_with_df</span></span>(<span>ifc_file: str | <a title="qto_buccaneer.utils.ifc_loader.IfcLoader" href="utils/ifc_loader.html#qto_buccaneer.utils.ifc_loader.IfcLoader">IfcLoader</a> | ForwardRef('ifcopenshell.file'),<br>df_for_ifc_enrichment: pandas.core.frame.DataFrame,<br>key: str = 'LongName',<br>pset_name: str = 'Pset_Enrichment',<br>file_postfix: str = '_enriched',<br>output_dir: str | None = None) ‑> str</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -95,7 +95,8 @@ The key is the column name that is used to merge the two DataFrames.</p>
                        df_for_ifc_enrichment: pd.DataFrame,
                        key: str = &#34;LongName&#34;,
                        pset_name: str = &#34;Pset_Enrichment&#34;,
-                       file_postfix: str = &#34;_enriched&#34;) -&gt; str:
+                       file_postfix: str = &#34;_enriched&#34;,
+                       output_dir: Optional[str] = None) -&gt; str:
     &#34;&#34;&#34;
     Enrich IFC elements with data from a DataFrame.
 
@@ -104,6 +105,9 @@ The key is the column name that is used to merge the two DataFrames.</p>
         df_for_ifc_enrichment: DataFrame containing enrichment data
         key: Attribute name to match IFC elements (e.g. &#34;LongName&#34;, &#34;GlobalId&#34;)
         pset_name: Name for the property set storing enriched data
+        file_postfix: Postfix to add to the output filename
+        output_dir: Optional output directory for the enriched IFC file. If not specified,
+                   the file will be saved in the same directory as the input file.
 
     Returns:
         str: Path to the enriched IFC file
@@ -134,10 +138,17 @@ The key is the column name that is used to merge the two DataFrames.</p>
 
     # Create new file path
     if loader.file_path:
-        output_path = Path(loader.file_path)
-        new_ifc_path = str(output_path.parent / f&#34;{output_path.stem}_{file_postfix}{output_path.suffix}&#34;)
+        input_path = Path(loader.file_path)
+        if output_dir:
+            output_path = Path(output_dir) / f&#34;{input_path.stem}{file_postfix}{input_path.suffix}&#34;
+        else:
+            output_path = input_path.parent / f&#34;{input_path.stem}{file_postfix}{input_path.suffix}&#34;
     else:
-        new_ifc_path = &#34;enriched.ifc&#34;
+        output_path = Path(&#34;enriched.ifc&#34;)
+
+    # Create output directory if it doesn&#39;t exist
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    new_ifc_path = str(output_path)
 
     # Copy the model
     loader.model.write(new_ifc_path)
@@ -220,6 +231,11 @@ The key is the column name that is used to merge the two DataFrames.</p>
 <dd>Attribute name to match IFC elements (e.g. "LongName", "GlobalId")</dd>
 <dt><strong><code>pset_name</code></strong></dt>
 <dd>Name for the property set storing enriched data</dd>
+<dt><strong><code>file_postfix</code></strong></dt>
+<dd>Postfix to add to the output filename</dd>
+<dt><strong><code>output_dir</code></strong></dt>
+<dd>Optional output directory for the enriched IFC file. If not specified,
+the file will be saved in the same directory as the input file.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>

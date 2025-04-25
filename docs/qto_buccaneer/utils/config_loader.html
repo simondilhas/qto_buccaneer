@@ -53,9 +53,17 @@ el.replaceWith(d);
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def create_result_dict(metric_name: str, error_message: str = None, **kwargs) -&gt; dict:
-    &#34;&#34;&#34;Create a standardized result dictionary using column definitions from config.&#34;&#34;&#34;
-    from datetime import datetime
+    &#34;&#34;&#34;
+    Create a standardized result dictionary using column definitions from config.
     
+    Args:
+        metric_name: Name of the metric
+        error_message: Optional error message if the calculation failed
+        **kwargs: Additional fields to include in the result
+        
+    Returns:
+        dict: Standardized result dictionary
+    &#34;&#34;&#34;
     result = {
         &#34;metric_name&#34;: metric_name,
         &#34;value&#34;: None if error_message else kwargs.get(&#39;value&#39;),
@@ -67,26 +75,208 @@ el.replaceWith(d);
     }
     # Add any additional info
     result.update({k: v for k, v in kwargs.items() if k not in result})
-    return result </code></pre>
+    return result</code></pre>
 </details>
-<div class="desc"><p>Create a standardized result dictionary using column definitions from config.</p></div>
+<div class="desc"><p>Create a standardized result dictionary using column definitions from config.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>metric_name</code></strong></dt>
+<dd>Name of the metric</dd>
+<dt><strong><code>error_message</code></strong></dt>
+<dd>Optional error message if the calculation failed</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Additional fields to include in the result</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Standardized result dictionary</dd>
+</dl></div>
 </dd>
-<dt id="qto_buccaneer.utils.config_loader.load_column_definitions"><code class="name flex">
-<span>def <span class="ident">load_column_definitions</span></span>(<span>) ‑> dict</span>
+<dt id="qto_buccaneer.utils.config_loader.find_config_file"><code class="name flex">
+<span>def <span class="ident">find_config_file</span></span>(<span>config_name: str, search_paths: List[str] = None) ‑> str</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def load_column_definitions() -&gt; dict:
-    &#34;&#34;&#34;Load column definitions from the metrics config file.&#34;&#34;&#34;
-    config_path = Path(__file__).parent.parent / &#34;configs&#34; / &#34;metrics_config_abstractBIM.yaml&#34;
-    with open(config_path, &#39;r&#39;) as f:
-        config = yaml.safe_load(f)
+<pre><code class="python">def find_config_file(config_name: str, search_paths: List[str] = None) -&gt; str:
+    &#34;&#34;&#34;
+    Find a configuration file in various possible locations.
+    
+    Args:
+        config_name: Name of the config file to find
+        search_paths: Optional list of paths to search. If None, uses default search paths.
+    
+    Returns:
+        str: Path to the found config file
+        
+    Raises:
+        FileNotFoundError: If config file cannot be found in any search path
+    &#34;&#34;&#34;
+    if search_paths is None:
+        # Get the frame of the caller
+        frame = inspect.currentframe()
+        try:
+            # Go up two frames to get the caller of load_config
+            caller_frame = frame.f_back.f_back
+            caller_path = caller_frame.f_globals.get(&#39;__file__&#39;, &#39;&#39;)
+            caller_dir = os.path.dirname(os.path.abspath(caller_path))
+        finally:
+            del frame  # Ensure frame is deleted to avoid reference cycles
+            
+        # Default search paths in order of priority:
+        # 1. Directory of the calling script
+        # 2. Current working directory
+        # 3. Project root directory
+        search_paths = [
+            caller_dir,
+            os.getcwd(),
+            str(Path(__file__).parent.parent.parent)
+        ]
+    
+    for path in search_paths:
+        config_path = os.path.join(path, config_name)
+        if os.path.exists(config_path):
+            return config_path
+            
+    raise FileNotFoundError(
+        f&#34;Could not find config file &#39;{config_name}&#39; in any of these locations: {search_paths}&#34;
+    )</code></pre>
+</details>
+<div class="desc"><p>Find a configuration file in various possible locations.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>config_name</code></strong></dt>
+<dd>Name of the config file to find</dd>
+<dt><strong><code>search_paths</code></strong></dt>
+<dd>Optional list of paths to search. If None, uses default search paths.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>Path to the found config file</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>FileNotFoundError</code></dt>
+<dd>If config file cannot be found in any search path</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.utils.config_loader.load_column_definitions"><code class="name flex">
+<span>def <span class="ident">load_column_definitions</span></span>(<span>config_name: str = 'metrics_config_abstractBIM.yaml') ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_column_definitions(config_name: str = &#34;metrics_config_abstractBIM.yaml&#34;) -&gt; dict:
+    &#34;&#34;&#34;
+    Load column definitions from the metrics config file.
+    
+    Args:
+        config_name: Name of the config file containing column definitions
+        
+    Returns:
+        dict: Column definitions from the config file
+    &#34;&#34;&#34;
+    config = load_config(config_name)
     return config.get(&#39;column_definitions&#39;, {})</code></pre>
 </details>
-<div class="desc"><p>Load column definitions from the metrics config file.</p></div>
+<div class="desc"><p>Load column definitions from the metrics config file.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>config_name</code></strong></dt>
+<dd>Name of the config file containing column definitions</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Column definitions from the config file</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.utils.config_loader.load_config"><code class="name flex">
+<span>def <span class="ident">load_config</span></span>(<span>config_name: str, search_paths: List[str] = None) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_config(config_name: str, search_paths: List[str] = None) -&gt; dict:
+    &#34;&#34;&#34;
+    Load metrics configuration from YAML file.
+    
+    Args:
+        config_name: Name of the config file to load
+        search_paths: Optional list of paths to search for the config file
+        
+    Returns:
+        dict: Loaded configuration
+        
+    Raises:
+        FileNotFoundError: If config file cannot be found
+    &#34;&#34;&#34;
+    config_path = find_config_file(config_name, search_paths)
+    with open(config_path, &#39;r&#39;) as f:
+        return yaml.safe_load(f)</code></pre>
+</details>
+<div class="desc"><p>Load metrics configuration from YAML file.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>config_name</code></strong></dt>
+<dd>Name of the config file to load</dd>
+<dt><strong><code>search_paths</code></strong></dt>
+<dd>Optional list of paths to search for the config file</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Loaded configuration</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>FileNotFoundError</code></dt>
+<dd>If config file cannot be found</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.utils.config_loader.validate_top_level_structure"><code class="name flex">
+<span>def <span class="ident">validate_top_level_structure</span></span>(<span>config: Dict) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def validate_top_level_structure(config: Dict) -&gt; bool:
+    &#34;&#34;&#34;
+    Validate that config has required top-level sections.
+    
+    Args:
+        config: Configuration dictionary
+    
+    Returns:
+        bool: True if valid, raises ValueError if not
+    &#34;&#34;&#34;
+    required_sections = {&#34;metrics&#34;, &#34;room_based_metrics&#34;}
+    missing = required_sections - set(config.keys())
+    if missing:
+        raise ValueError(f&#34;Missing required sections in config: {missing}&#34;)
+    return True</code></pre>
+</details>
+<div class="desc"><p>Validate that config has required top-level sections.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>config</code></strong></dt>
+<dd>Configuration dictionary</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool</code></dt>
+<dd>True if valid, raises ValueError if not</dd>
+</dl></div>
 </dd>
 </dl>
 </section>
@@ -106,7 +296,10 @@ el.replaceWith(d);
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="qto_buccaneer.utils.config_loader.create_result_dict" href="#qto_buccaneer.utils.config_loader.create_result_dict">create_result_dict</a></code></li>
+<li><code><a title="qto_buccaneer.utils.config_loader.find_config_file" href="#qto_buccaneer.utils.config_loader.find_config_file">find_config_file</a></code></li>
 <li><code><a title="qto_buccaneer.utils.config_loader.load_column_definitions" href="#qto_buccaneer.utils.config_loader.load_column_definitions">load_column_definitions</a></code></li>
+<li><code><a title="qto_buccaneer.utils.config_loader.load_config" href="#qto_buccaneer.utils.config_loader.load_config">load_config</a></code></li>
+<li><code><a title="qto_buccaneer.utils.config_loader.validate_top_level_structure" href="#qto_buccaneer.utils.config_loader.validate_top_level_structure">validate_top_level_structure</a></code></li>
 </ul>
 </li>
 </ul>

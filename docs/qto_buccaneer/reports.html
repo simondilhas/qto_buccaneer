@@ -44,6 +44,253 @@ el.replaceWith(d);
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="qto_buccaneer.reports.build_metrics_table"><code class="name flex">
+<span>def <span class="ident">build_metrics_table</span></span>(<span>metrics_df: pandas.core.frame.DataFrame,<br>base_metrics: dict = None,<br>include_metrics: list = None,<br>language: str = None) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_metrics_table(
+    metrics_df: pd.DataFrame, 
+    base_metrics: dict = None,
+    include_metrics: list = None,
+    language: str = None
+) -&gt; dict:
+    &#34;&#34;&#34;
+    Build a formatted metrics table from a DataFrame of metrics.
+    
+    Args:
+        metrics_df (pd.DataFrame): DataFrame containing metrics with columns:
+            - metric_name: Name of the metric
+            - value: Numeric value
+            - unit: Unit of measurement
+        base_metrics (dict): Dictionary mapping metric names to their base metrics for percentages.
+            If None, will use base_metrics from config.
+        include_metrics (list): List of metric names to include in the table.
+            If None, will use metrics defined in sections from config.
+        language (str): Language code to use for display names (e.g., &#39;en&#39;, &#39;de&#39;).
+            If None, will use default_language from config.
+            
+    Returns:
+        dict: Dictionary containing sections with their metrics
+    &#34;&#34;&#34;
+    print(f&#34;Input metrics_df shape: {metrics_df.shape}&#34;)  # Debug print
+    print(f&#34;Input metrics_df columns: {metrics_df.columns.tolist()}&#34;)  # Debug print
+    
+    # Load configuration
+    config = load_metrics_config()
+    
+    # Use default language if none specified
+    if language is None:
+        language = config.get(&#39;default_language&#39;, &#39;en&#39;)
+    print(f&#34;Using language: {language}&#34;)  # Debug print
+    
+    # Get all defined metrics from the configuration
+    defined_metrics = set()
+    for section in config.get(&#39;sections&#39;, []):
+        if &#39;metrics&#39; in section:
+            defined_metrics.update(section.get(&#39;metrics&#39;, []))
+    
+    print(f&#34;Defined metrics in config: {defined_metrics}&#34;)  # Debug print
+    
+    # First filter to only include metrics that exist in the DataFrame
+    available_metrics = set(metrics_df[&#39;metric_name&#39;].unique())
+    print(f&#34;Available metrics in DataFrame: {available_metrics}&#34;)  # Debug print
+    
+    # Determine which metrics to include
+    if include_metrics and len(include_metrics) &gt; 0:
+        print(f&#34;Using provided include_metrics: {include_metrics}&#34;)  # Debug print
+        # Convert include_metrics to set for faster lookups
+        include_metrics_set = set(include_metrics)
+        # Only keep metrics that are both in include_metrics and available_metrics
+        filtered_metrics = include_metrics_set.intersection(available_metrics)
+        print(f&#34;Metrics after include_metrics filter: {filtered_metrics}&#34;)  # Debug print
+    else:
+        # If no include_metrics provided or empty list, use defined metrics that are available
+        filtered_metrics = defined_metrics.intersection(available_metrics)
+        print(f&#34;No include_metrics provided, using defined metrics: {filtered_metrics}&#34;)  # Debug print
+    
+    # Filter the DataFrame to only include the filtered metrics
+    metrics_df = metrics_df[metrics_df[&#39;metric_name&#39;].isin(filtered_metrics)].copy()
+    print(f&#34;Final DataFrame shape after filtering: {metrics_df.shape}&#34;)  # Debug print
+    
+    # Use provided base_metrics or load from config
+    if base_metrics is None:
+        base_metrics = {}
+        for metric_id, metric_config in config.get(&#39;metrics&#39;, {}).items():
+            if metric_config.get(&#39;base_metric&#39;):
+                base_metrics[metric_id] = metric_config[&#39;base_metric&#39;]
+    
+    # Get base metric values
+    base_values = {}
+    for base_metric in set(base_metrics.values()):
+        try:
+            base_values[base_metric] = metrics_df[metrics_df[&#39;metric_name&#39;] == base_metric][&#39;value&#39;].iloc[0]
+        except IndexError:
+            base_values[base_metric] = 0
+    
+    # Build metrics table by sections
+    result = {}
+    for section in config.get(&#39;sections&#39;, []):
+        section_id = section[&#39;id&#39;]
+        section_title = section[&#39;title&#39;].get(language, section[&#39;title&#39;][&#39;en&#39;])
+        
+        # Handle special sections
+        if section_id == &#39;title_page&#39;:
+            result[section_id] = {
+                &#39;title&#39;: section_title,
+                &#39;metrics&#39;: []  # No metrics for title page
+            }
+            continue
+            
+        if section_id == &#39;table_of_contents&#39;:
+            result[section_id] = {
+                &#39;title&#39;: section_title,
+                &#39;metrics&#39;: []  # No metrics for table of contents
+            }
+            continue
+            
+        # Handle metrics sections
+        section_metrics = []
+        for metric_id in section.get(&#39;metrics&#39;, []):
+            if metric_id not in filtered_metrics:
+                continue
+                
+            metric_config = config[&#39;metrics&#39;].get(metric_id, {})
+            metric_row = metrics_df[metrics_df[&#39;metric_name&#39;] == metric_id].iloc[0]
+            
+            # Get display name in selected language
+            display_name = metric_config[&#39;name&#39;].get(language, metric_config[&#39;name&#39;][&#39;en&#39;])
+            
+            # Format the value with unit - show just the number for count metrics
+            value = metric_row[&#39;value&#39;]
+            unit = metric_row[&#39;unit&#39;]
+            if unit == &#39;count&#39;:
+                formatted_value = f&#34;{value}&#34;
+            else:
+                formatted_value = f&#34;{value:.2f} {unit}&#34;
+            
+            # Calculate and format percentage if applicable
+            percentage = &#39;&#39;
+            base_metric = metric_config.get(&#39;base_metric&#39;)
+            if base_metric:
+                base_value = base_values.get(base_metric, 0)
+                if base_value &gt; 0:
+                    pct = (value / base_value) * 100
+                    base_name = config[&#39;metrics&#39;][base_metric][&#39;name&#39;].get(language, config[&#39;metrics&#39;][base_metric][&#39;name&#39;][&#39;en&#39;])
+                    percentage = config[&#39;formatting&#39;][&#39;percentage&#39;][&#39;format&#39;].format(
+                        value=pct,
+                        base_name=base_name.split(&#39;(&#39;)[0].strip(),
+                        of_word=config[&#39;formatting&#39;][&#39;percentage&#39;][&#39;languages&#39;].get(language, &#39;of&#39;)
+                    )
+            
+            section_metrics.append({
+                &#39;name&#39;: display_name,
+                &#39;value1&#39;: formatted_value,
+                &#39;value2&#39;: percentage
+            })
+        
+        if section_metrics:  # Only add section if it has metrics
+            result[section_id] = {
+                &#39;title&#39;: section_title,
+                &#39;metrics&#39;: section_metrics
+            }
+    
+    print(f&#34;Final sections: {list(result.keys())}&#34;)  # Debug print
+    return result</code></pre>
+</details>
+<div class="desc"><p>Build a formatted metrics table from a DataFrame of metrics.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>metrics_df</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
+<dd>DataFrame containing metrics with columns:
+- metric_name: Name of the metric
+- value: Numeric value
+- unit: Unit of measurement</dd>
+<dt><strong><code>base_metrics</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary mapping metric names to their base metrics for percentages.
+If None, will use base_metrics from config.</dd>
+<dt><strong><code>include_metrics</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of metric names to include in the table.
+If None, will use metrics defined in sections from config.</dd>
+<dt><strong><code>language</code></strong> :&ensp;<code>str</code></dt>
+<dd>Language code to use for display names (e.g., 'en', 'de').
+If None, will use default_language from config.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Dictionary containing sections with their metrics</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.convert_html_to_pdf"><code class="name flex">
+<span>def <span class="ident">convert_html_to_pdf</span></span>(<span>html_content: str,<br>output_path: str,<br>style_config: <a title="qto_buccaneer.reports.ReportStyleConfig" href="#qto_buccaneer.reports.ReportStyleConfig">ReportStyleConfig</a> | None = None) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def convert_html_to_pdf(
+    html_content: str, 
+    output_path: str,
+    style_config: Optional[ReportStyleConfig] = None
+) -&gt; str:
+    &#34;&#34;&#34;
+    Convert HTML content to PDF using WeasyPrint with styling.
+    
+    Args:
+        html_content (str): HTML content to convert
+        output_path (str): Path where the PDF should be saved
+        style_config (Optional[ReportStyleConfig]): Configuration for report styling
+        
+    Returns:
+        str: Path to the generated PDF file
+        
+    Raises:
+        Exception: If PDF conversion fails
+    &#34;&#34;&#34;
+    try:
+        # Use default config if none provided
+        style_config = style_config or ReportStyleConfig()
+        
+        # Add CSS to HTML content
+        css = style_config.to_css()
+        html_with_css = f&#34;&#34;&#34;
+            &lt;style&gt;
+                {css}
+            &lt;/style&gt;
+            {html_content}
+        &#34;&#34;&#34;
+        
+        HTML(string=html_with_css).write_pdf(output_path)
+        return output_path
+    except Exception as e:
+        raise Exception(f&#34;Failed to convert HTML to PDF: {str(e)}&#34;)</code></pre>
+</details>
+<div class="desc"><p>Convert HTML content to PDF using WeasyPrint with styling.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>html_content</code></strong> :&ensp;<code>str</code></dt>
+<dd>HTML content to convert</dd>
+<dt><strong><code>output_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path where the PDF should be saved</dd>
+<dt><strong><code>style_config</code></strong> :&ensp;<code>Optional[<a title="qto_buccaneer.reports.ReportStyleConfig" href="#qto_buccaneer.reports.ReportStyleConfig">ReportStyleConfig</a>]</code></dt>
+<dd>Configuration for report styling</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>Path to the generated PDF file</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>Exception</code></dt>
+<dd>If PDF conversion fails</dd>
+</dl></div>
+</dd>
 <dt id="qto_buccaneer.reports.create_project_comparison_df"><code class="name flex">
 <span>def <span class="ident">create_project_comparison_df</span></span>(<span>df: pandas.core.frame.DataFrame, metrics: list[str] | None = None) ‑> pandas.core.frame.DataFrame</span>
 </code></dt>
@@ -127,7 +374,7 @@ If None, all metrics will be included.</dd>
 </dl></div>
 </dd>
 <dt id="qto_buccaneer.reports.export_project_comparison_excel"><code class="name flex">
-<span>def <span class="ident">export_project_comparison_excel</span></span>(<span>df: pandas.core.frame.DataFrame,<br>output_path: str,<br>metrics: list[str] | None = None,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> pandas.core.frame.DataFrame</span>
+<span>def <span class="ident">export_project_comparison_excel</span></span>(<span>df: pandas.core.frame.DataFrame,<br>output_path: str,<br>include_metrics: list[str] | None = None,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> pandas.core.frame.DataFrame</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -137,7 +384,7 @@ If None, all metrics will be included.</dd>
 <pre><code class="python">def export_project_comparison_excel(
     df: pd.DataFrame, 
     output_path: str, 
-    metrics: Optional[list[str]] = None,
+    include_metrics: Optional[list[str]] = None,
     layout_config: Optional[ExcelLayoutConfig] = None
 ) -&gt; pd.DataFrame:
     &#34;&#34;&#34;
@@ -145,19 +392,19 @@ If None, all metrics will be included.</dd>
 
     Args:
         df (pd.DataFrame): Input DataFrame containing metrics data
-        output_path (str): Path where the Excel file should be saved
-        metrics (Optional[list[str]]): List of metric names to include in the comparison
+        output_path (str): Full path where the Excel file should be saved
+        include_metrics (Optional[list[str]]): List of metric names to include in the comparison
         layout_config (Optional[ExcelLayoutConfig]): Configuration for Excel layout.
             If None, default settings will be used.
             
     Returns:
         pd.DataFrame: The comparison DataFrame that was exported
     &#34;&#34;&#34;
-    comparison_df = create_project_comparison_df(df, metrics)
+    comparison_df = create_project_comparison_df(df, include_metrics)
     
     print(&#34;Input DataFrame shape:&#34;, df.shape)  # Debug print
     print(&#34;Comparison DataFrame shape:&#34;, comparison_df.shape)  # Debug print
-    print(&#34;Metrics:&#34;, metrics)  # Debug print
+    print(&#34;Metrics:&#34;, include_metrics)  # Debug print
     
     if comparison_df.empty:
         print(&#34;Warning: Comparison DataFrame is empty!&#34;)  # Debug print
@@ -250,8 +497,8 @@ If None, all metrics will be included.</dd>
 <dt><strong><code>df</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
 <dd>Input DataFrame containing metrics data</dd>
 <dt><strong><code>output_path</code></strong> :&ensp;<code>str</code></dt>
-<dd>Path where the Excel file should be saved</dd>
-<dt><strong><code>metrics</code></strong> :&ensp;<code>Optional[list[str]]</code></dt>
+<dd>Full path where the Excel file should be saved</dd>
+<dt><strong><code>include_metrics</code></strong> :&ensp;<code>Optional[list[str]]</code></dt>
 <dd>List of metric names to include in the comparison</dd>
 <dt><strong><code>layout_config</code></strong> :&ensp;<code>Optional[<a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a>]</code></dt>
 <dd>Configuration for Excel layout.
@@ -281,7 +528,7 @@ If None, default settings will be used.</dd>
     
     Args:
         df (pd.DataFrame): Room program comparison DataFrame
-        output_path (str): Path where the Excel file should be saved
+        output_path (str): Full path where the Excel file should be saved
         layout_config (Optional[ExcelLayoutConfig]): Configuration for Excel layout.
             If None, default settings will be used.
             
@@ -294,8 +541,8 @@ If None, default settings will be used.</dd>
         
     # Make sure the output directory exists
     output_dir = os.path.dirname(output_path)
-    if output_dir and not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if output_dir:  # Only create directory if path contains a directory component
+        os.makedirs(output_dir, exist_ok=True)
         
     try:
         # Use provided config or create default one
@@ -395,7 +642,7 @@ If None, default settings will be used.</dd>
 <dt><strong><code>df</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
 <dd>Room program comparison DataFrame</dd>
 <dt><strong><code>output_path</code></strong> :&ensp;<code>str</code></dt>
-<dd>Path where the Excel file should be saved</dd>
+<dd>Full path where the Excel file should be saved</dd>
 <dt><strong><code>layout_config</code></strong> :&ensp;<code>Optional[<a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a>]</code></dt>
 <dd>Configuration for Excel layout.
 If None, default settings will be used.</dd>
@@ -407,65 +654,541 @@ If None, default settings will be used.</dd>
 </dl></div>
 </dd>
 <dt id="qto_buccaneer.reports.export_to_excel"><code class="name flex">
-<span>def <span class="ident">export_to_excel</span></span>(<span>df: pandas.core.frame.DataFrame, path: str) ‑> None</span>
+<span>def <span class="ident">export_to_excel</span></span>(<span>df: pandas.core.frame.DataFrame,<br>output_dir: str,<br>filename_suffix: str = 'metrics',<br>building_name: str | None = None,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> str</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def export_to_excel(df: pd.DataFrame, path: str) -&gt; None:
-    &#34;&#34;&#34;Export a DataFrame to a new Excel file.&#34;&#34;&#34;
-    if not df.empty:
-        df.to_excel(path, index=False)</code></pre>
-</details>
-<div class="desc"><p>Export a DataFrame to a new Excel file.</p></div>
-</dd>
-<dt id="qto_buccaneer.reports.generate_pdf_report"><code class="name flex">
-<span>def <span class="ident">generate_pdf_report</span></span>(<span>project_data: dict,<br>template_path: str = 'template.tex',<br>output_path: str = 'output.tex') ‑> None</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def generate_pdf_report(
-    project_data: dict, 
-    template_path: str = &#34;template.tex&#34;, 
-    output_path: str = &#34;output.tex&#34;) -&gt; None:
-    
-    &#34;&#34;&#34;Generate a PDF report from a LaTeX template using project data.
+<pre><code class="python">def export_to_excel(
+    df: pd.DataFrame, 
+    output_dir: str,
+    filename_suffix: str = &#34;metrics&#34;,
+    building_name: Optional[str] = None,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -&gt; str:
+    &#34;&#34;&#34;Export a DataFrame to a new Excel file with optional styling.
     
     Args:
-        project_data (dict): Dictionary containing data to be rendered in the template
-        template_path (str, optional): Path to the LaTeX template file. Defaults to &#34;template.tex&#34;
-        output_path (str, optional): Path for the output tex file. Defaults to &#34;output.tex&#34;
+        df (pd.DataFrame): DataFrame to export
+        output_dir (str): Directory where the Excel file should be saved
+        filename_suffix (str): Suffix to add to the filename (default: &#34;metrics&#34;)
+        building_name (Optional[str]): Name of the building to include in filename
+        layout_config (Optional[ExcelLayoutConfig]): Configuration for Excel styling. 
+            If None, uses default ExcelLayoutConfig settings.
+            
+    Returns:
+        str: The path to the exported Excel file
     &#34;&#34;&#34;
-    # Get the directory containing the template
-    template_dir = str(Path(template_path).parent)
-    template_name = Path(template_path).name
+    if df.empty:
+        return df
+        
+    # Use default config if none provided
+    if layout_config is None:
+        layout_config = ExcelLayoutConfig()
     
-    # Set up Jinja environment with the correct directory
-    env = Environment(loader=FileSystemLoader(template_dir))
-    template = env.get_template(template_name)
-    rendered = template.render(**project_data)
+    # Create output directory if it doesn&#39;t exist
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    
+    # Construct filename
+    filename_parts = []
+    if building_name:
+        filename_parts.append(building_name)
+    filename_parts.append(filename_suffix)
+    filename = &#34;_&#34;.join(filename_parts) + &#34;.xlsx&#34;
+    
+    # Create full output path
+    output_path = os.path.join(output_dir, filename)
+    
+    # Create Excel writer with the full path
+    with pd.ExcelWriter(output_path, engine=&#39;openpyxl&#39;) as writer:
+        # Write DataFrame to Excel
+        df.to_excel(writer, index=False, sheet_name=&#39;Sheet1&#39;)
+        
+        # Get workbook and worksheet
+        workbook = writer.book
+        worksheet = writer.sheets[&#39;Sheet1&#39;]
+        
+        # Apply styling based on config
+        if layout_config.bold_headers:
+            for cell in worksheet[1]:
+                cell.font = openpyxl.styles.Font(bold=True)
+                if layout_config.header_color:
+                    cell.fill = openpyxl.styles.PatternFill(
+                        start_color=layout_config.header_color,
+                        end_color=layout_config.header_color,
+                        fill_type=&#39;solid&#39;
+                    )
+        
+        # Set number format
+        number_format = layout_config.number_format
+        for row in worksheet.iter_rows(min_row=2):
+            for cell in row:
+                if isinstance(cell.value, (int, float)):
+                    cell.number_format = number_format
+        
+        # Set row height if specified
+        if layout_config.row_height:
+            for row in worksheet.iter_rows():
+                worksheet.row_dimensions[row[0].row].height = layout_config.row_height
+        
+        # Set column widths
+        if layout_config.auto_column_width:
+            for column in worksheet.columns:
+                max_length = 0
+                column = [cell for cell in column]
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) &gt; max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+        
+        # Apply borders
+        if layout_config.horizontal_lines or layout_config.vertical_lines:
+            for row in worksheet.iter_rows():
+                for cell in row:
+                    border = openpyxl.styles.Border()
+                    if layout_config.horizontal_lines:
+                        border.top = openpyxl.styles.Side(style=&#39;thin&#39;)
+                        border.bottom = openpyxl.styles.Side(style=&#39;thin&#39;)
+                    if layout_config.vertical_lines:
+                        border.left = openpyxl.styles.Side(style=&#39;thin&#39;)
+                        border.right = openpyxl.styles.Side(style=&#39;thin&#39;)
+                    cell.border = border
+        
+        # Apply alternating colors if enabled
+        if layout_config.alternating_colors:
+            for row_idx, row in enumerate(worksheet.iter_rows(min_row=2), start=2):
+                if row_idx % 2 == 0:
+                    for cell in row:
+                        cell.fill = openpyxl.styles.PatternFill(
+                            start_color=&#39;F0F0F0&#39;,
+                            end_color=&#39;F0F0F0&#39;,
+                            fill_type=&#39;solid&#39;
+                        )
 
-    # Write rendered template to file
-    with open(output_path, &#34;w&#34;) as f:
-        f.write(rendered)
-
-    # Generate PDF using pdflatex
-    subprocess.run([&#34;pdflatex&#34;, output_path])</code></pre>
+    return output_path</code></pre>
 </details>
-<div class="desc"><p>Generate a PDF report from a LaTeX template using project data.</p>
+<div class="desc"><p>Export a DataFrame to a new Excel file with optional styling.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>project_data</code></strong> :&ensp;<code>dict</code></dt>
-<dd>Dictionary containing data to be rendered in the template</dd>
-<dt><strong><code>template_path</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>Path to the LaTeX template file. Defaults to "template.tex"</dd>
-<dt><strong><code>output_path</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>Path for the output tex file. Defaults to "output.tex"</dd>
+<dt><strong><code>df</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
+<dd>DataFrame to export</dd>
+<dt><strong><code>output_dir</code></strong> :&ensp;<code>str</code></dt>
+<dd>Directory where the Excel file should be saved</dd>
+<dt><strong><code>filename_suffix</code></strong> :&ensp;<code>str</code></dt>
+<dd>Suffix to add to the filename (default: "metrics")</dd>
+<dt><strong><code>building_name</code></strong> :&ensp;<code>Optional[str]</code></dt>
+<dd>Name of the building to include in filename</dd>
+<dt><strong><code>layout_config</code></strong> :&ensp;<code>Optional[<a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a>]</code></dt>
+<dd>Configuration for Excel styling.
+If None, uses default ExcelLayoutConfig settings.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The path to the exported Excel file</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.fill_text_line"><code class="name flex">
+<span>def <span class="ident">fill_text_line</span></span>(<span>text: str, width: int = 80, fill_char: str = ' ') ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fill_text_line(text: str, width: int = 80, fill_char: str = &#34; &#34;) -&gt; str:
+    &#34;&#34;&#34;
+    Fill a text line to a specific width with a fill character.
+    
+    Args:
+        text (str): The text to fill
+        width (int): The total width of the line
+        fill_char (str): The character to use for filling
+        
+    Returns:
+        str: The filled text line
+    &#34;&#34;&#34;
+    if not text:
+        return fill_char * width
+        
+    # Split text into words
+    words = text.split()
+    if not words:
+        return fill_char * width
+        
+    # Start with the first word
+    lines = [words[0]]
+    current_length = len(words[0])
+    
+    # Add remaining words
+    for word in words[1:]:
+        # If adding the word would exceed the width, start a new line
+        if current_length + len(word) + 1 &gt; width:
+            lines.append(word)
+            current_length = len(word)
+        else:
+            # Add the word to the current line
+            lines[-1] += &#34; &#34; + word
+            current_length += len(word) + 1
+            
+    # Fill each line to the specified width
+    filled_lines = []
+    for line in lines:
+        # Calculate how many fill characters to add
+        fill_count = width - len(line)
+        if fill_count &gt; 0:
+            filled_line = line + (fill_char * fill_count)
+        else:
+            filled_line = line
+        filled_lines.append(filled_line)
+        
+    return &#34;\n&#34;.join(filled_lines)</code></pre>
+</details>
+<div class="desc"><p>Fill a text line to a specific width with a fill character.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>text</code></strong> :&ensp;<code>str</code></dt>
+<dd>The text to fill</dd>
+<dt><strong><code>width</code></strong> :&ensp;<code>int</code></dt>
+<dd>The total width of the line</dd>
+<dt><strong><code>fill_char</code></strong> :&ensp;<code>str</code></dt>
+<dd>The character to use for filling</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The filled text line</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.format_definition_line"><code class="name flex">
+<span>def <span class="ident">format_definition_line</span></span>(<span>term: str, definition: str, width: int = 80) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def format_definition_line(term: str, definition: str, width: int = 80) -&gt; str:
+    &#34;&#34;&#34;
+    Format a definition line with the term and definition.
+    
+    Args:
+        term (str): The term being defined
+        definition (str): The definition of the term
+        width (int): The total width of the line
+        
+    Returns:
+        str: The formatted definition line
+    &#34;&#34;&#34;
+    # Create the line with term and definition
+    line = f&#34;{term}: {definition}&#34;
+    return fill_text_line(line, width)</code></pre>
+</details>
+<div class="desc"><p>Format a definition line with the term and definition.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>term</code></strong> :&ensp;<code>str</code></dt>
+<dd>The term being defined</dd>
+<dt><strong><code>definition</code></strong> :&ensp;<code>str</code></dt>
+<dd>The definition of the term</dd>
+<dt><strong><code>width</code></strong> :&ensp;<code>int</code></dt>
+<dd>The total width of the line</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The formatted definition line</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.format_disclaimer"><code class="name flex">
+<span>def <span class="ident">format_disclaimer</span></span>(<span>disclaimer: str, width: int = 80) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def format_disclaimer(disclaimer: str, width: int = 80) -&gt; str:
+    &#34;&#34;&#34;
+    Format the disclaimer text.
+    
+    Args:
+        disclaimer (str): The disclaimer text
+        width (int): The total width of the line
+        
+    Returns:
+        str: The formatted disclaimer
+    &#34;&#34;&#34;
+    return fill_text_line(disclaimer, width)</code></pre>
+</details>
+<div class="desc"><p>Format the disclaimer text.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>disclaimer</code></strong> :&ensp;<code>str</code></dt>
+<dd>The disclaimer text</dd>
+<dt><strong><code>width</code></strong> :&ensp;<code>int</code></dt>
+<dd>The total width of the line</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The formatted disclaimer</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.generate_metrics_report"><code class="name flex">
+<span>def <span class="ident">generate_metrics_report</span></span>(<span>metrics_df: pandas.core.frame.DataFrame,<br>building_name: str,<br>plots_dir: str,<br>building_adresse: str | None = None,<br>building_description: str | None = None,<br>output_dir: str = 'reports',<br>template_path: str = 'configs/abstractBIM_report_template.html',<br>style_config: <a title="qto_buccaneer.reports.ReportStyleConfig" href="#qto_buccaneer.reports.ReportStyleConfig">ReportStyleConfig</a> | None = None,<br>report_config_path: str = 'abstractBIM_report_config.yaml') ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def generate_metrics_report(
+    metrics_df: pd.DataFrame,
+    building_name: str,
+    plots_dir: str,
+    building_adresse: Optional[str] = None,
+    building_description: Optional[str] = None,
+    output_dir: str = &#39;reports&#39;,
+    template_path: str = &#39;configs/abstractBIM_report_template.html&#39;,
+    style_config: Optional[ReportStyleConfig] = None,
+    report_config_path: str = &#34;abstractBIM_report_config.yaml&#34;
+) -&gt; str:
+    &#34;&#34;&#34;
+    Generate a metrics report from the provided metrics DataFrame.
+    
+    Args:
+        metrics_df (pd.DataFrame): DataFrame containing the metrics data
+        building_name (str): Name of the project, used for the report title
+        plots_dir (str): Directory containing report plots
+        building_adresse (Optional[str]): Address of the building
+        building_description (Optional[str]): Description of the building
+        output_dir (str): Directory where the final PDF report will be saved
+        template_path (str): Path to the report template HTML file
+        style_config (Optional[ReportStyleConfig]): Configuration for report styling
+        report_config_path (str): Path to the report configuration YAML file
+        
+    Returns:
+        str: Path to the generated PDF report
+    &#34;&#34;&#34;
+    # Get the workspace root directory (two levels up from the current file)
+    workspace_root = Path(__file__).parent.parent.parent
+    
+    # Convert relative paths to absolute paths
+    template_file = str(workspace_root / &#39;src&#39; / &#39;qto_buccaneer&#39; / template_path)
+    plots_dir = str(workspace_root / plots_dir)
+    output_dir = str(workspace_root / output_dir)
+    
+    # Create output directory if it doesn&#39;t exist
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Construct output file path
+    output_file = f&#34;{building_name}_report.pdf&#34;
+    output_path = os.path.join(output_dir, output_file)
+    
+    print(f&#34;Looking for template at: {template_file}&#34;)  # Debug print
+    
+    # Set default image placeholders and formats
+    image_placeholders = [&#39;pic_gfa&#39;, &#39;pic_gv&#39;, &#39;pic_project&#39;, &#39;pic_room_floorplan_scale&#39;]
+    image_formats = [&#39;.png&#39;, &#39;.jpg&#39;, &#39;.jpeg&#39;]
+    
+    # Collect available images
+    images = {}
+    for key in image_placeholders:
+        found = False
+        for ext in image_formats:
+            img_path = os.path.join(plots_dir, f&#34;{key}{ext}&#34;)
+            if os.path.isfile(img_path):
+                images[key] = img_path
+                found = True
+                break
+        if not found:
+            images[key] = None
+    
+    # Verify template file exists
+    if not os.path.isfile(template_file):
+        raise FileNotFoundError(f&#34;Template file not found: {template_file}&#34;)
+    
+    # Load report configuration if provided
+    include_metrics = None
+    if report_config_path:
+        try:
+            with open(report_config_path, &#39;r&#39;) as f:
+                report_config = yaml.safe_load(f)
+                include_metrics = report_config.get(&#39;include_metrics&#39;, [])
+                print(f&#34;Loaded include_metrics from config: {include_metrics}&#34;)  # Debug print
+        except Exception as e:
+            print(f&#34;Warning: Could not load report config: {e}&#34;)
+    
+    # Create metrics table using the build_metrics_table function
+    metrics_table = build_metrics_table(metrics_df, include_metrics=include_metrics)
+    
+    # Render HTML
+    template_dir = os.path.dirname(template_file)
+    template_name = os.path.basename(template_file)
+    env = Environment(loader=FileSystemLoader(template_dir))
+    template = env.get_template(template_name)
+    
+    html_out = template.render(
+        project_name=building_name,
+        file_name=building_name,
+        address=building_adresse or &#34;&#34;,
+        description=building_description or &#34;&#34;,
+        date_time=datetime.now().strftime(&#39;%Y-%m-%d %H:%M&#39;),
+        images=images,
+        logo_path=style_config.logo_path if style_config else None,
+        metrics_table=metrics_table  # Pass the metrics table to the template
+    )
+    
+    # Save HTML
+    html_path = output_path.replace(&#39;.pdf&#39;, &#39;.html&#39;)
+    with open(html_path, &#39;w&#39;) as f:
+        f.write(html_out)
+    
+    # Convert to PDF with styling
+    try:
+        convert_html_to_pdf(html_out, output_path, style_config)
+    except Exception as e:
+        print(f&#34;Warning: Could not convert to PDF: {e}&#34;)
+        print(f&#34;HTML report saved at: {html_path}&#34;)
+        return html_path
+    
+    return output_path</code></pre>
+</details>
+<div class="desc"><p>Generate a metrics report from the provided metrics DataFrame.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>metrics_df</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
+<dd>DataFrame containing the metrics data</dd>
+<dt><strong><code>building_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the project, used for the report title</dd>
+<dt><strong><code>plots_dir</code></strong> :&ensp;<code>str</code></dt>
+<dd>Directory containing report plots</dd>
+<dt><strong><code>building_adresse</code></strong> :&ensp;<code>Optional[str]</code></dt>
+<dd>Address of the building</dd>
+<dt><strong><code>building_description</code></strong> :&ensp;<code>Optional[str]</code></dt>
+<dd>Description of the building</dd>
+<dt><strong><code>output_dir</code></strong> :&ensp;<code>str</code></dt>
+<dd>Directory where the final PDF report will be saved</dd>
+<dt><strong><code>template_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the report template HTML file</dd>
+<dt><strong><code>style_config</code></strong> :&ensp;<code>Optional[<a title="qto_buccaneer.reports.ReportStyleConfig" href="#qto_buccaneer.reports.ReportStyleConfig">ReportStyleConfig</a>]</code></dt>
+<dd>Configuration for report styling</dd>
+<dt><strong><code>report_config_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the report configuration YAML file</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>Path to the generated PDF report</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.load_metrics_config"><code class="name flex">
+<span>def <span class="ident">load_metrics_config</span></span>(<span>) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_metrics_config() -&gt; dict:
+    &#34;&#34;&#34;
+    Load metrics configuration from YAML file.
+    
+    Returns:
+        dict: Configuration dictionary
+    &#34;&#34;&#34;
+    # Get the workspace root directory (two levels up from the current file)
+    workspace_root = Path(__file__).parent.parent.parent
+    config_path = workspace_root / &#39;src&#39; / &#39;qto_buccaneer&#39; / &#39;configs&#39; / &#39;abstractBIM_report_config.yaml&#39;
+    print(f&#34;Loading metrics config from: {config_path}&#34;)  # Debug print
+    if not config_path.exists():
+        raise FileNotFoundError(f&#34;Metrics configuration file not found at: {config_path}&#34;)
+    
+    with open(config_path, &#39;r&#39;) as f:
+        config = yaml.safe_load(f)
+        print(f&#34;Loaded config sections: {list(config.keys())}&#34;)  # Debug print
+        return config</code></pre>
+</details>
+<div class="desc"><p>Load metrics configuration from YAML file.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Configuration dictionary</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.render_template_with_filled_text"><code class="name flex">
+<span>def <span class="ident">render_template_with_filled_text</span></span>(<span>template, context)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def render_template_with_filled_text(template, context):
+    &#34;&#34;&#34;
+    Render the template with filled text lines.
+    
+    Args:
+        template: The Jinja2 template
+        context (dict): The context for the template
+        
+    Returns:
+        str: The rendered template with filled text
+    &#34;&#34;&#34;
+    # Format definitions
+    definitions = [
+        (&#34;Gross Floor Area (GFA)&#34;, &#34;The total area of all floors in a building, measured from the exterior walls.&#34;),
+        (&#34;Gross Volume (GV)&#34;, &#34;The total volume of the building, including all enclosed spaces.&#34;),
+        (&#34;Net Floor Area (NFA)&#34;, &#34;The usable area within the building, excluding walls.&#34;),
+        (&#34;Net Volume (NV)&#34;, &#34;The volume of usable space within the building.&#34;),
+        (&#34;Construction Area&#34;, &#34;Difference between GFA and NFA.&#34;),
+        (&#34;Construction Volume&#34;, &#34;Difference between GV and NV.&#34;),
+        (&#34;Facade Area (FA)&#34;, &#34;The total exterior surface area of the building envelope.&#34;),
+        (&#34;Room Type&#34;, &#34;A classification of rooms based on their intended function.&#34;),
+        (&#34;Spatial Relationships&#34;, &#34;Position between elements (e.g., a window relating to a room).&#34;),
+        (&#34;Storey&#34;, &#34;A horizontal division of a building.&#34;),
+        (&#34;Baseplate&#34;, &#34;The foundational slab at the bottom of the building.&#34;),
+        (&#34;Covering Area&#34;, &#34;Area of facade elements like cladding and panels.&#34;)
+    ]
+    
+    # Format each definition
+    formatted_definitions = [
+        format_definition_line(term, definition)
+        for term, definition in definitions
+    ]
+    
+    # Format disclaimer
+    disclaimer = &#34;These quantities were generated automatically using the abstractBIM system. Accuracy depends on input quality. The general terms and conditions of abstract AG apply.&#34;
+    formatted_disclaimer = format_disclaimer(disclaimer)
+    
+    # Add formatted text to context
+    context.update({
+        &#39;formatted_definitions&#39;: formatted_definitions,
+        &#39;formatted_disclaimer&#39;: formatted_disclaimer
+    })
+    
+    return template.render(context)</code></pre>
+</details>
+<div class="desc"><p>Render the template with filled text lines.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>template</code></strong></dt>
+<dd>The Jinja2 template</dd>
+<dt><strong><code>context</code></strong> :&ensp;<code>dict</code></dt>
+<dd>The context for the template</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The rendered template with filled text</dd>
 </dl></div>
 </dd>
 <dt id="qto_buccaneer.reports.room_program_comparison"><code class="name flex">
@@ -747,6 +1470,214 @@ class ExcelLayoutConfig:
 </dd>
 </dl>
 </dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig"><code class="flex name class">
+<span>class <span class="ident">ReportStyleConfig</span></span>
+<span>(</span><span>logo_path: str | None = None,<br>footer_text: str = 'Generated by QTO Buccaneer',<br>page_size: str = 'A4',<br>margin_top: str = '1.5cm',<br>margin_bottom: str = '1.5cm',<br>margin_left: str = '2cm',<br>margin_right: str = '1.5cm',<br>font_family: str = 'Arial',<br>font_size: str = '10pt',<br>header_height: str = '2cm',<br>footer_height: str = '2cm')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class ReportStyleConfig:
+    &#34;&#34;&#34;Configuration for report styling.&#34;&#34;&#34;
+    logo_path: Optional[str] = None
+    footer_text: str = &#34;Generated by QTO Buccaneer&#34;
+    page_size: str = &#34;A4&#34;
+    margin_top: str = &#34;1.5cm&#34;
+    margin_bottom: str = &#34;1.5cm&#34;
+    margin_left: str = &#34;2cm&#34;
+    margin_right: str = &#34;1.5cm&#34;
+    font_family: str = &#34;Arial&#34;
+    font_size: str = &#34;10pt&#34;
+    header_height: str = &#34;2cm&#34;
+    footer_height: str = &#34;2cm&#34;
+    
+    def to_css(self) -&gt; str:
+        &#34;&#34;&#34;Convert config to CSS string.&#34;&#34;&#34;
+        return f&#34;&#34;&#34;
+            @page {{
+                size: {self.page_size};
+                margin-top: {self.margin_top};
+                margin-bottom: {self.margin_bottom};
+                margin-left: {self.margin_left};
+                margin-right: {self.margin_right};
+                
+                @top-center {{
+                    content: string(title);
+                    font-family: {self.font_family};
+                    font-size: {self.font_size};
+                }}
+                
+                @bottom-left {{
+                    content: string(project-name);
+                    font-family: {self.font_family};
+                    font-size: {self.font_size};
+                }}
+                
+                @bottom-right {{
+                    content: &#34;Page &#34; counter(page) &#34; of &#34; counter(pages);
+                    font-family: {self.font_family};
+                    font-size: {self.font_size};
+                }}
+            }}
+            
+            body {{
+                font-family: {self.font_family};
+                font-size: {self.font_size};
+                margin: 0;  /* Reset body margin to ensure page margins are used */
+            }}
+            
+            .header {{
+                height: {self.header_height};
+            }}
+            
+            .footer {{
+                height: {self.footer_height};
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 1em;
+            }}
+            
+            .footer-left {{
+                font-weight: bold;
+            }}
+            
+            .logo {{
+                max-height: 2cm;
+                max-width: 5cm;
+            }}
+            
+            string(project-name) {{
+                content: &#34;{self.footer_text}&#34;;
+            }}
+        &#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>Configuration for report styling.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.font_family"><code class="name">var <span class="ident">font_family</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.font_size"><code class="name">var <span class="ident">font_size</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.footer_height"><code class="name">var <span class="ident">footer_height</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.footer_text"><code class="name">var <span class="ident">footer_text</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.header_height"><code class="name">var <span class="ident">header_height</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.logo_path"><code class="name">var <span class="ident">logo_path</span> : str | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.margin_bottom"><code class="name">var <span class="ident">margin_bottom</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.margin_left"><code class="name">var <span class="ident">margin_left</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.margin_right"><code class="name">var <span class="ident">margin_right</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.margin_top"><code class="name">var <span class="ident">margin_top</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.page_size"><code class="name">var <span class="ident">page_size</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.to_css"><code class="name flex">
+<span>def <span class="ident">to_css</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_css(self) -&gt; str:
+    &#34;&#34;&#34;Convert config to CSS string.&#34;&#34;&#34;
+    return f&#34;&#34;&#34;
+        @page {{
+            size: {self.page_size};
+            margin-top: {self.margin_top};
+            margin-bottom: {self.margin_bottom};
+            margin-left: {self.margin_left};
+            margin-right: {self.margin_right};
+            
+            @top-center {{
+                content: string(title);
+                font-family: {self.font_family};
+                font-size: {self.font_size};
+            }}
+            
+            @bottom-left {{
+                content: string(project-name);
+                font-family: {self.font_family};
+                font-size: {self.font_size};
+            }}
+            
+            @bottom-right {{
+                content: &#34;Page &#34; counter(page) &#34; of &#34; counter(pages);
+                font-family: {self.font_family};
+                font-size: {self.font_size};
+            }}
+        }}
+        
+        body {{
+            font-family: {self.font_family};
+            font-size: {self.font_size};
+            margin: 0;  /* Reset body margin to ensure page margins are used */
+        }}
+        
+        .header {{
+            height: {self.header_height};
+        }}
+        
+        .footer {{
+            height: {self.footer_height};
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1em;
+        }}
+        
+        .footer-left {{
+            font-weight: bold;
+        }}
+        
+        .logo {{
+            max-height: 2cm;
+            max-width: 5cm;
+        }}
+        
+        string(project-name) {{
+            content: &#34;{self.footer_text}&#34;;
+        }}
+    &#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>Convert config to CSS string.</p></div>
+</dd>
+</dl>
+</dd>
 </dl>
 </section>
 </article>
@@ -762,11 +1693,18 @@ class ExcelLayoutConfig:
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="qto_buccaneer.reports.build_metrics_table" href="#qto_buccaneer.reports.build_metrics_table">build_metrics_table</a></code></li>
+<li><code><a title="qto_buccaneer.reports.convert_html_to_pdf" href="#qto_buccaneer.reports.convert_html_to_pdf">convert_html_to_pdf</a></code></li>
 <li><code><a title="qto_buccaneer.reports.create_project_comparison_df" href="#qto_buccaneer.reports.create_project_comparison_df">create_project_comparison_df</a></code></li>
 <li><code><a title="qto_buccaneer.reports.export_project_comparison_excel" href="#qto_buccaneer.reports.export_project_comparison_excel">export_project_comparison_excel</a></code></li>
 <li><code><a title="qto_buccaneer.reports.export_room_program_comparison" href="#qto_buccaneer.reports.export_room_program_comparison">export_room_program_comparison</a></code></li>
 <li><code><a title="qto_buccaneer.reports.export_to_excel" href="#qto_buccaneer.reports.export_to_excel">export_to_excel</a></code></li>
-<li><code><a title="qto_buccaneer.reports.generate_pdf_report" href="#qto_buccaneer.reports.generate_pdf_report">generate_pdf_report</a></code></li>
+<li><code><a title="qto_buccaneer.reports.fill_text_line" href="#qto_buccaneer.reports.fill_text_line">fill_text_line</a></code></li>
+<li><code><a title="qto_buccaneer.reports.format_definition_line" href="#qto_buccaneer.reports.format_definition_line">format_definition_line</a></code></li>
+<li><code><a title="qto_buccaneer.reports.format_disclaimer" href="#qto_buccaneer.reports.format_disclaimer">format_disclaimer</a></code></li>
+<li><code><a title="qto_buccaneer.reports.generate_metrics_report" href="#qto_buccaneer.reports.generate_metrics_report">generate_metrics_report</a></code></li>
+<li><code><a title="qto_buccaneer.reports.load_metrics_config" href="#qto_buccaneer.reports.load_metrics_config">load_metrics_config</a></code></li>
+<li><code><a title="qto_buccaneer.reports.render_template_with_filled_text" href="#qto_buccaneer.reports.render_template_with_filled_text">render_template_with_filled_text</a></code></li>
 <li><code><a title="qto_buccaneer.reports.room_program_comparison" href="#qto_buccaneer.reports.room_program_comparison">room_program_comparison</a></code></li>
 </ul>
 </li>
@@ -784,6 +1722,23 @@ class ExcelLayoutConfig:
 <li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.row_height" href="#qto_buccaneer.reports.ExcelLayoutConfig.row_height">row_height</a></code></li>
 <li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.to_dict" href="#qto_buccaneer.reports.ExcelLayoutConfig.to_dict">to_dict</a></code></li>
 <li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.vertical_lines" href="#qto_buccaneer.reports.ExcelLayoutConfig.vertical_lines">vertical_lines</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="qto_buccaneer.reports.ReportStyleConfig" href="#qto_buccaneer.reports.ReportStyleConfig">ReportStyleConfig</a></code></h4>
+<ul class="two-column">
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.font_family" href="#qto_buccaneer.reports.ReportStyleConfig.font_family">font_family</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.font_size" href="#qto_buccaneer.reports.ReportStyleConfig.font_size">font_size</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.footer_height" href="#qto_buccaneer.reports.ReportStyleConfig.footer_height">footer_height</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.footer_text" href="#qto_buccaneer.reports.ReportStyleConfig.footer_text">footer_text</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.header_height" href="#qto_buccaneer.reports.ReportStyleConfig.header_height">header_height</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.logo_path" href="#qto_buccaneer.reports.ReportStyleConfig.logo_path">logo_path</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.margin_bottom" href="#qto_buccaneer.reports.ReportStyleConfig.margin_bottom">margin_bottom</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.margin_left" href="#qto_buccaneer.reports.ReportStyleConfig.margin_left">margin_left</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.margin_right" href="#qto_buccaneer.reports.ReportStyleConfig.margin_right">margin_right</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.margin_top" href="#qto_buccaneer.reports.ReportStyleConfig.margin_top">margin_top</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.page_size" href="#qto_buccaneer.reports.ReportStyleConfig.page_size">page_size</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.to_css" href="#qto_buccaneer.reports.ReportStyleConfig.to_css">to_css</a></code></li>
 </ul>
 </li>
 </ul>
