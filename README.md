@@ -16,9 +16,13 @@ Ahoy! Tired of manual takeoffs and spreadsheet gymnastics? QTO Buccaneer is your
   - [Installation](#installation-for-non-landlubbers)
   - [Development Setup](#development-setup)
   - [Usage Examples](#usage-examples)
-    - [Calculate Metrics](#calculate-metrics)
-    - [Enrich IFC Model](#enrich-ifc-model)
-    - [Configuration Files](#configuration-files)
+    - [Calculate Metrics and Benchmarks](#i-want-to-calculate-metrics-and-benchmarks-from-an-ifc-model)
+    - [Enrich IFC Model](#i-want-to-enrich-an-ifc-model-with-additional-data)
+    - [Add Spatial Data](#i-want-to-add-spatial-data-like-storey-information-as-a-property-to-my-ifc-model)
+    - [Create Complete Workflow](#i-want-to-create-a-complete-workflow-chain-for-a-building)
+    - [Create PDF Reports](#i-want-to-create-a-pdf-report-with-metrics-and-plots)
+    - [Compare Projects](#i-want-to-compare-metrics-across-multiple-projects)
+    - [Repair IFC Model](#i-want-to-repair-attributes--property-value-from-my-ifc-model-based-on-rules)
 - [Project Structure](#-project-structure)
 - [Dependencies](#dependencies)
   - [Core Dependencies](#core-dependencies)
@@ -41,6 +45,7 @@ What QTO Buccaneer lets you do:
 - Create beautiful reports with plans, making information visible and manageable 
 - Define metric logic using a user-friendly YAML config file — no need to write code or click through complex software 
 - Enrich and clean up IFC files more easily than working directly with raw ifcopenshell
+- Repair IFC Models based on rules
 - Build up project specific workflows and apply the same rules consecutive to the models. E.g. 
    - For architectural competitions
    - Benchmarking Portfolios
@@ -232,7 +237,7 @@ Look bellow or in the folder examples for more detailed once or in the documenta
 
 https://simondilhas.github.io/qto_buccaneer/qto_buccaneer/index.html
 
-#### Calculate Metrics
+#### I want to calculate metrics and benchmarks from an IFC model...
 ```python
 from qto_buccaneer.metrics import calculate_all_metrics
 import yaml
@@ -245,7 +250,7 @@ def main():
     # Calculate metrics
     metrics_df = calculate_all_metrics(
         config=config,
-        filepath="path/to/your/model.ifc"
+        ifc_path="path/to/your/model.ifc"
     )
     
     # Save results
@@ -255,7 +260,7 @@ if __name__ == "__main__":
     main()
 ```
 
-#### Enrich IFC Model
+#### I want to enrich an IFC model with additional data...
 ```python
 import pandas as pd
 from qto_buccaneer.enrich import enrich_ifc_with_df
@@ -269,48 +274,217 @@ def main():
         ifc_file="path/to/your/model.ifc",
         df_for_ifc_enrichment=df_enrichment,
         key="LongName",  # column name to match IFC elements
-        pset_name="Pset_Enrichment"  # optional
+        pset_name="Pset_Enrichment",  # optional
+        file_postfix="_enriched",  # optional
+        output_dir="path/to/output/directory"  # optional
     )
     
     print(f"Created enriched IFC file: {enriched_ifc_path}")
 
 if __name__ == "__main__":
     main()
-
-#### Configuration Files
-
-The package uses YAML configuration files to define metrics and enrichment rules. Here's an example metrics configuration:
-
-```yaml
-metrics:
-  gross_floor_area:
-    description: "The gross floor area excluding voids"
-    quantity_type: "area"
-    ifc_entity: "IfcSpace"
-    pset_name: "Qto_SpaceBaseQuantities"
-    prop_name: "NetFloorArea"
-    include_filter:
-      Name: "GrossArea"
-    subtract_filter:
-      Name: ["LUF", "Void", "Luftraum"]
-
-room_based_metrics:
-  windows_area_by_room:
-    description: "Get windows grouped by room"
-    ifc_entity: "IfcWindow"
-    grouping_attribute: "GlobalId"
-    pset_name: "Qto_WindowBaseQuantities"
-    prop_name: "Area"
 ```
 
-Key configuration concepts:
-- `metrics`: Standard metrics that return a single value for the entire project
-- `room_based_metrics`: Metrics calculated per room/space
-- Filters can use:
-  - Simple key-value pairs: `Name: "GrossArea"`
-  - Lists: `Name: ["LUF", "Void"]`
-  - Comparisons: `Width: [">", 0.15]`
-  - Boolean values: `IsExternal: true`
+#### I want to add spatial data like storey information as a property to my IFC model...
+```python
+from qto_buccaneer.preprocess_ifc import add_spatial_data_to_ifc
+
+def main():
+    # Add spatial data to IFC
+    spatial_data_path = add_spatial_data_to_ifc(
+        ifc_file="path/to/your/model.ifc",
+        pset_name="Pset_SpatialData",  # optional
+        ifc_entity="IfcSpace",  # optional
+        output_dir="path/to/output/directory"  # optional
+    )
+    
+    print(f"Added spatial data: {spatial_data_path}")
+
+if __name__ == "__main__":
+    main()
+```
+
+#### I want to create a complete workflow chain for a building...
+```python
+from pathlib import Path
+from qto_buccaneer.utils.config_loader import load_config
+from qto_buccaneer.preprocess_ifc import add_spatial_data_to_ifc
+from qto_buccaneer.enrich import enrich_ifc_with_df
+from qto_buccaneer.metrics import calculate_all_metrics
+from qto_buccaneer.reports import export_to_excel
+import pandas as pd
+
+def process_building(building_name: str, ifc_path: str, config_dir: str) -> None:
+    # Set up paths
+    building_dir = Path("buildings") / building_name
+    building_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Step 1: Add spatial data
+    spatial_data_path = add_spatial_data_to_ifc(
+        ifc_file=ifc_path,
+        output_dir=str(building_dir / "02_enriched_spatial_data")
+    )
+    
+    # Step 2: Enrich with additional data
+    df_enrichment = pd.read_excel(Path(config_dir) / "enrichment_space_table.xlsx")
+    enriched_ifc_path = enrich_ifc_with_df(
+        ifc_file=spatial_data_path,
+        df_for_ifc_enrichment=df_enrichment,
+        output_dir=str(building_dir / "03_enriched_ifc")
+    )
+    
+    # Step 3: Calculate metrics
+    metrics_config = load_config(Path(config_dir) / "metrics_config.yaml")
+    metrics_df = calculate_all_metrics(
+        config=metrics_config,
+        ifc_path=enriched_ifc_path
+    )
+    
+    # Step 4: Export results
+    export_to_excel(
+        df=metrics_df,
+        output_dir=str(building_dir / "04_metrics"),
+        building_name=building_name
+    )
+
+if __name__ == "__main__":
+    process_building(
+        building_name="MyBuilding",
+        ifc_path="path/to/model.ifc",
+        config_dir="path/to/config"
+    )
+```
+
+#### I want to create a PDF report with metrics and plots...
+```python
+from qto_buccaneer.reports import generate_metrics_report
+from qto_buccaneer.plots import create_all_plots
+
+def main():
+    # Create plots first
+    plots_path = create_all_plots(
+        geometry_dir="path/to/geometry_json",
+        properties_path="path/to/metadata.json",
+        config_path="path/to/plots_config.yaml",
+        output_dir="path/to/plots_output"
+    )
+    
+    # Generate PDF report
+    generate_metrics_report(
+        metrics_df=metrics_df,  # Your metrics DataFrame
+        building_name="MyBuilding",
+        plots_dir=plots_path,
+        output_dir="path/to/report_output",
+        template_path="path/to/report_template.html"
+    )
+
+if __name__ == "__main__":
+    main()
+```
+
+#### I want to compare metrics across multiple projects...
+```python
+from qto_buccaneer.reports import create_project_comparison_df
+import pandas as pd
+
+def main():
+    # Load metrics from multiple projects
+    project_metrics = []
+    for project_path in ["project1.ifc", "project2.ifc", "project3.ifc"]:
+        metrics_df = calculate_all_metrics(
+            config=metrics_config,
+            ifc_path=project_path
+        )
+        metrics_df['file_name'] = project_path
+        project_metrics.append(metrics_df)
+    
+    # Combine metrics
+    combined_df = pd.concat(project_metrics)
+    
+    # Create comparison table
+    comparison_df = create_project_comparison_df(
+        df=combined_df,
+        metrics=["gross_floor_area", "net_floor_area", "window_area"]  # optional
+    )
+    
+    # Save comparison
+    comparison_df.to_excel("project_comparison.xlsx")
+
+if __name__ == "__main__":
+    main()
+```
+
+#### I want to repair attributes / property value from my IFC model based on rules...
+```yaml
+# workflow_config.yaml
+buildings:
+  - name: "my_building"
+    repairs:
+      - name: "Fix space names"
+        filter: "type=IfcSpace AND LongName=TRH"
+        actions:
+          - change_value:
+              field: LongName
+              value: "Technical Room"
+      - name: "Update door names"
+        filter: "type=IfcDoor"
+        actions:
+          - change_value:
+              field: "Name"
+              value: "Standard Door"
+      - name: "Update property values"
+        filter: "type=IfcSpace"
+        actions:
+          - change_value:
+              field: "ePset_abstractBIM.Normal"
+              value: "90"
+```
+
+```python
+from pathlib import Path
+from qto_buccaneer.utils.config_loader import load_config
+from qto_buccaneer.repairs import apply_repairs
+
+def main():
+    # Load repair configuration
+    config = load_config("path/to/workflow_config.yaml")
+    
+    # Apply repairs to IFC model
+    repaired_ifc_path = apply_repairs(
+        ifc_path_or_model="path/to/your/model.ifc",
+        config=config,
+        building_name="my_building",
+        output_dir="path/to/output/directory"  # optional
+    )
+    
+    print(f"Created repaired IFC file: {repaired_ifc_path}")
+
+if __name__ == "__main__":
+    main()
+```
+
+The repair system supports:
+- Filtering elements by type and properties
+- Changing direct attributes (like Name, LongName)
+- Changing property set values (using dot notation: PsetName.PropertyName)
+- Multiple repair rules per building
+- Case-insensitive property matching
+
+For more complex repairs, you can combine multiple actions in a single rule:
+```yaml
+- name: "Complex space update"
+  filter: "type=IfcSpace AND IsExternal=true"
+  actions:
+    - change_value:
+        field: "ePset_abstractBIM.Normal"
+        value: "90"
+    - change_value:
+        field: "ePset_abstractBIM.IsExternal"
+        value: "true"
+    - change_value:
+        field: "Name"
+        value: "External Space"
+```
 
 For more examples and detailed configuration options, check the `configs/` directory in the repository.
 

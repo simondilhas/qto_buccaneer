@@ -1,10 +1,10 @@
 # define the project structure and workflow steps, based on this the folder structure will be created
 
-project_name: "003_test_project__public"
+project_name: "002_test_project__public"
 project_description: "This is a test project to test the workflow"
 
 buildings:
-  - "test_building_001" 
+  - name: "test_building_001" 
 
 building_folder:
   - "00_original_input_data"

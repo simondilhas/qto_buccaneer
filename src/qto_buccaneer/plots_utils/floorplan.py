@@ -6,7 +6,7 @@ from datetime import datetime
 import json
 
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
-from qto_buccaneer.utils.visualization_utils import (
+from qto_buccaneer.utils.plots_utils import (
     parse_filter,
     element_matches_conditions,
     apply_layout_settings

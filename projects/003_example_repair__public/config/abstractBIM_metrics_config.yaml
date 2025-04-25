@@ -1,0 +1,941 @@
+# Configuration for project metrics.
+
+# Each metric is defined as a dictionary with the following keys:
+# - description: A short description of the metric.
+# - quantity_type: The type of quantity to calculate. Options include:
+#     - "area"
+#     - "volume"
+#     - "count"
+# - ifc_entity: The IFC entity to calculate the quantity for (e.g. IfcWall, IfcSlab).
+# - pset_name: The name of the Property Set (Pset) to retrieve the property from.
+# - prop_name: The name of the property or attribute within the Pset (Property Set) to use for quantity calculation.
+# - include_filter: A dictionary of conditions to include only specific elements.
+# - include_filter_logic: Logical operator to combine multiple include filters. Options:
+#     - "AND"
+#     - "OR"
+
+# ---------------------------
+# Filter Key Usage Examples:
+# ---------------------------
+
+# Use filters to narrow down the included or subtracted elements. Examples:
+
+# 1. Key-value pair:
+#    - description: "Calculate area of internal walls"
+#    - include_filter: PredefinedType: "INTERNAL"
+
+# 2. Filter with multiple values:
+#    - subtract_filter: Name: ["LUF", "Void"]
+
+# 3. Filter with boolean value:
+#    - subtract_filter: Pset_CoveringCommon.IsExternal: true
+
+# 4. Filter with condition (operator, value):
+#    - subtract_filter: Thickness: ("<", 0.1)
+
+# Combine multiple conditions using include_filter_logic or subtract_filter_logic:
+# Example:
+#     include_filter: PredefinedType: "INTERNAL", Pset_SpaceCommon.IsExternal: true
+#     include_filter_logic: "AND"
+
+# adding new metrics and template:
+# 1. add a new metric to the metrics list by copying this template:
+# metrics:
+#   new_metric:
+#     description: "Description of the metric"
+#     quantity_type: "area" or "volume" or "count"
+#     ifc_entity: "IfcSpace"
+#     pset_name: "Pset_Name" (leave blank for attributes)
+#     prop_name: "Attribute Name or Property Name"
+#     include_filter:
+#       "Key": "Value"
+#       "Key": ["Value1", "Value2"]
+#       ...
+#     include_filter_logic: "AND" or "OR"
+#     subtract_filter:
+#       "Key": ["<"", Number]
+#       "Key": ["Value1", "Value2"]
+#       ...
+#     subtract_filter_logic: "OR"
+
+# Explain the difference between metrics and room-based metrics:
+# - metrics: Calculated based on all spaces or elements in the project.
+# - room-based metrics: Calculated based on spaces grouped by room.
+
+# TODO: include or exclude Filter merged to one, and with NOR added -> flatter hirachy
+# TODO: . as seperator can lead to problems in Pset.Attribut
+# TODO: use the IfcOpenshell logic for filtering => more felxibility and more stabel (https://docs.ifcopenshell.org/ifcopenshell-python/selector_syntax.html)
+
+# Common column definitions for all metrics and benchmarks dataframe (dont delete the name "column_definitions")
+column_definitions:
+  metric_name:
+    description: "Unique identifier for the metric"
+    type: "string"
+  value:
+    description: "Calculated numeric value"
+    type: "float"
+  unit:
+    description: "Unit of measurement (m², m³, ratio, etc.)"
+    type: "string"
+  category:
+    description: "Type of measurement (area, volume, ratio, count)"
+    type: "string"
+  description:
+    description: "Detailed explanation of what is being measured"
+    type: "string"
+  calculation_time:
+    description: "When the metric was calculated"
+    type: "datetime"
+  status:
+    description: "Calculation status (success/error)"
+    type: "string"
+
+metrics: #Dont delete the name "metrics". List all the standard metrics that return a single value for the entire project here
+  gross_floor_area:
+    description: "The gross floor area from the outside of the exterior walls, including all interior spaces, the area of spaces with Name = LUF is subtracted"
+    quantity_type: "area"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      Name: "GrossArea"
+    subtract_filter:
+      Name: ["LUF", "Void", "Luftraum"]
+
+  gross_floor_area_above_ground:
+    description: "The gross floor area above ground level from the outside of the exterior walls, including all interior spaces, the area of spaces with Name = LUF is subtracted. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      Name: "GrossArea"
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+    subtract_filter:
+      Name: ["LUF", "Void", "Luftraum"]
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    subtract_filter_logic: "AND"
+
+  gross_floor_area_below_ground:
+    description: "The gross floor area below ground level from the outside of the exterior walls, including all interior spaces, the area of spaces with Name = LUF is subtracted. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      Name: "GrossArea"
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    include_filter_logic: "AND"
+    subtract_filter:
+      Name: ["LUF", "Void", "Luftraum"]
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    subtract_filter_logic: "AND"
+
+  gross_volume:
+    description: |
+      The gross floor volume.
+      In the abstractBIM IFC standard, Gross Volume is calculated based on
+      the volume enclosed by the exterior face of exterior walls, including all interior spaces.
+    quantity_type: "volume"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetVolume"
+    include_filter:
+      Name: "GrossVolume"
+    include_filter_logic: "AND"
+    subtract_filter:
+    subtract_filter_logic: "OR"
+
+  gross_volume_above_ground:
+    description: |
+      The gross floor volume above ground level.
+      In the abstractBIM IFC standard, Gross Volume is calculated based on
+      the volume enclosed by the exterior face of exterior walls, including all interior spaces.
+      This formula works for flat terrain, with groundfloor +/- 0.
+    quantity_type: "volume"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetVolume"
+    include_filter:
+      Name: "GrossVolume"
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+
+
+  gross_volume_below_ground:
+    description: |
+      The gross floor volume below ground level.
+      In the abstractBIM IFC standard, Gross Volume is calculated based on
+      the volume enclosed by the exterior face of exterior walls, including all interior spaces.
+    quantity_type: "volume"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetVolume"
+    include_filter:
+      Name: "GrossVolume"
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    include_filter_logic: "AND"
+
+    # Space metrics
+
+  space_interior_floor_area:
+    description: "The total floor area of net interior spaces (between the walls and slabs), the area of spaces with Name = LUF or Void or Luftraum is subtracted"
+    quantity_type: "area"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      PredefinedType: "INTERNAL"
+    include_filter_logic: "AND"
+    subtract_filter:
+      Name: ["LUF", "Void", "Luftraum"]
+    subtract_filter_logic: "OR"
+
+  space_interior_floor_area_above_ground:
+    description: "The total floor area of net interior spaces (between the walls and slabs), the area of spaces with Name = LUF or Void or Luftraum is subtracted. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      PredefinedType: "INTERNAL"
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+    subtract_filter:
+      Name: ["LUF", "Void", "Luftraum"]
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    subtract_filter_logic: "AND"
+    
+  space_interior_floor_area_below_ground:
+    description: "The total floor area of net interior spaces (between the walls and slabs), the area of spaces with Name = LUF or Void or Luftraum is subtracted. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      PredefinedType: "INTERNAL"
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    include_filter_logic: "AND"
+    subtract_filter:
+      Name: ["LUF", "Void", "Luftraum"]
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    subtract_filter_logic: "AND"
+  
+  space_exterior_area:
+    description: "The total area of exterior spaces (horizontal projection)"
+    quantity_type: "area"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      PredefinedType: "EXTERNAL"
+    include_filter_logic: "AND"
+
+  space_interior_volume:
+    description: "The total volume of net spaces (between the walls and slabs) interior spaces"
+    quantity_type: "volume"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetVolume"
+    include_filter:
+      PredefinedType: "INTERNAL"
+    include_filter_logic: "OR"
+
+  space_interior_volume_above_ground:
+    description: "The total volume of net spaces (between the walls and slabs) interior spaces. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "volume"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetVolume"
+    include_filter:
+      PredefinedType: "INTERNAL"
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+    
+  space_interior_volume_below_ground:
+    description: "The total volume of net spaces (between the walls and slabs) interior spaces. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "volume"
+    ifc_entity: "IfcSpace"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetVolume"  
+    include_filter:
+      PredefinedType: "INTERNAL"
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    include_filter_logic: "AND"
+
+  windows_exterior_area:
+    description: "The total area of exterior windows"
+    quantity_type: "area"
+    ifc_entity: "IfcWindow"
+    pset_name: "Qto_WindowBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_WindowCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  windows_exterior_area_above_ground:
+    description: "The total area of exterior windows above ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcWindow"
+    pset_name: "Qto_WindowBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_WindowCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+
+  windows_exterior_area_below_ground:
+    description: "The total area of exterior windows below ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcWindow"
+    pset_name: "Qto_WindowBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_WindowCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    include_filter_logic: "AND"
+
+  windows_interior_area:
+    description: "The total area of interior windows"
+    quantity_type: "area"
+    ifc_entity: "IfcWindow"
+    pset_name: "Qto_WindowBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_WindowCommon.IsExternal: false
+    include_filter_logic: "AND"
+
+  windows_exterior_count:
+    description: "The total count of exterior windows"
+    quantity_type: "count"
+    ifc_entity: "IfcWindow"
+    include_filter:
+      Pset_WindowCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  windows_exterior_count_above_ground:
+    description: "The total count of exterior windows above ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "count"
+    ifc_entity: "IfcWindow"
+    include_filter:
+      Pset_WindowCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+
+  windows_exterior_count_below_ground:
+    description: "The total count of exterior windows below ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "count"
+    ifc_entity: "IfcWindow"
+    include_filter:
+      Pset_WindowCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+
+
+  interior_walls_area:
+    description: "The net side area of interior walls"
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: false
+
+  interior_walls_area_above_ground:
+    description: "The net side area of interior walls above ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: false
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+
+  interior_walls_area_below_ground:
+    description: "The net side area of interior walls below ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: false
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    include_filter_logic: "AND"
+
+  facade_vertical_area:
+    description: "The total area of exterior coverings"
+    quantity_type: "area"
+    ifc_entity: "IfcCovering"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "CLADDING"
+      Pset_CoveringCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  facade_vertical_area_above_ground:
+    description: "The total area of exterior coverings above ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcCovering"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "CLADDING"
+      Pset_CoveringCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+
+  facade_vertical_area_below_ground:
+    description: "The total area of exterior coverings below ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcCovering"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "CLADDING"
+      Pset_CoveringCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    include_filter_logic: "AND"
+    
+    
+  soffit_area:
+    description: "The total area of soffits, with the abstractBIM, the insulation of the base slab is also included"
+    quantity_type: "area"
+    ifc_entity: "IfcCovering"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "INSULATION"
+      Pset_CoveringCommon.IsExternal: true
+    include_filter_logic: "AND"
+  
+  soffit_area_above_ground:
+    description: "The total area of soffits above ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcCovering"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"  
+    include_filter:
+      PredefinedType: "INSULATION"
+      Pset_CoveringCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+    
+  soffit_area_below_ground:
+    description: "The total area of soffits below ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcCovering"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"  
+    include_filter:
+      PredefinedType: "INSULATION"
+      Pset_CoveringCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    include_filter_logic: "AND"
+
+  coverings_interior_area:
+    description: "The total area of interior coverings"
+    quantity_type: "area"
+    ifc_entity: "IfcCovering"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      Pset_CoveringCommon.IsExternal: false
+    include_filter_logic: "AND"
+
+  slab_balcony_area:
+    description: |
+      The total area of balcony slabs.
+      In the abstractBIM IFC standard, balcony slabs are defined as slabs with exterior space above.
+      Note: Cantilevered roofs may also be included as they meet the same criteria.
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      Name: "Slab Balcony"
+    include_filter_logic: "AND"
+
+  slab_interior_area:
+    description: "The total area of interior slabs"
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "FLOOR"
+    include_filter_logic: "AND"
+
+  slab_interior_area_above_ground:
+    description: "The total area of interior slabs above ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "FLOOR"
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+
+  slab_interior_area_below_ground:
+    description: "The total area of interior slabs below ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "FLOOR"
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    include_filter_logic: "AND"
+
+  roof_area:
+    description: "The total area of roof slabs"
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "ROOF"
+    include_filter_logic: "AND"
+
+  roof_area_above_ground:
+    description: "The total area of roof slabs above ground level"
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"  
+    include_filter:
+      PredefinedType: "ROOF"
+      Pset_SpatialData.ElevationOfStory: [">=", 0.5]
+    include_filter_logic: "AND"
+    
+  roof_area_below_ground:
+    description: "The total area of roof slabs below ground level"
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"  
+    include_filter:
+      PredefinedType: "ROOF"
+      Pset_SpatialData.ElevationOfStory: ["<", 0.5]
+    include_filter_logic: "AND"
+    
+  base_slab_area:
+    description: |
+      The total area of base slabs.
+      In the abstractBIM IFC standard, base slabs are defined as:
+      - Base slabs: Slabs with an internal space above
+      - Cantilevered Slabs: Also included as they meet the same criteria
+      TODO: Add filter for spaces in contact with ground (manual data enrichment)
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "BASESLAB"
+    include_filter_logic: "AND"
+
+  base_slab_area_above_ground:
+    description: "The total area of base slabs above ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "BASESLAB"
+      Pset_SpatialData.ElevationOfStory: [">=", 0.5]
+    include_filter_logic: "AND"
+
+  base_slab_area_below_ground:
+    description: "The total area of base slabs below ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcSlab"
+    pset_name: "Qto_SlabBaseQuantities"
+    prop_name: "NetArea" 
+    include_filter:
+      PredefinedType: "BASESLAB"
+      Pset_SpatialData.ElevationOfStory: ["<", 0.5]
+    include_filter_logic: "AND"
+    
+  doors_exterior_area:
+    description: "The total area of exterior doors"
+    quantity_type: "area"
+    ifc_entity: "IfcDoor"
+    pset_name: "Qto_DoorBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_DoorCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  doors_exterior_area_above_ground:
+    description: "The total area of exterior doors above ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcDoor"
+    pset_name: "Qto_DoorBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_DoorCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+    
+  doors_exterior_area_below_ground:
+    description: "The total area of exterior doors below ground level"
+    quantity_type: "area"
+    ifc_entity: "IfcDoor"
+    pset_name: "Qto_DoorBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_DoorCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+
+  doors_interior_area:
+    description: "The total area of interior doors"
+    quantity_type: "area"
+    ifc_entity: "IfcDoor"
+    pset_name: "Qto_DoorBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_DoorCommon.IsExternal: false
+    include_filter_logic: "AND"
+
+  doors_exterior_count:
+    description: "The total count of exterior doors"
+    quantity_type: "count"
+    ifc_entity: "IfcDoor"
+    include_filter:
+      Pset_DoorCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  doors_exterior_count_above_ground:
+    description: "The total count of exterior doors above ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "count"
+    ifc_entity: "IfcDoor"
+    include_filter:
+      Pset_DoorCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+
+  doors_exterior_count_below_ground:
+    description: "The total count of exterior doors below ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "count"
+    ifc_entity: "IfcDoor"
+    include_filter:
+      Pset_DoorCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+
+  
+  # Walls metrics
+  walls_exterior_net_side_area:
+    description: "The total net side area of exterior walls (excluding openings)"
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  walls_exterior_net_side_area_above_ground:
+    description: "The total net side area of exterior walls above ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter: 
+      Pset_WallCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: [">=", -0.5]
+    include_filter_logic: "AND"
+  
+  walls_exterior_net_side_area_below_ground:
+    description: "The total net side area of exterior walls below ground level. This formula works for flat terrain, with groundfloor +/- 0"
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter: 
+      Pset_WallCommon.IsExternal: true
+      Pset_SpatialData.ElevationOfStory: ["<", -0.5]
+    include_filter_logic: "AND" 
+
+  walls_interior_net_side_area:
+    description: "The total net side area of interior walls (excluding openings)"
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: false
+    include_filter_logic: "AND"
+
+  walls_interior_loadbearing_net_side_area:
+    description: |
+      The total area of interior structural walls.
+      The default values are based on the abstractBIM IFC.
+      Assumption is that walls thicker than 15cm are structural walls.
+      This is a simplification and may not be 100% accurate.
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: false
+      Qto_WallBaseQuantities.Width: [">", 0.15]
+    include_filter_logic: "AND"
+
+  walls_interior_non_loadbearing_net_side_area:
+    description: |
+      The total area of internal non-load bearing walls
+      The default values are based on the abstractBIM IFC.
+      Assumption is that walls thinner than 15cm are non-load bearing walls.
+      This is a simplification and may not be 100% accurate.
+    quantity_type: "area"
+    ifc_entity: "IfcWallStandardCase"
+    pset_name: "Qto_WallBaseQuantities"
+    prop_name: "NetSideArea"
+    include_filter:
+      Pset_WallCommon.IsExternal: false
+      Qto_WallBaseQuantities.Width: ["<=", 0.15]  
+    include_filter_logic: "AND"
+
+  
+  storeys_count_including_roof:
+    description: "The total count of storeys including the roof (abstractBIM IFC has a roof storey)"
+    quantity_type: "count"
+    ifc_entity: "IfcBuildingStorey"
+
+  storeys_count_including_roof_above_ground:
+    description: "The total count of storeys including the roof above ground"
+    quantity_type: "count"
+    ifc_entity: "IfcBuildingStorey"
+    include_filter:
+      Elevation: [">=", -0.5]
+    include_filter_logic: "AND"
+
+  
+  storeys_count_including_roof_below_ground:
+    description: "The total count of storeys including the roof below ground"
+    quantity_type: "count"
+    ifc_entity: "IfcBuildingStorey"
+    include_filter:
+      Elevation: ["<", -0.5]
+    include_filter_logic: "AND"
+
+# Room-based metrics
+room_based_metrics: #Dont delete the name "room_based_metrics". List all the metrics calculated per room here e.g. window area by roomtyp
+  windows_external_area_by_room:
+    description: "Get external windows grouped by room"
+    ifc_entity: "IfcWindow"
+    grouping_attribute: "LongName"
+    room_reference_attribute_guid: "ePset_abstractBIM.Spaces"
+    metric_pset_name: "Qto_WindowBaseQuantities"
+    metric_prop_name: "Area"
+    include_filter:
+      Pset_WindowCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  windows_internal_area_by_room:
+    description: "Get internal windows grouped by room"
+    ifc_entity: "IfcWindow"
+    grouping_attribute: "SpacesName"
+    room_reference_attribute_guid: "ePset_abstractBIM.Spaces"
+    metric_pset_name: "Qto_WindowBaseQuantities"
+    metric_prop_name: "Area"
+    include_filter:
+      Pset_WindowCommon.IsExternal: false
+    include_filter_logic: "AND"
+
+  wall_surface_net_area_by_room_type:
+    description: "Get wall coverings grouped by room"
+    ifc_entity: "IfcCovering"
+    grouping_attribute: "SpacesName"
+    room_reference_attribute_guid: "ePset_abstractBIM.Spaces"
+    metric_pset_name: "Qto_CoveringBaseQuantities"
+    metric_prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "CLADDING"
+      Pset_CoveringCommon.IsExternal: false
+    include_filter_logic: "AND"
+
+
+grouped_by_attribute_metrics:
+  room_area_by_room_type:
+    description: "Get room area grouped by room type"
+    ifc_entity: "IfcSpace"
+    grouping_attribute: "LongName"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetFloorArea"
+    include_filter:
+      PredefinedType: ["INTERNAL", "EXTERNAL"]
+    include_filter_logic: "OR"
+
+
+  room_volume_by_room_type:
+    description: "Get room volume grouped by room type"
+    ifc_entity: "IfcSpace"
+    grouping_attribute: "LongName"
+    pset_name: "Qto_SpaceBaseQuantities"
+    prop_name: "NetVolume"
+    include_filter:
+      PredefinedType: ["INTERNAL", "EXTERNAL"]
+    include_filter_logic: "OR"
+
+    
+  facade_net_area_by_direction:
+    description: "Get facade gross area grouped by direction"
+    ifc_entity: "IfcCovering"
+    grouping_pset: "ePset_abstractBIM"
+    grouping_attribute: "Normal"
+    pset_name: "Qto_CoveringBaseQuantities"
+    prop_name: "NetArea"
+    include_filter:
+      PredefinedType: "CLADDING"
+      Pset_CoveringCommon.IsExternal: true
+    include_filter_logic: "AND"
+
+  windows_area_by_direction:
+    description: "Get windows area grouped by direction"
+    ifc_entity: "IfcWindow"
+    grouping_pset: "ePset_abstractBIM"
+    grouping_attribute: "Normal"
+    pset_name: "Qto_WindowBaseQuantities"
+    prop_name: "Area"
+    include_filter:
+      Pset_WindowCommon.IsExternal: true
+    include_filter_logic: "AND" 
+
+# Add here the metrics that are calculated based on other metrics
+derived_metrics:
+  construction_area:
+    description: "The total construction area. Relevance: Helps assess structural and usable footprint. Typical use: Estimating construction costs and comparing project scales."
+    formula: "gross_floor_area - space_interior_floor_area"
+
+  construction_area_above_ground:
+    description: "The total construction area above ground. Relevance: Helps assess structural and usable footprint. Typical use: Estimating construction costs and comparing project scales."
+    formula: "gross_floor_area_above_ground - space_interior_floor_area_above_ground"
+
+  construction_area_below_ground:
+    description: "The total construction area below ground. Relevance: Helps assess structural and usable footprint. Typical use: Estimating construction costs and comparing project scales."
+    formula: "gross_floor_area_below_ground - space_interior_floor_area_below_ground"
+
+  construction_volume:
+    description: "The total construction volume. Relevance: Reflects the built volume above and below ground. Typical use: Energy demand modeling, material estimation."
+    formula: "gross_volume - space_interior_volume"
+
+  construction_volume_above_ground:
+    description: "The total construction volume above ground. Relevance: Helps assess structural and usable footprint. Typical use: Estimating construction costs and comparing project scales."
+    formula: "gross_volume_above_ground - space_interior_volume_above_ground"
+
+  construction_volume_below_ground:
+    description: "The total construction volume below ground. Relevance: Helps assess structural and usable footprint. Typical use: Estimating construction costs and comparing project scales."
+    formula: "gross_volume_below_ground - space_interior_volume_below_ground"
+
+  gv_to_gf_ratio:
+    description: "Ratio of gross volume to gross floor area. Relevance: Indicates spatial efficiency and height characteristics. Typical use: Early-stage massing analysis and zoning checks."
+    formula: "gross_volume / gross_floor_area"
+
+  window_to_floor_ratio:
+    description: "Ratio of window area to floor area. Relevance: Influences daylighting and thermal performance. Typical use: Energy simulations and facade design decisions."
+    formula: "windows_exterior_area / gross_floor_area"
+
+  facade_area_to_gross_volume_ratio:
+    description: "Ratio of facade area to gross volume. Relevance: Indicates envelope efficiency. Typical use: Comparing compactness and evaluating surface-related energy loss."
+    formula: "(facade_vertical_area + windows_exterior_area + doors_exterior_area) / gross_volume"
+
+  facade_area_to_gross_volume_ratio_above_ground:
+    description: "Ratio of facade area to gross volume above ground. Relevance: Indicates envelope efficiency. Typical use: Comparing compactness and evaluating surface-related energy loss."
+    formula: "(facade_vertical_area_above_ground + windows_exterior_area_above_ground + doors_exterior_area_above_ground) / gross_volume_above_ground"
+
+  facade_area_to_gross_volume_ratio_below_ground:
+    description: "Ratio of facade area to gross volume below ground. Relevance: Indicates envelope efficiency. Typical use: Comparing compactness and evaluating surface-related energy loss."
+    formula: "(facade_vertical_area_below_ground + windows_exterior_area_below_ground + doors_exterior_area_below_ground) / gross_volume_below_ground"
+
+  facade_area_to_gross_floor_area_ratio:
+    description: "Ratio of facade area to gross floor area. Relevance: Assesses building envelope exposure per usable area. Typical use: Thermal envelope design and cost estimation."
+    formula: "(facade_vertical_area + windows_exterior_area + doors_exterior_area) / gross_floor_area"
+
+  facade_area_to_gross_floor_area_ratio_above_ground:
+    description: "Ratio of facade area to gross floor area above ground. Relevance: Assesses building envelope exposure per usable area. Typical use: Thermal envelope design and cost estimation."
+    formula: "(facade_vertical_area_above_ground + windows_exterior_area_above_ground + doors_exterior_area_above_ground) / gross_floor_area"
+
+  facade_area_to_gross_floor_area_ratio_below_ground:
+    description: "Ratio of facade area to gross floor area below ground. Relevance: Assesses building envelope exposure per usable area. Typical use: Thermal envelope design and cost estimation."
+    formula: "(facade_vertical_area_below_ground + windows_exterior_area_below_ground + doors_exterior_area_below_ground) / gross_floor_area"
+
+  windows_area_to_total_facade_area_ratio:
+    description: "Ratio of window area to total facade area. Relevance: Key factor in daylight, ventilation, and heat loss. Typical use: Evaluating window-to-wall ratio for building code compliance."
+    formula: "windows_exterior_area / facade_vertical_area"
+
+  windows_area_to_total_facade_area_ratio_above_ground:
+    description: "Ratio of window area to total facade area above ground. Relevance: Key factor in daylight, ventilation, and heat loss. Typical use: Evaluating window-to-wall ratio for building code compliance."
+    formula: "windows_exterior_area_above_ground / facade_vertical_area_above_ground"
+
+  windows_area_to_total_facade_area_ratio_below_ground:
+    description: "Ratio of window area to total facade area below ground. Relevance: Key factor in daylight, ventilation, and heat loss. Typical use: Evaluating window-to-wall ratio for building code compliance."
+    formula: "windows_exterior_area_below_ground / facade_vertical_area_below_ground"
+
+  construction_area_to_gross_floor_area_ratio:
+    description: "Ratio of construction area to gross floor area. Relevance: Measures structural overhead. Typical use: Analyzing design efficiency and structure-to-usage proportion."
+    formula: "construction_area / gross_floor_area"
+
+  construction_area_to_gross_floor_area_ratio_above_ground:
+    description: "Ratio of construction area to gross floor area above ground. Relevance: Measures structural overhead. Typical use: Analyzing design efficiency and structure-to-usage proportion."
+    formula: "construction_area_above_ground / gross_floor_area"
+
+  construction_area_to_gross_floor_area_ratio_below_ground:
+    description: "Ratio of construction area to gross floor area below ground. Relevance: Measures structural overhead. Typical use: Analyzing design efficiency and structure-to-usage proportion."
+    formula: "construction_area_below_ground / gross_floor_area"
+
+  construction_volume_to_gross_volume_ratio:
+    description: "Ratio of construction volume to gross volume. Relevance: Indicates how much volume is occupied by structure vs. usable space. Typical use: Structural optimization and material estimation."
+    formula: "construction_volume / gross_volume"
+  
+  construction_volume_to_gross_volume_ratio_above_ground:
+    description: "Ratio of construction volume to gross volume above ground. Relevance: Indicates how much volume is occupied by structure vs. usable space. Typical use: Structural optimization and material estimation."
+    formula: "construction_volume_above_ground / gross_volume_above_ground"
+
+  construction_volume_to_gross_volume_ratio_below_ground:
+    description: "Ratio of construction volume to gross volume below ground. Relevance: Indicates how much volume is occupied by structure vs. usable space. Typical use: Structural optimization and material estimation."
+    formula: "construction_volume_below_ground / gross_volume_below_ground"
+
+  total_envelope_area:
+    description: "The total envelope area. Relevance: Indicates the total area of the building envelope. Typical use: Estimating construction costs and comparing project scales."
+    formula: "facade_vertical_area + windows_exterior_area + doors_exterior_area + roof_area + soffit_area"
+
+  total_envelope_area_to_gross_floor_area_ratio:
+    description: "Ratio of total envelope area to gross floor area. Relevance: Indicates the total area of the building envelope per usable area. Typical use: Estimating construction costs and comparing project scales."
+    formula: "total_envelope_area / gross_floor_area"
+
+  total_envelope_area_to_gross_volume_ratio:
+    description: "Ratio of total envelope area to gross volume. Relevance: Indicates the total area of the building envelope per usable volume. Typical use: Estimating construction costs and comparing project scales."
+    formula: "total_envelope_area / gross_volume"
+
+  storeys_count_excluding_roof:
+    description: "The total count of storeys excluding the roof"
+    formula: "storeys_count_including_roof - 1"
+
+  storeys_count_excluding_roof_above_ground:
+    description: "The total count of storeys excluding the roof above ground"
+    formula: "storeys_count_including_roof_above_ground - 1"
+
+reports:
+  useable_space_summary:
+    title: "Usable Space Summary"
+    ifc_entity: IfcSpace
+    grouping_attribute: LongName
+    fields:
+      - name: count
+        type: count
+      - name: area
+        type: area
+        pset_name: Qto_SpaceBaseQuantities
+        prop_name: NetFloorArea
+      - name: volume
+        type: volume
+        pset_name: Qto_SpaceBaseQuantities
+        prop_name: NetVolume
+    include_percentages:
+
+
+
+
