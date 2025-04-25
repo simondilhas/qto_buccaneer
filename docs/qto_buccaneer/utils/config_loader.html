@@ -242,6 +242,49 @@ el.replaceWith(d);
 <dd>If config file cannot be found</dd>
 </dl></div>
 </dd>
+<dt id="qto_buccaneer.utils.config_loader.validate_config"><code class="name flex">
+<span>def <span class="ident">validate_config</span></span>(<span>config: Dict) ‑> Tuple[bool, List[str]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def validate_config(config: Dict) -&gt; Tuple[bool, List[str]]:
+    &#34;&#34;&#34;
+    Validate the configuration file.
+    
+    Args:
+        config: Configuration dictionary
+        
+    Returns:
+        Tuple[bool, List[str]]: (is_valid, validation_messages)
+    &#34;&#34;&#34;
+    messages = []
+    is_valid = True
+    
+    try:
+        # Validate top-level structure
+        validate_top_level_structure(config)
+        messages.append(&#34;✓ Top-level structure is valid&#34;)
+    except ValueError as e:
+        is_valid = False
+        messages.append(f&#34;❌ {str(e)}&#34;)
+    
+    return is_valid, messages</code></pre>
+</details>
+<div class="desc"><p>Validate the configuration file.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>config</code></strong></dt>
+<dd>Configuration dictionary</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Tuple[bool, List[str]]</code></dt>
+<dd>(is_valid, validation_messages)</dd>
+</dl></div>
+</dd>
 <dt id="qto_buccaneer.utils.config_loader.validate_top_level_structure"><code class="name flex">
 <span>def <span class="ident">validate_top_level_structure</span></span>(<span>config: Dict) ‑> bool</span>
 </code></dt>
@@ -299,6 +342,7 @@ el.replaceWith(d);
 <li><code><a title="qto_buccaneer.utils.config_loader.find_config_file" href="#qto_buccaneer.utils.config_loader.find_config_file">find_config_file</a></code></li>
 <li><code><a title="qto_buccaneer.utils.config_loader.load_column_definitions" href="#qto_buccaneer.utils.config_loader.load_column_definitions">load_column_definitions</a></code></li>
 <li><code><a title="qto_buccaneer.utils.config_loader.load_config" href="#qto_buccaneer.utils.config_loader.load_config">load_config</a></code></li>
+<li><code><a title="qto_buccaneer.utils.config_loader.validate_config" href="#qto_buccaneer.utils.config_loader.validate_config">validate_config</a></code></li>
 <li><code><a title="qto_buccaneer.utils.config_loader.validate_top_level_structure" href="#qto_buccaneer.utils.config_loader.validate_top_level_structure">validate_top_level_structure</a></code></li>
 </ul>
 </li>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.6">
 <title>qto_buccaneer.plots_utils API documentation</title>
-<meta name="description" content="">
+<meta name="description" content="Plotting utilities for QTO Buccaneer …">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -36,6 +36,50 @@ el.replaceWith(d);
 <h1 class="title">Module <code>qto_buccaneer.plots_utils</code></h1>
 </header>
 <section id="section-intro">
+<p>Plotting utilities for QTO Buccaneer.</p>
+<p>This package provides tools for visualizing IFC models and quantity takeoff results:</p>
+<h3 id="core-features">Core Features</h3>
+<ul>
+<li>Floorplan Generation</li>
+<li>Create 2D floor plans from IFC models</li>
+<li>Customize visualization styles</li>
+<li>
+<p>Support for different element types</p>
+</li>
+<li>
+<p>3D Visualization</p>
+</li>
+<li>Generate 3D views of IFC models</li>
+<li>Customize camera angles and perspectives</li>
+<li>
+<p>Highlight specific elements or metrics</p>
+</li>
+<li>
+<p>Metric Visualization</p>
+</li>
+<li>Create charts and graphs for quantity data</li>
+<li>Compare metrics across different views</li>
+<li>Generate visual reports</li>
+</ul>
+<h3 id="usage">Usage</h3>
+<pre><code class="language-python">from qto_buccaneer.plots_utils import load_plot_config, create_single_plot
+
+# Load plot configuration
+config = load_plot_config(&quot;path/to/plot_config.yaml&quot;)
+
+# Create a plot
+plot = create_single_plot(
+    geometry_dir=&quot;path/to/geometry_json&quot;,
+    properties_path=&quot;path/to/metadata.json&quot;,
+    config=config
+)
+</code></pre>
+<h3 id="configuration">Configuration</h3>
+<p>Plot configurations are defined in YAML files and support:
+- Custom colors and styles
+- Element filtering
+- View settings
+- Output formats</p>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
@@ -161,7 +205,11 @@ el.replaceWith(d);
 </article>
 <nav id="sidebar">
 <div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#core-features">Core Features</a></li>
+<li><a href="#usage">Usage</a></li>
+<li><a href="#configuration">Configuration</a></li>
+</ul>
 </div>
 <ul id="index">
 <li><h3>Super-module</h3>
