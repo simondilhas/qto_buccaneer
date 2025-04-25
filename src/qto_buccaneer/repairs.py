@@ -3,7 +3,7 @@ from pathlib import Path
 import ifcopenshell
 from .utils.ifc_loader import IfcLoader
 
-def parse_filter(filter_str: str) -> Dict[str, Any]:
+def _parse_filter(filter_str: str) -> Dict[str, Any]:
     """
     Parse a filter string into a dictionary of conditions.
     Supports AND, OR, NOT, and parentheses.
@@ -50,7 +50,7 @@ def parse_filter(filter_str: str) -> Dict[str, Any]:
     
     return parsed_conditions
 
-def apply_filter(loader: IfcLoader, filter_str: str) -> List[Any]:
+def _apply_filter(loader: IfcLoader, filter_str: str) -> List[Any]:
     """
     Apply a filter to the IFC model and return matching elements.
     
@@ -61,7 +61,7 @@ def apply_filter(loader: IfcLoader, filter_str: str) -> List[Any]:
     Returns:
         List of matching IFC elements
     """
-    conditions = parse_filter(filter_str)
+    conditions = _parse_filter(filter_str)
     if not conditions:
         return []
     
@@ -96,7 +96,7 @@ def apply_filter(loader: IfcLoader, filter_str: str) -> List[Any]:
     
     return filtered_elements
 
-def apply_change_value(element: Any, field: str, value: Any, model: Any = None) -> None:
+def _apply_change_value(element: Any, field: str, value: Any, model: Any = None) -> None:
     """
     Change a value of an IFC element.
     
@@ -203,7 +203,7 @@ def apply_change_value(element: Any, field: str, value: Any, model: Any = None) 
         else:
             raise AttributeError(f"Element has no attribute '{field}'")
 
-def apply_repair(ifc_path_or_model: Union[str, ifcopenshell.file], repair: Dict[str, Any]) -> None:
+def _apply_repair(ifc_path_or_model: Union[str, ifcopenshell.file], repair: Dict[str, Any]) -> None:
     """
     Apply a repair to an IFC model.
     
@@ -219,7 +219,7 @@ def apply_repair(ifc_path_or_model: Union[str, ifcopenshell.file], repair: Dict[
     model = loader.model
     
     # Apply filter to get matching elements
-    elements = apply_filter(loader, repair['filter'])
+    elements = _apply_filter(loader, repair['filter'])
     print(f"Found {len(elements)} matching elements")
     
     if not elements:
@@ -237,7 +237,7 @@ def apply_repair(ifc_path_or_model: Union[str, ifcopenshell.file], repair: Dict[
                 try:
                     global_id = getattr(element, 'GlobalId', 'No GlobalId')
                     print(f"  - Processing element: {element.is_a()} (GlobalId: {global_id})")
-                    apply_change_value(element, field, value, model)
+                    _apply_change_value(element, field, value, model)
                     print(f"    ✓ Successfully updated {field}")
                 except Exception as e:
                     print(f"    ✗ Error updating {field}: {str(e)}")
@@ -284,7 +284,7 @@ def apply_repairs(ifc_path_or_model: Union[str, ifcopenshell.file], config: Dict
     
     # Apply each repair
     for repair in repairs:
-        apply_repair(loader.model, repair)
+        _apply_repair(loader.model, repair)
     
     # Determine output path
     if output_dir:
