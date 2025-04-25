@@ -20,16 +20,18 @@ load_dotenv()
 # API Configuration
 API_KEY_NAME = os.getenv("API_KEY_NAME", "test_key")
 API_KEY_SECRET = os.getenv("IFC_TO_JSON_API_KEY")
-if not API_KEY_SECRET:
-    raise ValueError(
-        "IFC_TO_JSON_API_KEY environment variable not set. "
-        "Please set it in your .env file or environment variables. "
-        "Contact simon.dilhas@abstract.build to obtain a key."
-    )
-
-# Validate and clean BASE_URL
 BASE_URL = os.getenv("IFC_TO_JSON_API_URL")
-#BASE_URL = "http://localhost:8000"
+
+def _validate_api_key(api_key: Optional[str] = None) -> str:
+    """Validate that an API key is available."""
+    key = api_key or API_KEY_SECRET
+    if not key:
+        raise ValueError(
+            "IFC_TO_JSON_API_KEY environment variable not set. "
+            "Please set it in your .env file or environment variables. "
+            "Contact simon.dilhas@abstract.build to obtain a key."
+        )
+    return key
 
 def calculate_geometry_json_via_api(
     ifc_path: str,
@@ -54,6 +56,9 @@ def calculate_geometry_json_via_api(
         str: Path to the output directory containing the generated JSON files
     """
     try:
+        # Validate API key
+        _validate_api_key()
+        
         # Create output directory if it doesn't exist
         os.makedirs(output_dir, exist_ok=True)
         
@@ -75,7 +80,7 @@ def calculate_geometry_json_via_api(
 
 def _get_headers(api_key: Optional[str] = None) -> Dict[str, str]:
     """Internal function to get headers with API key for requests."""
-    key = api_key or API_KEY_SECRET
+    key = _validate_api_key(api_key)
     return {
         API_KEY_NAME: key
     }

@@ -512,7 +512,7 @@ qto-buccaneer/
 ├── projects/                                        # Project directories
 │   ├── 00_run_create_new_project.py                # Project creation script
 │   ├── 002_example_project__public/                # Example project
-│   └── __init__                                    # Package marker
+│   └── __init__.py                                 # Package marker
 ├── templates/                                       # Template files
 ├── tests/                                          # Test files
 ├── tutorial/                                       # Tutorial materials
