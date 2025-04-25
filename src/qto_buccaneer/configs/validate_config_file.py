@@ -4,8 +4,7 @@ import yaml
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from qto_buccaneer.utils.config import validate_config
-from qto_buccaneer.utils.config import load_config
+from qto_buccaneer.utils.config_loader import validate_config, load_config
 
 config = load_config("src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml")
 
