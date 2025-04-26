@@ -8,6 +8,7 @@ __pycache__/
 output/
 projects/*__private/
 *__private/
+*__private
 
 .env
 .vscode/

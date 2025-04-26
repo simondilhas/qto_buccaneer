@@ -206,32 +206,6 @@ Now you can:
 - Make changes to the code and see them reflected immediately
 - Run tests and contribute to the project
 
-## Project Creation Scripts
-
-The repository includes scripts to help you create new projects based on templates. To set up these scripts:
-
-1. Make the setup script executable and run it:
-   ```bash
-   chmod +x setup_scripts.sh
-   ./setup_scripts.sh
-   ```
-
-2. This will:
-   - Make the project creation scripts executable
-   - Set up a virtual environment if one doesn't exist
-   - Install required dependencies
-
-3. You can then create new projects using:
-   ```bash
-   ./create_project my_new_project
-   ```
-   
-   Or specify a different template:
-   ```bash
-   ./create_project my_new_project --template custom_template
-   ```
-
-The script will create a new project in the `projects` directory based on the specified template.
 
 ### Usage Examples
 
@@ -490,7 +464,44 @@ For more complex repairs, you can combine multiple actions in a single rule:
 
 For more examples and detailed configuration options, check the `configs/` directory in the repository.
 
-## 📁 Project Structure
+### Working with Projects
+
+When creating the library, I realized, that having all the singel tools available is nice, but true power comes when they are chained together.
+
+for this I added the Project folder and workflow.
+
+- A Project is a collection of building the same rules apply to. So a building could be the same building in different phases, different buildings that need comparison / benchmarking, ... e.g. for cost benchmarking or architectural competitions.
+
+- So the workflow is:
+    1. create a new project with 00_run_create_new_project.py (script that does this from the template structure)
+    2. When configure the projects with a 00_workflow_config.yaml
+        - Specify which buildings are inside the project (either through the list, or by copying the ifc files in the folder all_models)
+        - Specify the folder names for each project, that should be created
+        
+```yaml
+project_name: "002_test_project__public"
+project_description: "This is a test project to test the workflow"
+
+buildings:
+  - name: "test_building_001" 
+
+building_folder:
+  - "00_original_input_data"
+  - "01_abstractbim_model"
+```
+
+    3. run the script 01_create_new_buildings.py to create the buildings 
+    4. speify the workflow of which steps should be done in which order in the script 02_execute_workflows.py. E.g,
+        - first create abstractBIM
+        - enrich it with additional information
+        - calculate metrics and benchmarks
+        - calculate plots for visualizations
+        - crreate a pdf report
+
+Following this structured approach, you will build a pipline and truly benefit from structured data
+
+
+## 📁 Code Structure
 
 ```bash
 qto-buccaneer/

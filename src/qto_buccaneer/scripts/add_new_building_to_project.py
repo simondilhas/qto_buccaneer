@@ -9,6 +9,7 @@ import sys
 import yaml
 import argparse
 from pathlib import Path
+from typing import Union, Optional
 
 def get_project_root() -> Path:
     """Get the root directory of the project."""
@@ -28,14 +29,136 @@ def get_project_root() -> Path:
     
     raise RuntimeError("Could not determine project root directory.")
 
-def add_building_to_project(project_name: str, building_name: str):
+def _copy_files_to_building(source_folder: Union[Path, str], building_path: Path, building_name: str) -> None:
+    """
+    Copy files from source folder to building folders based on file type.
+    
+    Args:
+        source_folder (Union[Path, str]): Path to folder containing files to copy
+        building_path (Path): Path to the building directory
+        building_name (str): Name of the building
+    """
+    source_folder = Path(source_folder) if isinstance(source_folder, str) else source_folder
+    source_folder = source_folder.resolve()
+    
+    if not source_folder.exists():
+        raise ValueError(f"Source files folder not found: {source_folder}")
+        
+    for file in source_folder.glob("*"):
+        if file.is_file():
+            # Determine target folder based on file type
+            if file.suffix.lower() == '.ifc':
+                if 'abstractbim' in file.name.lower():
+                    target_folder = building_path / "01_abstractbim_model"
+                    target_file = target_folder / f"{building_name}_abstractBIM.ifc"
+                else:
+                    target_folder = building_path / "00_original_input_data"
+                    target_file = target_folder / file.name
+            elif file.suffix.lower() in ['.json', '.yaml', '.yml']:
+                target_folder = building_path / "config"
+                target_file = target_folder / file.name
+            else:
+                target_folder = building_path / "00_original_input_data"
+                target_file = target_folder / file.name
+            
+            # Ensure target folder exists
+            target_folder.mkdir(parents=True, exist_ok=True)
+            
+            # Copy file
+            import shutil
+            shutil.copy2(file, target_file)
+            print(f"Copied {file.name} to {target_folder}")
+
+def _update_workflow_config(project_path: Union[Path, str], building_name: str) -> None:
+    """
+    Update the workflow configuration with a new building.
+    This function only updates the YAML config file, preserving its formatting.
+    
+    Args:
+        project_path (Union[Path, str]): Path to the project directory
+        building_name (str): Name of the building to add
+    """
+    try:
+        # Convert to Path object if string is provided
+        project_path = Path(project_path) if isinstance(project_path, str) else project_path
+        project_path = project_path.resolve()
+        
+        if not str(project_path).startswith(str(get_project_root() / "projects")):
+            raise ValueError(f"Project path must be inside a project directory under projects/")
+            
+        # Load workflow configuration
+        workflow_config_path = project_path / "00_workflow_config.yaml"
+        if not workflow_config_path.exists():
+            raise ValueError(f"Workflow configuration not found in {workflow_config_path}")
+            
+        # Read the file line by line to preserve formatting
+        with open(workflow_config_path, 'r') as f:
+            lines = f.readlines()
+            
+        # Parse the YAML content
+        config = yaml.safe_load(''.join(lines))
+            
+        # Check if building is already in config
+        building_exists = False
+        buildings_list = config.get('buildings', [])
+        if buildings_list is None:  # Handle case where buildings: is empty
+            buildings_list = []
+            
+        # Ensure all buildings are in dict format
+        buildings_list = [{'name': b} if isinstance(b, str) else b for b in buildings_list]
+            
+        for building in buildings_list:
+            if isinstance(building, dict) and building.get('name') == building_name:
+                building_exists = True
+                break
+                
+        if not building_exists:
+            # Find the buildings section in the file
+            buildings_section_start = None
+            for i, line in enumerate(lines):
+                if line.strip().startswith('buildings:'):
+                    buildings_section_start = i
+                    break
+                    
+            if buildings_section_start is None:
+                # If no buildings section exists, add it at the end
+                new_building = f"  - name: \"{building_name}\"\n"
+                lines.append("\nbuildings:\n")
+                lines.append(new_building)
+            else:
+                # Find the indentation level of the buildings section
+                indent = len(lines[buildings_section_start]) - len(lines[buildings_section_start].lstrip())
+                
+                # Add the new building with proper indentation
+                new_building = f"{' ' * indent}  - name: \"{building_name}\"\n"
+                
+                # Find where to insert the new building
+                insert_pos = buildings_section_start + 1
+                while insert_pos < len(lines) and lines[insert_pos].strip() and not lines[insert_pos].strip().startswith('-'):
+                    insert_pos += 1
+                    
+                lines.insert(insert_pos, new_building)
+                
+            # Write the file back with preserved formatting
+            with open(workflow_config_path, 'w') as f:
+                f.writelines(lines)
+                
+            print(f"Added building '{building_name}' to workflow configuration")
+            
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        raise
+
+def add_building_to_project(project_name: str, building_name: str, source_files_folder: Optional[Union[Path, str]] = None):
     """
     Add a new building to an existing project.
     Creates the necessary folder structure based on the workflow configuration.
+    Optionally copies files from a source folder to the building's folders.
     
     Args:
         project_name (str): Name of the project (with __public or __private tag)
         building_name (str): Name of the new building to add
+        source_files_folder (Optional[Union[Path, str]]): Path to folder containing files to copy
     """
     try:
         # Get the root directory of the project
@@ -69,6 +192,10 @@ def add_building_to_project(project_name: str, building_name: str):
             print(f"Building '{building_name}' already exists, skipping...")
             return
         
+        # 1. First update the workflow config
+        _update_workflow_config(project_path, building_name)
+        
+        # 2. Create the folder structure
         building_path.mkdir(parents=True, exist_ok=True)
         
         # Create all required subfolders
@@ -77,31 +204,9 @@ def add_building_to_project(project_name: str, building_name: str):
             folder_path.mkdir(parents=True, exist_ok=True)
             print(f"Created folder: {folder_path}")
         
-        # Update workflow config with new building
-        if 'buildings' not in config:
-            config['buildings'] = []
-        
-        # Check if building is already in config
-        building_exists = False
-        for building in config['buildings']:
-            if isinstance(building, dict) and building.get('name') == building_name:
-                building_exists = True
-                break
-        
-        if not building_exists:
-            # Add building with empty repairs list
-            new_building = {'name': building_name}
-            # Only add repairs field if it exists in the original config
-            for original_building in buildings:
-                if isinstance(original_building, dict) and original_building.get('name') == building_name:
-                    if 'repairs' in original_building:
-                        new_building['repairs'] = original_building['repairs']
-                    break
-            
-            config['buildings'].append(new_building)
-            with open(workflow_config_path, 'w') as f:
-                yaml.dump(config, f, default_flow_style=False)
-            print(f"Added building '{building_name}' to workflow configuration")
+        # 3. Copy files from source folder if provided
+        if source_files_folder:
+            _copy_files_to_building(source_files_folder, building_path, building_name)
         
         print(f"\nBuilding '{building_name}' added successfully to project '{project_name}'")
         print(f"Location: {building_path}")
@@ -122,6 +227,71 @@ def add_new_building_to_project_from_list(project_name: str, buildings: list[str
     for building_name in buildings:
         add_building_to_project(project_name, building_name)
 
+def create_buildings_from_files(input_folder_path: Union[Path, str], project_path: Union[Path, str], target_folder: str = "00_original_input_data") -> None:
+    """
+    Create buildings from files in the input folder.
+    This function:
+    1. Gets all model names from the input folder
+    2. Adds them to the YAML config as dictionaries
+    3. Uses add_new_building_to_project_from_list to create the buildings
+    4. Copies files to each building's target folder
+    
+    Args:
+        input_folder_path (Union[Path, str]): Path to the folder containing building files
+        project_path (Union[Path, str]): Path to the project directory
+        target_folder (str): Name of the folder to copy files to (default: "00_original_input_data")
+    """
+    try:
+        # Convert to Path objects if strings are provided
+        input_folder_path = Path(input_folder_path) if isinstance(input_folder_path, str) else input_folder_path
+        project_path = Path(project_path) if isinstance(project_path, str) else project_path
+        
+        # Ensure paths are absolute
+        input_folder_path = input_folder_path.resolve()
+        project_path = project_path.resolve()
+        
+        if not str(project_path).startswith(str(get_project_root() / "projects")):
+            raise ValueError(f"Project path must be inside a project directory under projects/")
+            
+        project_name = project_path.name
+        
+        # Get all model names from the input folder
+        model_names = []
+        for item in input_folder_path.iterdir():
+            if item.is_file():
+                # Use the filename without extension as the model name
+                model_name = item.stem
+                model_names.append(model_name)
+        
+        if not model_names:
+            raise ValueError(f"No files found in {input_folder_path}")
+            
+        # Add each model to the YAML config
+        for model_name in model_names:
+            _update_workflow_config(project_path, model_name)
+            
+        # Use the existing function to create buildings from the list
+        add_new_building_to_project_from_list(project_name, model_names)
+        
+        # Copy files to each building's target folder
+        for model_name in model_names:
+            building_path = project_path / "buildings" / model_name
+            target_path = building_path / target_folder
+            target_path.mkdir(parents=True, exist_ok=True)
+            
+            # Copy the file
+            source_file = input_folder_path / f"{model_name}{item.suffix}"
+            if source_file.exists():
+                import shutil
+                shutil.copy2(source_file, target_path / source_file.name)
+                print(f"Copied {source_file.name} to {target_path}")
+        
+        print(f"\nCreated {len(model_names)} buildings in project '{project_name}'")
+        print(f"Models processed: {', '.join(model_names)}")
+        
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        raise
 
 def main():
     parser = argparse.ArgumentParser(description="Add a new building to an existing project")
