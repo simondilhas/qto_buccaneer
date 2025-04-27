@@ -193,16 +193,20 @@ el.replaceWith(d);
     try:
         # For floor plans, create separate figures for each storey
         if plot_config.get(&#39;mode&#39;) == &#39;floor_plan&#39;:
-            # Get all storeys
+            # Get all storeys from the loader
             storey_ids = loader.by_type_index.get(&#39;IfcBuildingStorey&#39;, [])
+            print(f&#34;\nFound {len(storey_ids)} storeys in by_type_index&#34;)
             storey_figures = {}
             
             for storey_id in storey_ids:
+                print(f&#34;\nProcessing storey with ID {storey_id}&#34;)
                 storey = loader.properties[&#39;elements&#39;].get(str(storey_id))
                 if not storey:
+                    print(f&#34;No storey properties found for ID {storey_id}&#34;)
                     continue
                     
-                storey_name = storey.get(&#39;name&#39;, &#39;Unknown&#39;)
+                storey_name = storey.get(&#39;Name&#39;, &#39;Unknown&#39;)
+                print(f&#34;Storey name: {storey_name}&#34;)
                 
                 # Create a new figure for this storey
                 fig = go.Figure()
@@ -223,7 +227,9 @@ el.replaceWith(d);
                 )
                 
                 storey_figures[storey_name] = fig
+                print(f&#34;Added figure for storey {storey_name}&#34;)
                 
+            print(f&#34;\nCreated figures for {len(storey_figures)} storeys&#34;)
             return storey_figures
         else:
             # Create single figure for non-floor plan views

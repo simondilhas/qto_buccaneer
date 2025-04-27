@@ -110,16 +110,20 @@ el.replaceWith(d);
             output_paths[plot_name] = output_path
         else:
             # Floor plan returns a dict of storey names to paths
-            storey_paths = create_floorplan_per_storey(
-                geometry_dir=geometry_dir,
-                properties_path=properties_path,
-                config_path=config_path,
-                output_dir=str(output_dir),
-                plot_name=plot_name
-            )
-            # Add all storey paths to the output paths
-            for storey_name, path in storey_paths.items():
-                output_paths[f&#34;{plot_name}_{storey_name}&#34;] = path
+            try:
+                storey_paths = create_floorplan_per_storey(
+                    geometry_dir=geometry_dir,
+                    properties_path=properties_path,
+                    config_path=config_path,
+                    output_dir=str(output_dir),
+                    plot_name=plot_name
+                )
+                # Add all storey paths to the output paths
+                for storey_name, path in storey_paths.items():
+                    output_paths[f&#34;{plot_name}_{storey_name}&#34;] = path
+            except Exception as e:
+                print(f&#34;Error creating floor plan for &#39;{plot_name}&#39;: {str(e)}&#34;)
+                continue
     
     return output_paths </code></pre>
 </details>
