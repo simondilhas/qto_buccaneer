@@ -204,11 +204,6 @@ el.replaceWith(d);
             if not space:
                 continue
                 
-            # Check PredefinedType if it exists
-            predefined_type = space.get(&#34;PredefinedType&#34;, &#34;&#34;)
-            if predefined_type and predefined_type not in [&#34;INTERNAL&#34;, &#34;EXTERNAL&#34;]:
-                continue
-            
             # Get storey from cache
             space_storey = self._storey_cache.get(str(space_id))
             
@@ -355,11 +350,6 @@ that have been converted to JSON format.</p>
         if not space:
             continue
             
-        # Check PredefinedType if it exists
-        predefined_type = space.get(&#34;PredefinedType&#34;, &#34;&#34;)
-        if predefined_type and predefined_type not in [&#34;INTERNAL&#34;, &#34;EXTERNAL&#34;]:
-            continue
-        
         # Get storey from cache
         space_storey = self._storey_cache.get(str(space_id))
         
