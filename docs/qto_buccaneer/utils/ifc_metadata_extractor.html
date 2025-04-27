@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>qto_buccaneer.utils.ifc_metadata_extractor API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>qto_buccaneer.utils.ifc_metadata_extractor</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="qto_buccaneer.utils.ifc_metadata_extractor.extract_ifc_metadata"><code class="name flex">
+<span>def <span class="ident">extract_ifc_metadata</span></span>(<span>ifc_file_path, output_json_path=None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extract_ifc_metadata(ifc_file_path, output_json_path=None):
+    logger.info(f&#34;Opening IFC file for metadata extraction: {ifc_file_path}&#34;)
+    ifc_file = ifcopenshell.open(ifc_file_path)
+
+    elements_data = []
+    classification_id_map = {}  # Map IFC entity to our internal classification ID
+    system_id_map = {}  # Map IFC entity to our internal system ID
+
+    # Build GlobalId to ID map
+    globalid_to_id = {}
+    all_elements = []
+
+    # First get the project
+    project = ifc_file.by_type(&#34;IfcProject&#34;)[0]  # There should be exactly one project
+    all_elements.append(project)
+
+    # Then get all products
+    for el in ifc_file.by_type(&#34;IfcProduct&#34;):
+        if el.is_a(&#34;IfcOpeningElement&#34;):
+            continue  # Skip openings
+        all_elements.append(el)
+
+    logger.debug(f&#34;Found {len(all_elements)} elements (including project, excluding openings)&#34;)
+
+    # First pass: gather basic info and collect classifications
+    for idx, el in enumerate(all_elements, start=1):
+        globalid_to_id[el.GlobalId] = idx
+
+    # Build parent-child mapping from Aggregates and Containment relations
+    child_to_parent = {}
+
+    # Project is the root, so all sites should point to it
+    for site in ifc_file.by_type(&#34;IfcSite&#34;):
+        child_to_parent[site.GlobalId] = project.GlobalId
+
+    for rel in ifc_file.by_type(&#34;IfcRelAggregates&#34;):
+        if rel.RelatedObjects:
+            parent = rel.RelatingObject
+            for child in rel.RelatedObjects:
+                child_to_parent[child.GlobalId] = parent.GlobalId
+
+    for rel in ifc_file.by_type(&#34;IfcRelContainedInSpatialStructure&#34;):
+        if rel.RelatedElements:
+            parent = rel.RelatingStructure
+            for child in rel.RelatedElements:
+                # Only set parent if not already set by Aggregates (prefer Aggregates)
+                if child.GlobalId not in child_to_parent:
+                    child_to_parent[child.GlobalId] = parent.GlobalId
+
+    # First collect all unique classifications and systems
+    counter = len(all_elements) + 1  # Start after regular elements
+    
+    # Collect classifications
+    for el in all_elements:
+        if hasattr(el, &#34;HasAssociations&#34;):
+            for association in el.HasAssociations:
+                if association.is_a(&#34;IfcRelAssociatesClassification&#34;):
+                    classification = association.RelatingClassification
+                    classification_key = str(classification)
+                    if classification_key not in classification_id_map:
+                        if classification.is_a(&#34;IfcClassificationReference&#34;):
+                            classification_data = {
+                                &#34;id&#34;: counter,
+                                &#34;parent_id&#34;: None,
+                                &#34;GlobalId&#34;: getattr(classification, &#34;GlobalId&#34;, None),
+                                &#34;IfcEntity&#34;: &#34;IfcClassificationReference&#34;,
+                                &#34;Name&#34;: str(getattr(classification, &#34;Name&#34;, &#34;&#34;)),
+                                &#34;Description&#34;: str(getattr(classification, &#34;Description&#34;, &#34;&#34;)),
+                                &#34;Location&#34;: str(getattr(classification, &#34;Location&#34;, &#34;&#34;)),
+                                &#34;ItemReference&#34;: str(getattr(classification, &#34;ItemReference&#34;, &#34;&#34;)),
+                                &#34;ReferencedSource&#34;: str(getattr(classification, &#34;ReferencedSource&#34;, &#34;&#34;))
+                            }
+                        elif classification.is_a(&#34;IfcClassification&#34;):
+                            classification_data = {
+                                &#34;id&#34;: counter,
+                                &#34;parent_id&#34;: None,
+                                &#34;GlobalId&#34;: getattr(classification, &#34;GlobalId&#34;, None),
+                                &#34;IfcEntity&#34;: &#34;IfcClassification&#34;,
+                                &#34;Name&#34;: str(getattr(classification, &#34;Name&#34;, &#34;&#34;)),
+                                &#34;Description&#34;: str(getattr(classification, &#34;Description&#34;, &#34;&#34;)),
+                                &#34;Location&#34;: str(getattr(classification, &#34;Location&#34;, &#34;&#34;)),
+                                &#34;Edition&#34;: str(getattr(classification, &#34;Edition&#34;, &#34;&#34;)),
+                                &#34;EditionDate&#34;: str(getattr(classification, &#34;EditionDate&#34;, &#34;&#34;))
+                            }
+                        elements_data.append(classification_data)
+                        classification_id_map[classification_key] = counter
+                        counter += 1
+                elif association.is_a(&#34;IfcRelAssociatesLibrary&#34;):
+                    library = association.RelatingLibrary
+                    library_key = str(library)
+                    if library_key not in classification_id_map:
+                        library_data = {
+                            &#34;id&#34;: counter,
+                            &#34;parent_id&#34;: None,
+                            &#34;GlobalId&#34;: getattr(library, &#34;GlobalId&#34;, None),
+                            &#34;IfcEntity&#34;: &#34;IfcLibraryReference&#34;,
+                            &#34;Name&#34;: str(getattr(library, &#34;Name&#34;, &#34;&#34;)),
+                            &#34;Description&#34;: str(getattr(library, &#34;Description&#34;, &#34;&#34;)),
+                            &#34;Version&#34;: str(getattr(library, &#34;Version&#34;, &#34;&#34;)),
+                            &#34;VersionDate&#34;: str(getattr(library, &#34;VersionDate&#34;, &#34;&#34;))
+                        }
+                        elements_data.append(library_data)
+                        classification_id_map[library_key] = counter
+                        counter += 1
+
+    # Collect systems
+    for el in all_elements:
+        if hasattr(el, &#34;HasAssignments&#34;):
+            for assignment in el.HasAssignments:
+                if assignment.is_a(&#34;IfcRelAssignsToGroup&#34;):
+                    group = assignment.RelatingGroup
+                    if group.is_a(&#34;IfcSystem&#34;):
+                        system_key = str(group)
+                        if system_key not in system_id_map:
+                            system_data = {
+                                &#34;id&#34;: counter,
+                                &#34;parent_id&#34;: None,
+                                &#34;GlobalId&#34;: getattr(group, &#34;GlobalId&#34;, None),
+                                &#34;IfcEntity&#34;: &#34;IfcSystem&#34;,
+                                &#34;Name&#34;: str(getattr(group, &#34;Name&#34;, &#34;&#34;)),
+                                &#34;Description&#34;: str(getattr(group, &#34;Description&#34;, &#34;&#34;)),
+                                &#34;ObjectType&#34;: str(getattr(group, &#34;ObjectType&#34;, &#34;&#34;)),
+                                &#34;Type&#34;: &#34;System&#34;
+                            }
+                            elements_data.append(system_data)
+                            system_id_map[system_key] = counter
+                            counter += 1
+                elif assignment.is_a(&#34;IfcRelAssignsToProcess&#34;):
+                    process = assignment.RelatingProcess
+                    system_key = str(process)
+                    if system_key not in system_id_map:
+                        system_data = {
+                            &#34;id&#34;: counter,
+                            &#34;parent_id&#34;: None,
+                            &#34;GlobalId&#34;: getattr(process, &#34;GlobalId&#34;, None),
+                            &#34;IfcEntity&#34;: &#34;IfcProcess&#34;,
+                            &#34;Name&#34;: str(getattr(process, &#34;Name&#34;, &#34;&#34;)),
+                            &#34;Description&#34;: str(getattr(process, &#34;Description&#34;, &#34;&#34;)),
+                            &#34;ObjectType&#34;: str(getattr(process, &#34;ObjectType&#34;, &#34;&#34;)),
+                            &#34;Type&#34;: &#34;Process&#34;
+                        }
+                        elements_data.append(system_data)
+                        system_id_map[system_key] = counter
+                        counter += 1
+                elif assignment.is_a(&#34;IfcRelAssignsToResource&#34;):
+                    resource = assignment.RelatingResource
+                    system_key = str(resource)
+                    if system_key not in system_id_map:
+                        system_data = {
+                            &#34;id&#34;: counter,
+                            &#34;parent_id&#34;: None,
+                            &#34;GlobalId&#34;: getattr(resource, &#34;GlobalId&#34;, None),
+                            &#34;IfcEntity&#34;: &#34;IfcResource&#34;,
+                            &#34;Name&#34;: str(getattr(resource, &#34;Name&#34;, &#34;&#34;)),
+                            &#34;Description&#34;: str(getattr(resource, &#34;Description&#34;, &#34;&#34;)),
+                            &#34;ObjectType&#34;: str(getattr(resource, &#34;ObjectType&#34;, &#34;&#34;)),
+                            &#34;Type&#34;: &#34;Resource&#34;
+                        }
+                        elements_data.append(system_data)
+                        system_id_map[system_key] = counter
+                        counter += 1
+
+    # Now build full record for each element
+    for idx, el in enumerate(all_elements, start=1):
+        record = {
+            &#34;id&#34;: idx,
+            &#34;parent_id&#34;: None,
+            &#34;GlobalId&#34;: el.GlobalId,
+            &#34;IfcEntity&#34;: el.is_a(),
+            &#34;Classifications&#34;: [],  # List of classification IDs
+            &#34;Systems&#34;: []  # List of system IDs
+        }
+
+        parent_gid = child_to_parent.get(el.GlobalId)
+        if parent_gid:
+            record[&#34;parent_id&#34;] = globalid_to_id.get(parent_gid)
+
+        # Get all attributes from the element
+        for attr in dir(el):
+            if (not attr.startswith(&#39;_&#39;) and 
+                not callable(getattr(el, attr)) and
+                attr not in [
+                    &#39;ObjectPlacement&#39;, 
+                    &#39;OwnerHistory&#39;, 
+                    &#39;Representation&#39;,
+                    &#39;RepresentationContexts&#39;,
+                    &#39;UnitsInContext&#39;,
+                    &#39;file&#39;,
+                    &#39;IsDefinedBy&#39;,
+                    &#39;HasAssociations&#39;,
+                    &#39;IsDecomposedBy&#39;,
+                    &#39;Decomposes&#39;
+                ]):
+                value = getattr(el, attr, None)
+                # Handle entity instances
+                if hasattr(value, &#39;is_a&#39;):  # This is an IFC entity
+                    if hasattr(value, &#39;GlobalId&#39;):
+                        record[attr] = value.GlobalId
+                    else:
+                        record[attr] = str(value)
+                # Handle lists of entities
+                elif isinstance(value, (list, tuple)) and value and hasattr(value[0], &#39;is_a&#39;):
+                    record[attr] = [v.GlobalId if hasattr(v, &#39;GlobalId&#39;) else str(v) for v in value]
+                # Handle other values
+                else:
+                    record[attr] = value
+
+        # Property Sets (Psets)
+        if hasattr(el, &#34;IsDefinedBy&#34;):
+            for rel_def in el.IsDefinedBy:
+                if rel_def.is_a(&#34;IfcRelDefinesByProperties&#34;):
+                    prop_set = rel_def.RelatingPropertyDefinition
+                    if prop_set.is_a(&#34;IfcPropertySet&#34;):
+                        pset_name = prop_set.Name
+                        for prop in prop_set.HasProperties:
+                            prop_name = f&#34;{pset_name}.{prop.Name}&#34;
+                            prop_value = getattr(prop, &#34;NominalValue&#34;, None)
+                            if prop_value:
+                                try:
+                                    value = prop_value.wrappedValue
+                                    # Handle boolean values
+                                    if isinstance(value, bool):
+                                        record[prop_name] = value
+                                    else:
+                                        record[prop_name] = str(value)
+                                except AttributeError:
+                                    record[prop_name] = str(prop_value)
+
+        # Add classification references
+        if hasattr(el, &#34;HasAssociations&#34;):
+            for association in el.HasAssociations:
+                if association.is_a(&#34;IfcRelAssociatesClassification&#34;):
+                    classification = association.RelatingClassification
+                    classification_key = str(classification)
+                    if classification_key in classification_id_map:
+                        record[&#34;Classifications&#34;].append(classification_id_map[classification_key])
+                elif association.is_a(&#34;IfcRelAssociatesLibrary&#34;):
+                    library = association.RelatingLibrary
+                    library_key = str(library)
+                    if library_key in classification_id_map:
+                        record[&#34;Classifications&#34;].append(classification_id_map[library_key])
+
+        # Add system references
+        if hasattr(el, &#34;HasAssignments&#34;):
+            for assignment in el.HasAssignments:
+                if assignment.is_a(&#34;IfcRelAssignsToGroup&#34;):
+                    group = assignment.RelatingGroup
+                    if group.is_a(&#34;IfcSystem&#34;):
+                        system_key = str(group)
+                        if system_key in system_id_map:
+                            record[&#34;Systems&#34;].append(system_id_map[system_key])
+                elif assignment.is_a(&#34;IfcRelAssignsToProcess&#34;):
+                    process = assignment.RelatingProcess
+                    system_key = str(process)
+                    if system_key in system_id_map:
+                        record[&#34;Systems&#34;].append(system_id_map[system_key])
+                elif assignment.is_a(&#34;IfcRelAssignsToResource&#34;):
+                    resource = assignment.RelatingResource
+                    system_key = str(resource)
+                    if system_key in system_id_map:
+                        record[&#34;Systems&#34;].append(system_id_map[system_key])
+
+        elements_data.append(record)
+
+    # Create DataFrame with explicit dtype mapping to preserve boolean values
+    df = pd.DataFrame(elements_data)
+    
+    # Convert boolean columns back to boolean type
+    for col in df.columns:
+        if df[col].dtype == &#39;object&#39;:
+            # Check if column contains boolean values
+            if df[col].isin([True, False]).any():
+                df[col] = df[col].astype(&#39;boolean&#39;)
+
+    if output_json_path:
+        os.makedirs(os.path.dirname(output_json_path), exist_ok=True)
+        # Create the final JSON structure with all elements
+        json_data = {
+            &#34;elements&#34;: {str(elem[&#34;id&#34;]): elem for elem in elements_data}
+        }
+        with open(output_json_path, &#39;w&#39;) as f:
+            json.dump(json_data, f, indent=2, ensure_ascii=False)
+        logger.info(f&#34;Metadata saved to {output_json_path}&#34;)
+
+    return df</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.utils.ifc_metadata_extractor.extract_metadata"><code class="name flex">
+<span>def <span class="ident">extract_metadata</span></span>(<span>ifc_file_path,<br>output_formats=['json', 'json_file', 'dataframe'],<br>output_dir=None,<br>project_name=None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extract_metadata(ifc_file_path, output_formats=[&#34;json&#34;, &#34;json_file&#34;, &#34;dataframe&#34;], output_dir=None, project_name=None):
+    &#34;&#34;&#34;
+    Extracts IFC metadata and saves it to the specified output formats.
+    
+    Args:
+        ifc_file_path: Path to the IFC file
+        output_formats: List of desired output formats. Can include &#34;json&#34;, &#34;json_file&#34;, &#34;dataframe&#34;
+        output_dir: Directory to save output files (required if json_file is in output_formats)
+        project_name: Name of the project (used for output filenames)
+        
+    Returns:
+        Tuple containing only the requested outputs in order: (dataframe, json_data, json_path)
+        Only returns the values that were requested in output_formats
+    &#34;&#34;&#34;
+    if &#34;json_file&#34; in output_formats and not output_dir:
+        raise ValueError(&#34;output_dir must be specified when json_file is requested&#34;)
+        
+    if not project_name:
+        project_name = Path(ifc_file_path).stem
+
+    # Create output directory if needed
+    if output_dir:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Extract metadata
+    df = extract_ifc_metadata(ifc_file_path)
+
+    # Prepare return values
+    return_values = []
+
+    # Handle requested formats in order
+    if &#34;dataframe&#34; in output_formats:
+        return_values.append(df)
+    
+    def convert_element(element):
+        &#34;&#34;&#34;Convert element fields to appropriate types.
+        - id: integer
+        - parent_id: integer or None
+        - booleans: preserved as bool
+        - NaN values: converted to None
+        - null values: preserved as None
+        - empty strings: preserved as empty strings
+        - arrays: preserved as arrays
+        - entity instances: converted to GlobalId or string representation
+        - file objects: converted to string representation
+        - All other fields: preserve original type
+        &#34;&#34;&#34;
+        # Convert id to integer
+        element[&#39;id&#39;] = int(element[&#39;id&#39;])
+        
+        # Convert parent_id to integer if not None and not NaN
+        if element[&#39;parent_id&#39;] is not None and not pd.isna(element[&#39;parent_id&#39;]):
+            element[&#39;parent_id&#39;] = int(element[&#39;parent_id&#39;])
+        else:
+            element[&#39;parent_id&#39;] = None
+        
+        # Handle all other fields
+        for key, value in element.items():
+            if isinstance(value, (list, np.ndarray)):
+                # Handle lists of values
+                if value and hasattr(value[0], &#39;is_a&#39;):  # List of entities
+                    element[key] = [v.GlobalId if hasattr(v, &#39;GlobalId&#39;) else str(v) for v in value]
+                else:
+                    # Preserve other arrays as is
+                    continue
+            elif pd.isna(value):
+                element[key] = None
+            elif isinstance(value, bool):
+                # Preserve boolean values
+                element[key] = bool(value)
+            elif isinstance(value, str):
+                # Preserve empty strings and $ values
+                element[key] = str(value)
+            elif hasattr(value, &#39;is_a&#39;):  # Single entity
+                if hasattr(value, &#39;GlobalId&#39;):
+                    element[key] = value.GlobalId
+                else:
+                    element[key] = str(value)
+            elif hasattr(value, &#39;read&#39;):  # File object
+                element[key] = str(value)
+            elif isinstance(value, float):
+                # Convert float values to appropriate type
+                if value.is_integer():
+                    element[key] = int(value)
+                else:
+                    element[key] = float(value)
+            elif isinstance(value, int):
+                # Preserve integer values
+                element[key] = int(value)
+            else:
+                # Convert any other non-serializable type to string
+                element[key] = str(value)
+            
+        return element
+    
+    def create_elements_dict(df):
+        &#34;&#34;&#34;Create a dictionary of elements with string keys (required by JSON)
+        but integer values for id and parent_id fields.&#34;&#34;&#34;
+        elements_dict = {}
+        for _, row in df.iterrows():
+            element = convert_element(row.to_dict())
+            # JSON requires string keys, but we keep id and parent_id as integers in the values
+            elements_dict[str(element[&#39;id&#39;])] = element
+        return elements_dict
+    
+    if &#34;json&#34; in output_formats:
+        elements_dict = create_elements_dict(df)
+        json_data = {&#34;elements&#34;: elements_dict}
+        return_values.append(json_data)
+    
+    if &#34;json_file&#34; in output_formats:
+        json_path = output_dir / f&#34;{project_name}_metadata.json&#34;
+        elements_dict = create_elements_dict(df)
+        json_data = {&#34;elements&#34;: elements_dict}
+        with open(json_path, &#39;w&#39;) as f:
+            json.dump(json_data, f, indent=2, ensure_ascii=False)
+        logger.info(f&#34;Metadata saved to {json_path}&#34;)
+        return_values.append(str(json_path))
+
+    # Return only the requested values
+    return tuple(return_values)</code></pre>
+</details>
+<div class="desc"><p>Extracts IFC metadata and saves it to the specified output formats.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ifc_file_path</code></strong></dt>
+<dd>Path to the IFC file</dd>
+<dt><strong><code>output_formats</code></strong></dt>
+<dd>List of desired output formats. Can include "json", "json_file", "dataframe"</dd>
+<dt><strong><code>output_dir</code></strong></dt>
+<dd>Directory to save output files (required if json_file is in output_formats)</dd>
+<dt><strong><code>project_name</code></strong></dt>
+<dd>Name of the project (used for output filenames)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Tuple containing only the requested outputs in order</code></dt>
+<dd>(dataframe, json_data, json_path)</dd>
+</dl>
+<p>Only returns the values that were requested in output_formats</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.ifc_metadata_extractor.safe_instances_by_type"><code class="name flex">
+<span>def <span class="ident">safe_instances_by_type</span></span>(<span>ifc_file, query)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def safe_instances_by_type(ifc_file, query):
+    &#34;&#34;&#34;
+    Safe wrapper around ifc_file.instances_by_type().
+    
+    Accepts either:
+    - an entity_instance (like an IfcWall object),
+    - a string (like &#34;IfcWall&#34;),
+    - or a class (like IfcWall class).
+
+    Args:
+        ifc_file: an opened ifcopenshell file.
+        query: entity instance, class, or string.
+
+    Returns:
+        List of matching instances, or empty list if not found or invalid input.
+    &#34;&#34;&#34;
+    import ifcopenshell
+
+    try:
+        if isinstance(query, ifcopenshell.entity_instance):
+            # it&#39;s an object like IfcWall(...)
+            return ifc_file.safe_instances_by_type(query.is_a())
+        
+        elif isinstance(query, str):
+            # it&#39;s already a string like &#34;IfcWall&#34;
+            return ifc_file.safe_instances_by_type(query)
+        
+        elif hasattr(query, &#34;__name__&#34;):
+            # it&#39;s a class (like IfcWall)
+            return ifc_file.safe_instances_by_type(query.__name__)
+        
+        else:
+            raise TypeError(f&#34;Unsupported query type: {type(query)}&#34;)
+
+    except Exception as e:
+        print(f&#34;[safe_instances_by_type] Error handling query &#39;{query}&#39;: {e}&#34;)
+        return []</code></pre>
+</details>
+<div class="desc"><p>Safe wrapper around ifc_file.instances_by_type().</p>
+<p>Accepts either:
+- an entity_instance (like an IfcWall object),
+- a string (like "IfcWall"),
+- or a class (like IfcWall class).</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ifc_file</code></strong></dt>
+<dd>an opened ifcopenshell file.</dd>
+<dt><strong><code>query</code></strong></dt>
+<dd>entity instance, class, or string.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>List of matching instances, or empty list if not found or invalid input.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="qto_buccaneer.utils" href="index.html">qto_buccaneer.utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="qto_buccaneer.utils.ifc_metadata_extractor.extract_ifc_metadata" href="#qto_buccaneer.utils.ifc_metadata_extractor.extract_ifc_metadata">extract_ifc_metadata</a></code></li>
+<li><code><a title="qto_buccaneer.utils.ifc_metadata_extractor.extract_metadata" href="#qto_buccaneer.utils.ifc_metadata_extractor.extract_metadata">extract_metadata</a></code></li>
+<li><code><a title="qto_buccaneer.utils.ifc_metadata_extractor.safe_instances_by_type" href="#qto_buccaneer.utils.ifc_metadata_extractor.safe_instances_by_type">safe_instances_by_type</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>
