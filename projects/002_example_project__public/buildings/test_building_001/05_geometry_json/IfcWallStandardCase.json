@@ -1,6 +1,6 @@
 [
   {
-    "id": 127,
+    "id": 128,
     "ifc_global_id": "27CB94Un19bxWjEMfDF_tz",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -109,7 +109,7 @@
     ]
   },
   {
-    "id": 128,
+    "id": 129,
     "ifc_global_id": "0yqdzF7l1A$hGK_k82peeY",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -218,7 +218,7 @@
     ]
   },
   {
-    "id": 129,
+    "id": 130,
     "ifc_global_id": "1h1CloBMPAY8QSWcibM7NS",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -327,7 +327,7 @@
     ]
   },
   {
-    "id": 130,
+    "id": 131,
     "ifc_global_id": "1Yj0X7yOz4bvdIRu10xxue",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -436,7 +436,7 @@
     ]
   },
   {
-    "id": 131,
+    "id": 132,
     "ifc_global_id": "0d9kREJMX68P32$dBft5Ou",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -545,7 +545,7 @@
     ]
   },
   {
-    "id": 132,
+    "id": 133,
     "ifc_global_id": "0i8I7bnrLAwQZS_iYbjL1O",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -654,7 +654,7 @@
     ]
   },
   {
-    "id": 133,
+    "id": 134,
     "ifc_global_id": "34IEhuPur2Zgh$QpYbZk8t",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -823,7 +823,7 @@
     ]
   },
   {
-    "id": 134,
+    "id": 135,
     "ifc_global_id": "05FXfjjGb1DxuXWAp4rsTI",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -1112,7 +1112,7 @@
     ]
   },
   {
-    "id": 135,
+    "id": 136,
     "ifc_global_id": "2eHfWzpGj23881UFurd2Jh",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -1221,7 +1221,7 @@
     ]
   },
   {
-    "id": 136,
+    "id": 137,
     "ifc_global_id": "22pqgOl8n5VPd2NcA2LwoR",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -1450,7 +1450,7 @@
     ]
   },
   {
-    "id": 137,
+    "id": 138,
     "ifc_global_id": "0xUglwixj0pxfmEdkpk174",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -1619,7 +1619,7 @@
     ]
   },
   {
-    "id": 138,
+    "id": 139,
     "ifc_global_id": "0hH0oTlif50gOzclVe0Bxs",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -1758,7 +1758,7 @@
     ]
   },
   {
-    "id": 139,
+    "id": 140,
     "ifc_global_id": "3vTGOfPIrENRgl4CoBni3U",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -2027,7 +2027,7 @@
     ]
   },
   {
-    "id": 140,
+    "id": 141,
     "ifc_global_id": "1C7XlH$DbCtQYf$m9Qf$AO",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -2166,7 +2166,7 @@
     ]
   },
   {
-    "id": 141,
+    "id": 142,
     "ifc_global_id": "1WNOM6Xnf3juItdU8l19bh",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -2275,7 +2275,7 @@
     ]
   },
   {
-    "id": 142,
+    "id": 143,
     "ifc_global_id": "2p19vUCdjBhhHkfT8MLtO7",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -2384,7 +2384,7 @@
     ]
   },
   {
-    "id": 143,
+    "id": 144,
     "ifc_global_id": "0o7k7s3Tn7X9e9cO0BolsS",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -2493,7 +2493,7 @@
     ]
   },
   {
-    "id": 144,
+    "id": 145,
     "ifc_global_id": "2K9D_BlGHE3fKF95Nsi7dB",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -2602,7 +2602,7 @@
     ]
   },
   {
-    "id": 145,
+    "id": 146,
     "ifc_global_id": "1wKsjj0c11rQ816_REiPlJ",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -2831,7 +2831,7 @@
     ]
   },
   {
-    "id": 146,
+    "id": 147,
     "ifc_global_id": "39yhdTQs5Epu9Axnmf3P0m",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -3000,7 +3000,7 @@
     ]
   },
   {
-    "id": 147,
+    "id": 148,
     "ifc_global_id": "00cyc6X2HF3ArBs3wCvnUQ",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -3169,7 +3169,7 @@
     ]
   },
   {
-    "id": 148,
+    "id": 149,
     "ifc_global_id": "3qnVtPCEr9$B3s2jeAzWJQ",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -3278,7 +3278,7 @@
     ]
   },
   {
-    "id": 149,
+    "id": 150,
     "ifc_global_id": "0lxw45W9nEauJ2ETSqlbco",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -3387,7 +3387,7 @@
     ]
   },
   {
-    "id": 150,
+    "id": 151,
     "ifc_global_id": "1WkpEKrWrFT9Ax49EZ3aEc",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -3496,7 +3496,7 @@
     ]
   },
   {
-    "id": 151,
+    "id": 152,
     "ifc_global_id": "0YMDnBzFv1EeCZueSkHoO3",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -3605,7 +3605,7 @@
     ]
   },
   {
-    "id": 152,
+    "id": 153,
     "ifc_global_id": "3wg1xnTKf3vgHaJXxifqLm",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -3714,7 +3714,7 @@
     ]
   },
   {
-    "id": 153,
+    "id": 154,
     "ifc_global_id": "2eyDBn3j957QXfs9PsBbmI",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -3823,7 +3823,7 @@
     ]
   },
   {
-    "id": 154,
+    "id": 155,
     "ifc_global_id": "0fnKcYTsHFuOqM$gNs4Xm0",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -3932,7 +3932,7 @@
     ]
   },
   {
-    "id": 155,
+    "id": 156,
     "ifc_global_id": "0vfcaXlyDFSgBQnYuQFDU3",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -4226,7 +4226,7 @@
     ]
   },
   {
-    "id": 156,
+    "id": 157,
     "ifc_global_id": "3gY2kXhAj6pRGcH3OliaBs",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -4365,7 +4365,7 @@
     ]
   },
   {
-    "id": 157,
+    "id": 158,
     "ifc_global_id": "0hyssQzI17DPpM9d5me8l0",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -4474,7 +4474,7 @@
     ]
   },
   {
-    "id": 158,
+    "id": 159,
     "ifc_global_id": "0vc5jn$tf6z8BFuF09YeOB",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [
@@ -4643,7 +4643,7 @@
     ]
   },
   {
-    "id": 159,
+    "id": 160,
     "ifc_global_id": "3282sO3MvAjhNbOglIftYa",
     "ifc_type": "IfcWallStandardCase",
     "vertices": [

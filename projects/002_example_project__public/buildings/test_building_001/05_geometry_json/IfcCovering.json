@@ -1,6 +1,6 @@
 [
   {
-    "id": 1,
+    "id": 2,
     "ifc_global_id": "0tkgbUMcT25OBOhCgbQt78",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -109,7 +109,7 @@
     ]
   },
   {
-    "id": 3,
+    "id": 4,
     "ifc_global_id": "3iUI97K5n3JRrmkA$BByCT",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -218,7 +218,7 @@
     ]
   },
   {
-    "id": 4,
+    "id": 5,
     "ifc_global_id": "2tEqOx7wDFgOpUq3HZz575",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -327,7 +327,7 @@
     ]
   },
   {
-    "id": 5,
+    "id": 6,
     "ifc_global_id": "1AQJmd6of9O9FEUZL24yU0",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -436,7 +436,7 @@
     ]
   },
   {
-    "id": 6,
+    "id": 7,
     "ifc_global_id": "0jUkzp7Zv2juPmBLRjOsP5",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -545,7 +545,7 @@
     ]
   },
   {
-    "id": 7,
+    "id": 8,
     "ifc_global_id": "1qWD_bIK5BPhwpat8Vecr4",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -654,7 +654,7 @@
     ]
   },
   {
-    "id": 8,
+    "id": 9,
     "ifc_global_id": "12wk4OjFbAdQEnfFlW_pHi",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -763,7 +763,7 @@
     ]
   },
   {
-    "id": 9,
+    "id": 10,
     "ifc_global_id": "0EqVs143DDvvTMAodqRENs",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -872,7 +872,7 @@
     ]
   },
   {
-    "id": 10,
+    "id": 11,
     "ifc_global_id": "3v45mQ2fvEgecIqcI9cyy5",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -981,7 +981,7 @@
     ]
   },
   {
-    "id": 11,
+    "id": 12,
     "ifc_global_id": "1RQSAgYsn1QPdJG$53EVGr",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -1090,7 +1090,7 @@
     ]
   },
   {
-    "id": 12,
+    "id": 13,
     "ifc_global_id": "0qztQy0ALExBliFucDnxKg",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -1199,7 +1199,7 @@
     ]
   },
   {
-    "id": 13,
+    "id": 14,
     "ifc_global_id": "3ernRpSjH1BebtZ8mPrffA",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -1308,7 +1308,7 @@
     ]
   },
   {
-    "id": 14,
+    "id": 15,
     "ifc_global_id": "0nWdsEWzP0NABDMtJ3UHtm",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -1417,7 +1417,7 @@
     ]
   },
   {
-    "id": 15,
+    "id": 16,
     "ifc_global_id": "1QBpCjMP141eGwOGp3KyBm",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -1526,7 +1526,7 @@
     ]
   },
   {
-    "id": 16,
+    "id": 17,
     "ifc_global_id": "3aWZMyJF51w9UrVyjKORKG",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -1635,7 +1635,7 @@
     ]
   },
   {
-    "id": 17,
+    "id": 18,
     "ifc_global_id": "0VrmhK1OvEPvlAxiuYu_ST",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -1744,7 +1744,7 @@
     ]
   },
   {
-    "id": 18,
+    "id": 19,
     "ifc_global_id": "2f6tMUEfv7jwA6u3eeg2MS",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -1853,7 +1853,7 @@
     ]
   },
   {
-    "id": 19,
+    "id": 20,
     "ifc_global_id": "2rFHwHXP98bhXDc8ziWhGL",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -1962,7 +1962,7 @@
     ]
   },
   {
-    "id": 20,
+    "id": 21,
     "ifc_global_id": "1XkH_0vzHDrP8GZMYLOGFG",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -2071,7 +2071,7 @@
     ]
   },
   {
-    "id": 22,
+    "id": 23,
     "ifc_global_id": "3T91p65crESxr4y$Tfg1M9",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -2180,7 +2180,7 @@
     ]
   },
   {
-    "id": 23,
+    "id": 24,
     "ifc_global_id": "3I2XpwQ79DPeRyB1_jlRMy",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -2289,7 +2289,7 @@
     ]
   },
   {
-    "id": 24,
+    "id": 25,
     "ifc_global_id": "1apYJS1nb0hwwB796NO8WO",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -2398,7 +2398,7 @@
     ]
   },
   {
-    "id": 25,
+    "id": 26,
     "ifc_global_id": "3f6SAZhV560B7zK2H8j0Wg",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -2507,7 +2507,7 @@
     ]
   },
   {
-    "id": 26,
+    "id": 27,
     "ifc_global_id": "2b_aSi4gb7r9gSUUIVhV2M",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -2616,7 +2616,7 @@
     ]
   },
   {
-    "id": 28,
+    "id": 29,
     "ifc_global_id": "2N584zsGT2yO$RXP13_ayO",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -2725,7 +2725,7 @@
     ]
   },
   {
-    "id": 29,
+    "id": 30,
     "ifc_global_id": "2tC1hgc2fEh8NVylWUvVu7",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -2834,7 +2834,7 @@
     ]
   },
   {
-    "id": 30,
+    "id": 31,
     "ifc_global_id": "3PQmmT7M50rAU30c1cw7R$",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -2943,7 +2943,7 @@
     ]
   },
   {
-    "id": 31,
+    "id": 32,
     "ifc_global_id": "3YZMWWvjP5ffuxO_6InFab",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -3052,7 +3052,7 @@
     ]
   },
   {
-    "id": 32,
+    "id": 33,
     "ifc_global_id": "3UYBFXLTn4RPTwltbvkTEO",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -3161,7 +3161,7 @@
     ]
   },
   {
-    "id": 33,
+    "id": 34,
     "ifc_global_id": "3AhQ9tZFP4RR3lYa0TkIIA",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -3270,7 +3270,7 @@
     ]
   },
   {
-    "id": 34,
+    "id": 35,
     "ifc_global_id": "1O9o5Y8VD5WBT8joEISsBc",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -3499,7 +3499,7 @@
     ]
   },
   {
-    "id": 35,
+    "id": 36,
     "ifc_global_id": "1JK6fblDL0yAsIZzQLCZwv",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -3608,7 +3608,7 @@
     ]
   },
   {
-    "id": 36,
+    "id": 37,
     "ifc_global_id": "0sNcbEc0v8Of3N4S0myPNb",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -3717,7 +3717,7 @@
     ]
   },
   {
-    "id": 37,
+    "id": 38,
     "ifc_global_id": "2_OIqbEZb2txxSCeBnEXrJ",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -3826,7 +3826,7 @@
     ]
   },
   {
-    "id": 39,
+    "id": 40,
     "ifc_global_id": "2z9xB4Ayb449BCMhwh11Fu",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -3935,7 +3935,7 @@
     ]
   },
   {
-    "id": 40,
+    "id": 41,
     "ifc_global_id": "2ikvhjLlnAfBYVASlF3TDp",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -4044,7 +4044,7 @@
     ]
   },
   {
-    "id": 41,
+    "id": 42,
     "ifc_global_id": "0MtMvVZmX5_PwZxUXefSrA",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -4313,7 +4313,7 @@
     ]
   },
   {
-    "id": 42,
+    "id": 43,
     "ifc_global_id": "1wg1bqPCj7Zv1JDJA8q_9_",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -4422,7 +4422,7 @@
     ]
   },
   {
-    "id": 43,
+    "id": 44,
     "ifc_global_id": "28n_Z09UTDkuRlnBFzUFtB",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -4651,7 +4651,7 @@
     ]
   },
   {
-    "id": 44,
+    "id": 45,
     "ifc_global_id": "1KhKzppyb3zfh8p4DzfKrA",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -4760,7 +4760,7 @@
     ]
   },
   {
-    "id": 45,
+    "id": 46,
     "ifc_global_id": "10Vjfp_YLEk9jam4SREvLH",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -4869,7 +4869,7 @@
     ]
   },
   {
-    "id": 46,
+    "id": 47,
     "ifc_global_id": "3R6IeDpxf8igfkhJhKRYiP",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -4978,7 +4978,7 @@
     ]
   },
   {
-    "id": 47,
+    "id": 48,
     "ifc_global_id": "3CLHxxLNHD7eDEBX4R0SC$",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -5087,7 +5087,7 @@
     ]
   },
   {
-    "id": 48,
+    "id": 49,
     "ifc_global_id": "01yEWdNLD78wN9JgQ6LIWe",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -5196,7 +5196,7 @@
     ]
   },
   {
-    "id": 49,
+    "id": 50,
     "ifc_global_id": "0k4IqAqLD1pQkqY$DjeCza",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -5445,7 +5445,7 @@
     ]
   },
   {
-    "id": 50,
+    "id": 51,
     "ifc_global_id": "0uG8lflA9BBRX0xZjys9nI",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -5554,7 +5554,7 @@
     ]
   },
   {
-    "id": 51,
+    "id": 52,
     "ifc_global_id": "37HjMDxavAqBD2$Dm3zVzX",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -5663,7 +5663,7 @@
     ]
   },
   {
-    "id": 52,
+    "id": 53,
     "ifc_global_id": "2LYa4$LBLCEeAC42AaxtOB",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -5772,7 +5772,7 @@
     ]
   },
   {
-    "id": 53,
+    "id": 54,
     "ifc_global_id": "1Qe$mAeqj4pBFBmKXngX1p",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -5881,7 +5881,7 @@
     ]
   },
   {
-    "id": 54,
+    "id": 55,
     "ifc_global_id": "27y3XFPAf2_AVQSif_QNwp",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -5990,7 +5990,7 @@
     ]
   },
   {
-    "id": 55,
+    "id": 56,
     "ifc_global_id": "0OYPGHe2L18hzwbyKNVoWR",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -6099,7 +6099,7 @@
     ]
   },
   {
-    "id": 56,
+    "id": 57,
     "ifc_global_id": "0GlWqPZeP5O93LEZMDFq1w",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -6208,7 +6208,7 @@
     ]
   },
   {
-    "id": 57,
+    "id": 58,
     "ifc_global_id": "0SkiI2s5T5duo2fcGlzxlB",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -6317,7 +6317,7 @@
     ]
   },
   {
-    "id": 58,
+    "id": 59,
     "ifc_global_id": "0MeJbmHoD2XPKPDBA4JjKK",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -6426,7 +6426,7 @@
     ]
   },
   {
-    "id": 59,
+    "id": 60,
     "ifc_global_id": "24__r3Tiz9ex8cMNpmOl$S",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -6535,7 +6535,7 @@
     ]
   },
   {
-    "id": 60,
+    "id": 61,
     "ifc_global_id": "0pom_mSYn3fxKfAnJN4A2T",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -6644,7 +6644,7 @@
     ]
   },
   {
-    "id": 61,
+    "id": 62,
     "ifc_global_id": "2fgf2TYZnF6hMtNSH5dCej",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -6753,7 +6753,7 @@
     ]
   },
   {
-    "id": 62,
+    "id": 63,
     "ifc_global_id": "3Alr6qyGnDmei5WpemYJmd",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -6862,7 +6862,7 @@
     ]
   },
   {
-    "id": 63,
+    "id": 64,
     "ifc_global_id": "0xotR0FSz5iuVvg_TuRNhA",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -6971,7 +6971,7 @@
     ]
   },
   {
-    "id": 64,
+    "id": 65,
     "ifc_global_id": "3M9a1jTW9F7RHY7D7RURc0",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -7080,7 +7080,7 @@
     ]
   },
   {
-    "id": 66,
+    "id": 67,
     "ifc_global_id": "28RMNEmtz4$uVWB6ms0CiG",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -7189,7 +7189,7 @@
     ]
   },
   {
-    "id": 67,
+    "id": 68,
     "ifc_global_id": "1$cBxjRQ1FsQONrrY8B3k3",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -7298,7 +7298,7 @@
     ]
   },
   {
-    "id": 68,
+    "id": 69,
     "ifc_global_id": "31aH1_rD95RBO_iRy7cv4k",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -7407,7 +7407,7 @@
     ]
   },
   {
-    "id": 70,
+    "id": 71,
     "ifc_global_id": "3ASv4fm75CxOQEeoGw5BLT",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -7516,7 +7516,7 @@
     ]
   },
   {
-    "id": 71,
+    "id": 72,
     "ifc_global_id": "3qTqD$SwvCMA_D01lE_XiD",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -7625,7 +7625,7 @@
     ]
   },
   {
-    "id": 72,
+    "id": 73,
     "ifc_global_id": "1bfzTzDlX489ZfwO$AilbC",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -7734,7 +7734,7 @@
     ]
   },
   {
-    "id": 73,
+    "id": 74,
     "ifc_global_id": "1yaDLe14T8KwJrBYj$7q$w",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -7843,7 +7843,7 @@
     ]
   },
   {
-    "id": 75,
+    "id": 76,
     "ifc_global_id": "1x5jcUTojBDw3viye5xwQ4",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -7952,7 +7952,7 @@
     ]
   },
   {
-    "id": 76,
+    "id": 77,
     "ifc_global_id": "02elX7_Bn8iOvJoCquoGkE",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -8061,7 +8061,7 @@
     ]
   },
   {
-    "id": 77,
+    "id": 78,
     "ifc_global_id": "0yYm8GUG91FwVoYIMqgbFo",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -8170,7 +8170,7 @@
     ]
   },
   {
-    "id": 78,
+    "id": 79,
     "ifc_global_id": "3nEtufSFj7bwK99Y7Xt8xx",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -8279,7 +8279,7 @@
     ]
   },
   {
-    "id": 79,
+    "id": 80,
     "ifc_global_id": "2gZx4S4InFEQV5YKAUlif4",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -8388,7 +8388,7 @@
     ]
   },
   {
-    "id": 81,
+    "id": 82,
     "ifc_global_id": "1axrM9joj61u0oXLS1Ttf9",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -8497,7 +8497,7 @@
     ]
   },
   {
-    "id": 82,
+    "id": 83,
     "ifc_global_id": "0yMUqQtKDDs9OwtNMfep84",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -8606,7 +8606,7 @@
     ]
   },
   {
-    "id": 83,
+    "id": 84,
     "ifc_global_id": "3Rkch3HGb0X9S2f1lSfcD6",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -8875,7 +8875,7 @@
     ]
   },
   {
-    "id": 84,
+    "id": 85,
     "ifc_global_id": "3xZWKxrVX5jwdqmXvjnIV2",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -8984,7 +8984,7 @@
     ]
   },
   {
-    "id": 85,
+    "id": 86,
     "ifc_global_id": "2ci5lICdr7pOS2mW$W0wP1",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -9093,7 +9093,7 @@
     ]
   },
   {
-    "id": 87,
+    "id": 88,
     "ifc_global_id": "3d0fK$8DX0meMGhg36kB7u",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -9202,7 +9202,7 @@
     ]
   },
   {
-    "id": 88,
+    "id": 89,
     "ifc_global_id": "3hCB$dhs5FSOHfngdCsgfu",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -9311,7 +9311,7 @@
     ]
   },
   {
-    "id": 89,
+    "id": 90,
     "ifc_global_id": "0NzftwtED7aQ38hqMMJXD4",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -9420,7 +9420,7 @@
     ]
   },
   {
-    "id": 90,
+    "id": 91,
     "ifc_global_id": "2jLsVJMrb0$OSXdsi26MV9",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -9529,7 +9529,7 @@
     ]
   },
   {
-    "id": 91,
+    "id": 92,
     "ifc_global_id": "2U98EYb01FMxsSO6N$Hual",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -9638,7 +9638,7 @@
     ]
   },
   {
-    "id": 92,
+    "id": 93,
     "ifc_global_id": "3zpfpzQCP5D8RpiI7jiyDJ",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -9747,7 +9747,7 @@
     ]
   },
   {
-    "id": 93,
+    "id": 94,
     "ifc_global_id": "1Si5jQB4f06gxeqCAbM0to",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -9856,7 +9856,7 @@
     ]
   },
   {
-    "id": 94,
+    "id": 95,
     "ifc_global_id": "04k3rAPEb24QzkQ2ET3cQ6",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -9965,7 +9965,7 @@
     ]
   },
   {
-    "id": 95,
+    "id": 96,
     "ifc_global_id": "2ZmRqXVXr5ngOV0ql0gYau",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -10074,7 +10074,7 @@
     ]
   },
   {
-    "id": 96,
+    "id": 97,
     "ifc_global_id": "3N3RQR8LrEqREY_BPr$O5m",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -10183,7 +10183,7 @@
     ]
   },
   {
-    "id": 97,
+    "id": 98,
     "ifc_global_id": "0A_YAeoyr7Bgku5T2tFqPz",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -10292,7 +10292,7 @@
     ]
   },
   {
-    "id": 98,
+    "id": 99,
     "ifc_global_id": "016LB9y_D80Q$hc78bFJbd",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -10401,7 +10401,7 @@
     ]
   },
   {
-    "id": 99,
+    "id": 100,
     "ifc_global_id": "1dA8Ni6Cn9vgZx9i5Q6ArJ",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -10650,7 +10650,7 @@
     ]
   },
   {
-    "id": 100,
+    "id": 101,
     "ifc_global_id": "308bGCvmf32fNFqLAHCweZ",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -10759,7 +10759,7 @@
     ]
   },
   {
-    "id": 101,
+    "id": 102,
     "ifc_global_id": "1hB$uqC6z1QeNXEPB9zgPM",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -10868,7 +10868,7 @@
     ]
   },
   {
-    "id": 102,
+    "id": 103,
     "ifc_global_id": "3QtE6_nBr6GxU4fykTyZhw",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -10977,7 +10977,7 @@
     ]
   },
   {
-    "id": 103,
+    "id": 104,
     "ifc_global_id": "12qTmdwoD7fuUbcfp3xAyG",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -11086,7 +11086,7 @@
     ]
   },
   {
-    "id": 104,
+    "id": 105,
     "ifc_global_id": "3GsDQeS$H089MLnIrFhRZT",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -11195,7 +11195,7 @@
     ]
   },
   {
-    "id": 105,
+    "id": 106,
     "ifc_global_id": "15j8qQXrb4tgBd6kpoG1pI",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -11304,7 +11304,7 @@
     ]
   },
   {
-    "id": 106,
+    "id": 107,
     "ifc_global_id": "2srsZTr1nDLR2Fcv4LxMcr",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -11413,7 +11413,7 @@
     ]
   },
   {
-    "id": 107,
+    "id": 108,
     "ifc_global_id": "26hT7Bc85CI8v7I87i4be_",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -11522,7 +11522,7 @@
     ]
   },
   {
-    "id": 108,
+    "id": 109,
     "ifc_global_id": "2zlBtCkyTDxwS5ZEJZ1oeS",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -11631,7 +11631,7 @@
     ]
   },
   {
-    "id": 109,
+    "id": 110,
     "ifc_global_id": "1izjrNgKvE3ulotPzaa3Qa",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -11740,7 +11740,7 @@
     ]
   },
   {
-    "id": 110,
+    "id": 111,
     "ifc_global_id": "1bP$MVD4v97ejReJNlNwWq",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -11849,7 +11849,7 @@
     ]
   },
   {
-    "id": 111,
+    "id": 112,
     "ifc_global_id": "0IA0XcS$L88gLdK9AhEHyj",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -11958,7 +11958,7 @@
     ]
   },
   {
-    "id": 112,
+    "id": 113,
     "ifc_global_id": "1KDOz6kfD4yBWdPHaN6f9A",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -12067,7 +12067,7 @@
     ]
   },
   {
-    "id": 113,
+    "id": 114,
     "ifc_global_id": "0hOAp3_3rFM8N_6r6wB833",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -12176,7 +12176,7 @@
     ]
   },
   {
-    "id": 114,
+    "id": 115,
     "ifc_global_id": "0L22ikmHjEZhPiksOJSFUo",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -12285,7 +12285,7 @@
     ]
   },
   {
-    "id": 115,
+    "id": 116,
     "ifc_global_id": "3UT7ZDzc1CNAPAEtTUZ_dj",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -12394,7 +12394,7 @@
     ]
   },
   {
-    "id": 116,
+    "id": 117,
     "ifc_global_id": "07GcracSn8dQSbCKMeFNKJ",
     "ifc_type": "IfcCovering",
     "vertices": [
@@ -12503,7 +12503,7 @@
     ]
   },
   {
-    "id": 117,
+    "id": 118,
     "ifc_global_id": "2bf1yiLXjAw8jUXZSMybBs",
     "ifc_type": "IfcCovering",
     "vertices": [

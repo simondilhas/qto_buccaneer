@@ -1,6 +1,6 @@
 [
   {
-    "id": 169,
+    "id": 170,
     "ifc_global_id": "1QkKxMqDv7nuSnClC0HTpb",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -109,7 +109,7 @@
     ]
   },
   {
-    "id": 170,
+    "id": 171,
     "ifc_global_id": "1cTPue28D2tej2wdtN2O_a",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -218,7 +218,7 @@
     ]
   },
   {
-    "id": 171,
+    "id": 172,
     "ifc_global_id": "1Lh9kPvIP9K8x1cSw46NVh",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -327,7 +327,7 @@
     ]
   },
   {
-    "id": 172,
+    "id": 173,
     "ifc_global_id": "0fDs7Jrab44BjOadqHVpL_",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -436,7 +436,7 @@
     ]
   },
   {
-    "id": 173,
+    "id": 174,
     "ifc_global_id": "3mTghv0wT96QnhB_2iOMrV",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -545,7 +545,7 @@
     ]
   },
   {
-    "id": 174,
+    "id": 175,
     "ifc_global_id": "37p15yvhL6BPwcr3y6bQad",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -654,7 +654,7 @@
     ]
   },
   {
-    "id": 175,
+    "id": 176,
     "ifc_global_id": "2lk8ATQRL3YhM35IFLYXiz",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -763,7 +763,7 @@
     ]
   },
   {
-    "id": 176,
+    "id": 177,
     "ifc_global_id": "021YoEi1HD9eSoSLT0LMfy",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -872,7 +872,7 @@
     ]
   },
   {
-    "id": 177,
+    "id": 178,
     "ifc_global_id": "2TeA0dkcv5mOYDoikAt8o6",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -1131,7 +1131,7 @@
     ]
   },
   {
-    "id": 178,
+    "id": 179,
     "ifc_global_id": "3LucVYu2nFCRRSWroqLzt$",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -1360,7 +1360,7 @@
     ]
   },
   {
-    "id": 179,
+    "id": 180,
     "ifc_global_id": "2LdGfbjKz6ah7X5m6r8rHu",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -1529,7 +1529,7 @@
     ]
   },
   {
-    "id": 180,
+    "id": 181,
     "ifc_global_id": "3whZk0fIHE1gpuYvr1I1c3",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -1638,7 +1638,7 @@
     ]
   },
   {
-    "id": 181,
+    "id": 182,
     "ifc_global_id": "080dwkmfr3LxVuspG_sSG1",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -1807,7 +1807,7 @@
     ]
   },
   {
-    "id": 182,
+    "id": 183,
     "ifc_global_id": "0mvx4L4VnBWf2800PAuksn",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -1916,7 +1916,7 @@
     ]
   },
   {
-    "id": 183,
+    "id": 184,
     "ifc_global_id": "1jJv2pBs5CnR_mHUEhD1Iy",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -2025,7 +2025,7 @@
     ]
   },
   {
-    "id": 184,
+    "id": 185,
     "ifc_global_id": "0$F2sbDW52Hv0s9WtRiYy2",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -2134,7 +2134,7 @@
     ]
   },
   {
-    "id": 185,
+    "id": 186,
     "ifc_global_id": "1UWlUGwqHElPT8JV0Y22_j",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -2243,7 +2243,7 @@
     ]
   },
   {
-    "id": 186,
+    "id": 187,
     "ifc_global_id": "2ky6TqzMD7gwJbHxE3Kcxy",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -2352,7 +2352,7 @@
     ]
   },
   {
-    "id": 187,
+    "id": 188,
     "ifc_global_id": "1GmqKQZe177As5pDpJEjmN",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -2461,7 +2461,7 @@
     ]
   },
   {
-    "id": 188,
+    "id": 189,
     "ifc_global_id": "29M4$NIOf0oggGQM0bnPUd",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -2570,7 +2570,7 @@
     ]
   },
   {
-    "id": 189,
+    "id": 190,
     "ifc_global_id": "2M1K5EINnBBwTzxQ4tDam5",
     "ifc_type": "IfcSpace",
     "vertices": [
@@ -2679,7 +2679,7 @@
     ]
   },
   {
-    "id": 190,
+    "id": 191,
     "ifc_global_id": "30t3pESuXEPfm4dohLWIXb",
     "ifc_type": "IfcSpace",
     "vertices": [

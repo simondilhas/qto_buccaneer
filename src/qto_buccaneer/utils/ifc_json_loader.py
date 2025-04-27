@@ -151,11 +151,6 @@ class IfcJsonLoader:
             if not space:
                 continue
                 
-            # Check PredefinedType if it exists
-            predefined_type = space.get("PredefinedType", "")
-            if predefined_type and predefined_type not in ["INTERNAL", "EXTERNAL"]:
-                continue
-            
             # Get storey from cache
             space_storey = self._storey_cache.get(str(space_id))
             
