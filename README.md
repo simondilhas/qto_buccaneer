@@ -477,7 +477,7 @@ for this I added the Project folder and workflow.
     2. When configure the projects with a 00_workflow_config.yaml
         - Specify which buildings are inside the project (either through the list, or by copying the ifc files in the folder all_models)
         - Specify the folder names for each project, that should be created
-        
+
 ```yaml
 project_name: "002_test_project__public"
 project_description: "This is a test project to test the workflow"
@@ -497,6 +497,8 @@ building_folder:
         - calculate metrics and benchmarks
         - calculate plots for visualizations
         - crreate a pdf report
+
+> Pro Tip: To make your project private, so that it does not sync with github, add a __private to your folder name
 
 Following this structured approach, you will build a pipline and truly benefit from structured data
 

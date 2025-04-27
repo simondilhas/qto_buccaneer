@@ -23,36 +23,115 @@ class IfcJsonLoader:
         self.geometry_index = {str(item["id"]): item for item in self.geometry}
         self.properties_index = {str(elem_id): elem for elem_id, elem in properties_json["elements"].items()}
         
-        # Create indexes from metadata
-        self.by_type_index = properties_json.get("indexes", {}).get("by_type", {})
-        self.global_id_to_id = properties_json.get("global_id_to_id", {})
+        # Build indexes from the data
+        self.by_type_index = {}
+        self.global_id_to_id = {}
         
-        # Create a storey index for faster lookups
-        self.storey_index = {}
-        for element_id, element in properties_json["elements"].items():
-            if element.get('type') == 'IfcBuildingStorey':
-                self.storey_index[element_id] = element
-            elif 'storey_id' in element:
-                # Add reverse lookup from element to storey
-                self.storey_index[element_id] = self.properties['elements'].get(str(element['storey_id']))
+        for elem_id, element in properties_json["elements"].items():
+            # Build by_type index
+            ifc_entity = element.get("IfcEntity")
+            if ifc_entity:
+                if ifc_entity not in self.by_type_index:
+                    self.by_type_index[ifc_entity] = []
+                self.by_type_index[ifc_entity].append(int(elem_id))
+            
+            # Build global_id to id mapping
+            global_id = element.get("GlobalId")
+            if global_id:
+                self.global_id_to_id[global_id] = elem_id
         
-        # Cache for storey information
-        self._storey_cache: Dict[str, str] = {}
+        # Initialize storey cache
+        self._storey_cache = {}  # element_id -> storey_name
         self._build_storey_cache()
     
     def _build_storey_cache(self):
-        """Build a cache of storey information for faster lookups."""
-        # Get all spaces using the by_type index
-        space_ids = self.by_type_index.get("IfcSpace", [])
-        for space_id in space_ids:
-            space = self.properties["elements"].get(str(space_id))
-            if space:
-                # Get storey from parent
-                parent_id = space.get("parent_id")
-                if parent_id:
-                    parent = self.properties["elements"].get(str(parent_id))
-                    if parent and parent.get("type") == "IfcBuildingStorey":
-                        self._storey_cache[str(space_id)] = parent.get("name", "Unknown")
+        """Build a cache of element_id -> storey_name mappings."""
+        # First build storey name lookup
+        storey_names = {}
+        for storey_id in self.by_type_index.get('IfcBuildingStorey', []):
+            storey = self.properties_index.get(str(storey_id))
+            if storey:
+                storey_names[str(storey_id)] = storey.get('Name', 'Unknown')
+        
+        print(f"\n=== Building Storey Cache ===")
+        print(f"Found {len(storey_names)} storeys with names:")
+        for storey_id, name in storey_names.items():
+            print(f"  - Storey {storey_id}: {name}")
+            storey = self.properties_index.get(str(storey_id))
+            print(f"    Full storey data: {storey}")
+        
+        print("\n=== Building Element -> Storey Mapping ===")
+        # First map elements directly contained in storeys
+        for storey_id, storey_name in storey_names.items():
+            storey = self.properties_index.get(str(storey_id))
+            if not storey:
+                continue
+                
+            # Get elements directly contained in this storey
+            contained_elements = storey.get('ContainsElements', [])
+            if isinstance(contained_elements, str):
+                # Handle case where it's a string representation of a list
+                contained_elements = [e.strip("'") for e in contained_elements.strip('[]').split(',')]
+            
+            print(f"\nStorey {storey_name} contains elements:")
+            for element_id in contained_elements:
+                if element_id:
+                    self._storey_cache[str(element_id)] = storey_name
+                    element = self.properties_index.get(str(element_id))
+                    print(f"  - Element {element_id}:")
+                    print(f"    Type: {element.get('IfcEntity', 'Unknown') if element else 'Unknown'}")
+                    print(f"    Properties: {element}")
+        
+        # Then handle elements that might be nested under other elements
+        for element_id, element in self.properties_index.items():
+            if element_id in self._storey_cache:
+                continue
+                
+            current_id = str(element_id)
+            path = []
+            while current_id:
+                path.append(current_id)
+                if current_id in storey_names:
+                    self._storey_cache[str(element_id)] = storey_names[current_id]
+                    print(f"\nElement {element_id}:")
+                    print(f"  Type: {element.get('IfcEntity', 'Unknown')}")
+                    print(f"  Parent chain: {' -> '.join(path)}")
+                    print(f"  Assigned to storey: {storey_names[current_id]}")
+                    break
+                current = self.properties_index.get(str(current_id))
+                if not current:
+                    print(f"\nElement {element_id}:")
+                    print(f"  Type: {element.get('IfcEntity', 'Unknown')}")
+                    print(f"  Parent chain: {' -> '.join(path)}")
+                    print(f"  WARNING: Parent chain broken at {current_id}")
+                    break
+                # Convert parent_id to string if it exists
+                parent_id = current.get('parent_id')
+                current_id = str(parent_id) if parent_id is not None else None
+                if not current_id:
+                    print(f"\nElement {element_id}:")
+                    print(f"  Type: {element.get('IfcEntity', 'Unknown')}")
+                    print(f"  Parent chain: {' -> '.join(path)}")
+                    print(f"  WARNING: No parent_id found for {current_id}")
+        
+        print(f"\n=== Summary ===")
+        print(f"Built storey cache with {len(self._storey_cache)} elements")
+        print(f"Elements without storey: {len(self.properties_index) - len(self._storey_cache)}")
+        
+        # Print space-specific summary
+        spaces = [id for id, elem in self.properties_index.items() if elem.get('IfcEntity') == 'IfcSpace']
+        spaces_with_storey = [id for id in spaces if id in self._storey_cache]
+        print(f"\n=== Spaces Summary ===")
+        print(f"Total spaces: {len(spaces)}")
+        print(f"Spaces with storey: {len(spaces_with_storey)}")
+        print(f"Spaces without storey: {len(spaces) - len(spaces_with_storey)}")
+        for space_id in spaces:
+            storey = self._storey_cache.get(str(space_id))
+            print(f"\nSpace {space_id}:")
+            print(f"  Storey: {storey if storey else 'Not found'}")
+            space = self.properties_index.get(str(space_id))
+            print(f"  Parent ID: {space.get('parent_id', 'None')}")
+            print(f"  Properties: {space}")
     
     def get_spaces_in_storey(self, storey_name: str) -> List[str]:
         """Return a list of IDs of spaces in a given storey.
@@ -68,12 +147,12 @@ class IfcJsonLoader:
         space_ids = self.by_type_index.get("IfcSpace", [])
         
         for space_id in space_ids:
-            space = self.properties["elements"].get(str(space_id))
+            space = self.properties_index.get(str(space_id))
             if not space:
                 continue
                 
             # Check PredefinedType if it exists
-            predefined_type = space.get("properties", {}).get("PredefinedType", "")
+            predefined_type = space.get("PredefinedType", "")
             if predefined_type and predefined_type not in ["INTERNAL", "EXTERNAL"]:
                 continue
             
@@ -126,114 +205,4 @@ class IfcJsonLoader:
 
     def get_storey_for_element(self, element_id: str) -> Optional[str]:
         """Get the storey name for an element by its ID."""
-        print(f"\nTrying to find storey for element {element_id}")
-        element = self.properties['elements'].get(str(element_id))
-        if not element:
-            print(f"Element {element_id} not found in properties")
-            return None
-            
-        print(f"Element type: {element.get('type')}")
-            
-        # First check if the element has a direct storey_id
-        if 'storey_id' in element:
-            storey = self.properties['elements'].get(str(element['storey_id']))
-            if storey and storey.get('type') == 'IfcBuildingStorey':
-                print(f"Found direct storey_id: {storey.get('name', 'Unknown')}")
-                return storey.get('name', 'Unknown')
-        
-        # If not, try to find the storey through the parent chain
-        current = element
-        while current and 'parent_id' in current:
-            parent = self.properties['elements'].get(str(current['parent_id']))
-            if not parent:
-                break
-            
-            print(f"Checking parent: {parent.get('type')}")
-            
-            # If we found a storey, return its name
-            if parent.get('type') == 'IfcBuildingStorey':
-                print(f"Found storey in parent chain: {parent.get('name', 'Unknown')}")
-                return parent.get('name', 'Unknown')
-            
-            # If parent has a storey_id, use that
-            if 'storey_id' in parent:
-                storey = self.properties['elements'].get(str(parent['storey_id']))
-                if storey and storey.get('type') == 'IfcBuildingStorey':
-                    print(f"Found storey_id in parent: {storey.get('name', 'Unknown')}")
-                    return storey.get('name', 'Unknown')
-            
-            current = parent
-        
-        # For doors and windows, try to find a containing space
-        if element.get('type') in ['IfcDoor', 'IfcWindow']:
-            print(f"Looking for containing space for {element.get('type')}")
-            # Get the element's geometry
-            geometry = self.get_geometry(str(element_id))
-            if geometry and 'vertices' in geometry:
-                # Use the first vertex as a reference point
-                ref_point = geometry['vertices'][0]
-                print(f"Reference point: {ref_point}")
-                
-                # Check all spaces to find one that contains this point
-                space_ids = self.by_type_index.get('IfcSpace', [])
-                print(f"Found {len(space_ids)} spaces to check")
-                
-                for space_id in space_ids:
-                    space = self.properties['elements'].get(str(space_id))
-                    if not space or 'storey_id' not in space:
-                        continue
-                    
-                    space_geometry = self.get_geometry(str(space_id))
-                    if not space_geometry or 'vertices' not in space_geometry:
-                        continue
-                    
-                    # Get the space's bounds
-                    x_coords = [v[0] for v in space_geometry['vertices']]
-                    y_coords = [v[1] for v in space_geometry['vertices']]
-                    
-                    # Check if the reference point is within the space's bounds
-                    if (min(x_coords) <= ref_point[0] <= max(x_coords) and
-                        min(y_coords) <= ref_point[1] <= max(y_coords)):
-                        # Found a containing space, get its storey
-                        storey = self.properties['elements'].get(str(space['storey_id']))
-                        if storey and storey.get('type') == 'IfcBuildingStorey':
-                            print(f"Found containing space in storey: {storey.get('name', 'Unknown')}")
-                            return storey.get('name', 'Unknown')
-        
-        # If we still haven't found a storey, try to find a wall that contains this element
-        if element.get('type') in ['IfcDoor', 'IfcWindow']:
-            print(f"Looking for containing wall for {element.get('type')}")
-            # Get the element's geometry
-            geometry = self.get_geometry(str(element_id))
-            if geometry and 'vertices' in geometry:
-                # Use the first vertex as a reference point
-                ref_point = geometry['vertices'][0]
-                
-                # Check all walls to find one that contains this point
-                wall_ids = self.by_type_index.get('IfcWall', [])
-                print(f"Found {len(wall_ids)} walls to check")
-                
-                for wall_id in wall_ids:
-                    wall = self.properties['elements'].get(str(wall_id))
-                    if not wall or 'storey_id' not in wall:
-                        continue
-                    
-                    wall_geometry = self.get_geometry(str(wall_id))
-                    if not wall_geometry or 'vertices' not in wall_geometry:
-                        continue
-                    
-                    # Get the wall's bounds
-                    x_coords = [v[0] for v in wall_geometry['vertices']]
-                    y_coords = [v[1] for v in wall_geometry['vertices']]
-                    
-                    # Check if the reference point is within the wall's bounds
-                    if (min(x_coords) <= ref_point[0] <= max(x_coords) and
-                        min(y_coords) <= ref_point[1] <= max(y_coords)):
-                        # Found a containing wall, get its storey
-                        storey = self.properties['elements'].get(str(wall['storey_id']))
-                        if storey and storey.get('type') == 'IfcBuildingStorey':
-                            print(f"Found containing wall in storey: {storey.get('name', 'Unknown')}")
-                            return storey.get('name', 'Unknown')
-        
-        print(f"Could not find storey for element {element_id}")
-        return None
+        return self._storey_cache.get(str(element_id))

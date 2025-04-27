@@ -63,15 +63,19 @@ def create_all_plots(
             output_paths[plot_name] = output_path
         else:
             # Floor plan returns a dict of storey names to paths
-            storey_paths = create_floorplan_per_storey(
-                geometry_dir=geometry_dir,
-                properties_path=properties_path,
-                config_path=config_path,
-                output_dir=str(output_dir),
-                plot_name=plot_name
-            )
-            # Add all storey paths to the output paths
-            for storey_name, path in storey_paths.items():
-                output_paths[f"{plot_name}_{storey_name}"] = path
+            try:
+                storey_paths = create_floorplan_per_storey(
+                    geometry_dir=geometry_dir,
+                    properties_path=properties_path,
+                    config_path=config_path,
+                    output_dir=str(output_dir),
+                    plot_name=plot_name
+                )
+                # Add all storey paths to the output paths
+                for storey_name, path in storey_paths.items():
+                    output_paths[f"{plot_name}_{storey_name}"] = path
+            except Exception as e:
+                print(f"Error creating floor plan for '{plot_name}': {str(e)}")
+                continue
     
     return output_paths 

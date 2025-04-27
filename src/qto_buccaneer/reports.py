@@ -217,9 +217,9 @@ def export_to_excel(
 
     return output_path
 
-def create_project_comparison_df(df: pd.DataFrame, metrics: Optional[list[str]] = None) -> pd.DataFrame:
+def _create_project_comparison_df(df: pd.DataFrame, metrics: Optional[list[str]] = None) -> pd.DataFrame:
     """
-    Create a comparison DataFrame with projects as rows and metrics as columns.
+    Used by project_comparison() to prepare data for comparison.
 
     Args:
         df (pd.DataFrame): Input DataFrame containing metrics data
@@ -228,6 +228,10 @@ def create_project_comparison_df(df: pd.DataFrame, metrics: Optional[list[str]] 
 
     Returns:
         pd.DataFrame: DataFrame with projects as rows and metrics as columns
+        
+    Note:
+        This is an internal helper function and should not be called directly.
+        Use project_comparison() instead.
     """
     required_columns = {'file_name', 'metric_name', 'unit', 'value'}
     missing_columns = required_columns - set(df.columns)
@@ -276,28 +280,31 @@ def create_project_comparison_df(df: pd.DataFrame, metrics: Optional[list[str]] 
     except Exception as e:
         return pd.DataFrame()
 
-
-
-def export_project_comparison_excel(
+def _export_project_comparison_excel(
     df: pd.DataFrame, 
     output_path: str, 
     include_metrics: Optional[list[str]] = None,
     layout_config: Optional[ExcelLayoutConfig] = None
 ) -> pd.DataFrame:
     """
-    Create and export project comparison to Excel file with customizable formatting.
-
+    Helper function to export project comparison to Excel with formatting.
+    Used by project_comparison() to handle Excel export.
+    
     Args:
-        df (pd.DataFrame): Input DataFrame containing metrics data
+        df (pd.DataFrame): Project comparison DataFrame
         output_path (str): Full path where the Excel file should be saved
         include_metrics (Optional[list[str]]): List of metric names to include in the comparison
         layout_config (Optional[ExcelLayoutConfig]): Configuration for Excel layout.
             If None, default settings will be used.
             
     Returns:
-        pd.DataFrame: The comparison DataFrame that was exported
+        pd.DataFrame: The exported DataFrame
+        
+    Note:
+        This is an internal helper function and should not be called directly.
+        Use project_comparison() instead.
     """
-    comparison_df = create_project_comparison_df(df, include_metrics)
+    comparison_df = _create_project_comparison_df(df, include_metrics)
     
     print("Input DataFrame shape:", df.shape)  # Debug print
     print("Comparison DataFrame shape:", comparison_df.shape)  # Debug print
@@ -392,25 +399,44 @@ def room_program_comparison(
     target_excel_path: str,
     ifc_loader,
     room_name_column: str = "LongName",
-    target_count_column: str = "Target Count",
+    target_count_column: Optional[str] = None,
     target_area_column: str = "Target Area/Room",
+    ifc_room_name_attribute: str = "LongName",
+    ifc_area_attribute: str = "Qto_SpaceBaseQuantities.NetFloorArea",
     output_path: Optional[str] = None,
     layout_config: Optional[ExcelLayoutConfig] = None
 ) -> pd.DataFrame:
     """
     Create a comparison between target room program and actual IFC spaces.
     
+    The function expects a target room program in Excel format with the following structure:
+    - One row per room type (e.g., "Office", "Meeting Room", "Bathroom")
+    - Columns for room type name and target area per room
+    - Optionally a column for target count, or it will be calculated from room names
+    
     Args:
-        target_excel_path: Path to Excel file containing target room program
+        target_excel_path: Path to Excel file containing target room program.
+            Expected format: One row per room type with columns for name and area.
         ifc_loader: Instance of IfcLoader with loaded IFC model
-        room_name_column: Column name in target Excel for room names (default: "Room Type")
-        target_count_column: Column name for target room count (default: "Target Count")
-        target_area_column: Column name for target room area (default: "Target Area")
+        room_name_column: Column name in target Excel for room types (default: "LongName")
+        target_count_column: Optional column name for target room count. If None, will be calculated.
+        target_area_column: Column name for target area per room (default: "Target Area/Room")
+        ifc_room_name_attribute: Attribute name in IFC for room names (default: "LongName")
+        ifc_area_attribute: Attribute name in IFC for area values (default: "Qto_SpaceBaseQuantities.NetFloorArea")
         output_path: Optional path to save Excel report
         layout_config: Optional ExcelLayoutConfig for custom formatting
         
     Returns:
-        pd.DataFrame: Comparison table with target vs actual metrics
+        pd.DataFrame: Comparison table with the following metrics for each room type:
+            - Target Count: Number of rooms planned (calculated if not provided)
+            - Target Area/Room: Planned area per room
+            - Target Total Area: Total planned area (count × area/room)
+            - Actual Count: Number of rooms in IFC
+            - Actual Total Area: Total area in IFC
+            - Average Area/Room: Actual average area per room
+            - Count Difference: Actual - Target count
+            - Area Difference: Actual - Target total area
+            - Percentage differences for both count and area
     """
     # Load target room program
     try:
@@ -421,7 +447,6 @@ def room_program_comparison(
         missing_columns = []
         for col, col_name in [
             (room_name_column, "room name"),
-            (target_count_column, "target count"),
             (target_area_column, "target area")
         ]:
             if col not in target_df.columns:
@@ -429,6 +454,17 @@ def room_program_comparison(
         
         if missing_columns:
             raise ValueError(f"Missing required columns in target Excel: {', '.join(missing_columns)}")
+            
+        # If no target_count_column provided, calculate counts from room names
+        if target_count_column is None:
+            print("No target count column provided - calculating counts from room names")
+            # Group by room name and count occurrences
+            count_df = target_df.groupby(room_name_column).size().reset_index(name='Target Count')
+            # Merge with original DataFrame
+            target_df = pd.merge(target_df, count_df, on=room_name_column)
+            target_count_column = 'Target Count'
+        elif target_count_column not in target_df.columns:
+            raise ValueError(f"Target count column '{target_count_column}' not found in Excel")
             
     except Exception as e:
         print(f"Error loading target Excel file: {str(e)}")
@@ -443,10 +479,10 @@ def room_program_comparison(
             raise ValueError("No spaces found in IFC model")
             
         # Verify required IFC data columns
-        if 'LongName' not in spaces_df.columns:
-            raise ValueError("IFC spaces missing 'LongName' attribute")
-        if 'Qto_SpaceBaseQuantities.NetFloorArea' not in spaces_df.columns:
-            raise ValueError("IFC spaces missing 'NetFloorArea' quantity")
+        if ifc_room_name_attribute not in spaces_df.columns:
+            raise ValueError(f"IFC spaces missing '{ifc_room_name_attribute}' attribute")
+        if ifc_area_attribute not in spaces_df.columns:
+            raise ValueError(f"IFC spaces missing '{ifc_area_attribute}' quantity")
             
     except Exception as e:
         print(f"Error processing IFC spaces: {str(e)}")
@@ -466,11 +502,11 @@ def room_program_comparison(
             print(f"Processing room type: {room_name}")  # Debug print
             
             # Get actual spaces matching this room name
-            actual_spaces = spaces_df[spaces_df['LongName'] == room_name]
+            actual_spaces = spaces_df[spaces_df[ifc_room_name_attribute] == room_name]
             actual_count = len(actual_spaces)
             
             # Sum up actual areas
-            actual_total_area = actual_spaces['Qto_SpaceBaseQuantities.NetFloorArea'].sum()
+            actual_total_area = actual_spaces[ifc_area_attribute].sum()
             
             print(f"Found {actual_count} spaces with total area {actual_total_area}")  # Debug print
             
@@ -537,7 +573,7 @@ def room_program_comparison(
         
         # Export to Excel if output path is provided
         if output_path:
-            result = export_room_program_comparison(
+            result = _export_room_program_comparison(
                 df=result,
                 output_path=output_path,
                 layout_config=layout_config
@@ -551,13 +587,14 @@ def room_program_comparison(
         traceback.print_exc()  # Print full stack trace
         return pd.DataFrame()
 
-def export_room_program_comparison(
+def _export_room_program_comparison(
     df: pd.DataFrame,
     output_path: str,
     layout_config: Optional[ExcelLayoutConfig] = None
 ) -> pd.DataFrame:
     """
-    Export room program comparison to Excel with formatting.
+    Helper function to export room program comparison to Excel with formatting.
+    Used by room_program_comparison() to handle Excel export.
     
     Args:
         df (pd.DataFrame): Room program comparison DataFrame
@@ -567,6 +604,10 @@ def export_room_program_comparison(
             
     Returns:
         pd.DataFrame: The exported DataFrame
+        
+    Note:
+        This is an internal helper function and should not be called directly.
+        Use room_program_comparison() instead.
     """
     if df.empty:
         print("Warning: Input DataFrame is empty!")
@@ -669,13 +710,14 @@ def export_room_program_comparison(
         
     return df
 
-def convert_html_to_pdf(
+def _convert_html_to_pdf(
     html_content: str, 
     output_path: str,
     style_config: Optional[ReportStyleConfig] = None
 ) -> str:
     """
-    Convert HTML content to PDF using WeasyPrint with styling.
+    Helper function to convert HTML content to PDF using WeasyPrint with styling.
+    Used by generate_metrics_report() to handle PDF conversion.
     
     Args:
         html_content (str): HTML content to convert
@@ -687,6 +729,10 @@ def convert_html_to_pdf(
         
     Raises:
         Exception: If PDF conversion fails
+        
+    Note:
+        This is an internal helper function and should not be called directly.
+        Use generate_metrics_report() instead.
     """
     try:
         # Use default config if none provided
@@ -978,7 +1024,7 @@ def generate_metrics_report(
     
     # Convert to PDF with styling
     try:
-        convert_html_to_pdf(html_out, output_path, style_config)
+        _convert_html_to_pdf(html_out, output_path, style_config)
     except Exception as e:
         print(f"Warning: Could not convert to PDF: {e}")
         print(f"HTML report saved at: {html_path}")
@@ -1108,4 +1154,493 @@ def render_template_with_filled_text(template, context):
     })
     
     return template.render(context)
+
+def project_comparison(
+    df: pd.DataFrame,
+    output_path: Optional[str] = None,
+    include_metrics: Optional[list[str]] = None,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -> pd.DataFrame:
+    """
+    Create and optionally export a project comparison DataFrame.
+    
+    Args:
+        df (pd.DataFrame): Input DataFrame containing metrics data
+        output_path (Optional[str]): Optional path to save Excel report
+        include_metrics (Optional[list[str]]): List of metric names to include in the comparison
+        layout_config (Optional[ExcelLayoutConfig]): Configuration for Excel layout.
+            If None, default settings will be used.
+            
+    Returns:
+        pd.DataFrame: Comparison table with projects as rows and metrics as columns
+    """
+    try:
+        # Create the comparison DataFrame
+        result = _create_project_comparison_df(df, include_metrics)
+        
+        if result.empty:
+            print("No data was processed - empty result DataFrame")
+            return pd.DataFrame()
+            
+        # Export to Excel if output path is provided
+        if output_path:
+            result = _export_project_comparison_excel(
+                df=result,
+                output_path=output_path,
+                include_metrics=include_metrics,
+                layout_config=layout_config
+            )
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error creating comparison: {str(e)}")
+        import traceback
+        traceback.print_exc()  # Print full stack trace
+        return pd.DataFrame()
+
+def create_room_program_from_excel(
+    input_excel_path: str,
+    room_name_column: str = "LongName",
+    area_column: str = "NetFloorArea",
+    count_column: Optional[str] = None,
+    output_path: Optional[str] = None,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -> pd.DataFrame:
+    """
+    Convert an Excel file with individual rooms into an aggregated room program format.
+    
+    This function takes an Excel file containing individual rooms and aggregates them by room type,
+    calculating the count and average area for each type. The output format matches
+    what is expected by room_program_comparison().
+    
+    Args:
+        input_excel_path: Path to Excel file containing individual rooms.
+            Each row should represent one room with at least:
+            - A room type/name column (default: "LongName")
+            - An area column (default: "NetFloorArea")
+            - Optionally a count column if rooms are already grouped
+        room_name_column: Column name in input Excel for the room type/name
+        area_column: Column name in input Excel for the area value
+        count_column: Optional column name for room count. If provided, uses this instead of counting rows.
+        output_path: Optional path to save the aggregated room program as Excel
+        layout_config: Optional ExcelLayoutConfig for custom formatting
+        
+    Returns:
+        pd.DataFrame: Aggregated room program with columns:
+            - Room Type (from room_name_column)
+            - Target Count (number of rooms of each type)
+            - Target Area/Room (average area per room type)
+            
+    Example:
+        Input Excel format:
+        | LongName | Soll m2 | Soll Anzahl | Other columns... |
+        |----------|---------|-------------|------------------|
+        | Office   | 20.0    | 2           | ...              |
+        | Meeting  | 30.0    | 1           | ...              |
+        
+        Output DataFrame:
+        | Room Type | Target Count | Target Area/Room |
+        |-----------|--------------|------------------|
+        | Office    | 2           | 20.0            |
+        | Meeting   | 1           | 30.0            |
+    """
+    try:
+        # Load input Excel file
+        df = pd.read_excel(input_excel_path)
+        
+        if df.empty:
+            raise ValueError("Input Excel file is empty")
+            
+        # Verify required columns exist
+        missing_columns = []
+        for col, col_name in [
+            (room_name_column, "room name"),
+            (area_column, "area")
+        ]:
+            if col not in df.columns:
+                missing_columns.append(f"{col_name} ({col})")
+                
+        if missing_columns:
+            raise ValueError(f"Missing required columns in input Excel: {', '.join(missing_columns)}")
+            
+        # If count_column is provided, use it directly
+        if count_column:
+            if count_column not in df.columns:
+                raise ValueError(f"Count column '{count_column}' not found in input Excel")
+                
+            # Group by room type and use provided count
+            result = df.groupby(room_name_column).agg({
+                count_column: 'sum',
+                area_column: 'mean'
+            }).reset_index()
+            
+            # Rename columns to match expected output format
+            result.columns = [room_name_column, 'Target Count', 'Target Area/Room']
+            
+        else:
+            # Group by room type and calculate metrics
+            result = df.groupby(room_name_column).agg({
+                area_column: ['count', 'mean']
+            }).reset_index()
+            
+            # Flatten multi-index columns
+            result.columns = [room_name_column, 'Target Count', 'Target Area/Room']
+        
+        # Round area to 2 decimal places
+        result['Target Area/Room'] = result['Target Area/Room'].round(2)
+        
+        # Export to Excel if path provided
+        if output_path:
+            # Create output directory if it doesn't exist
+            output_dir = os.path.dirname(output_path)
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+                
+            # Use default config if none provided
+            config = layout_config or ExcelLayoutConfig(
+                horizontal_lines=True,
+                vertical_lines=True,
+                bold_headers=True,
+                auto_column_width=True
+            )
+            
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                result.to_excel(writer, index=False, sheet_name='Room Program')
+                worksheet = writer.sheets['Room Program']
+                
+                # Apply styling based on config
+                if config.bold_headers:
+                    for cell in worksheet[1]:
+                        cell.font = openpyxl.styles.Font(bold=True)
+                        if config.header_color:
+                            cell.fill = openpyxl.styles.PatternFill(
+                                start_color=config.header_color,
+                                end_color=config.header_color,
+                                fill_type='solid'
+                            )
+                
+                # Set number format
+                number_format = config.number_format
+                for row in worksheet.iter_rows(min_row=2):
+                    for cell in row:
+                        if isinstance(cell.value, (int, float)):
+                            cell.number_format = number_format
+                
+                # Auto-adjust column widths
+                if config.auto_column_width:
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column = [cell for cell in column]
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) > max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = (max_length + 2)
+                        worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error creating room program: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return pd.DataFrame()
+
+def group_rooms_by_name(
+    input_excel_path: str,
+    input_room_name_column: str = "LongName",
+    input_area_column: str = "Soll m2",
+    output_room_name_column: str = "Room Type",
+    output_area_column: str = "Area",
+    output_count_column: str = "Soll Anzahl",
+    output_path: Optional[str] = None,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -> pd.DataFrame:
+    """
+    Group rooms by name and calculate aggregated metrics.
+    
+    This function takes an Excel file containing individual rooms and:
+    1. Groups them by room name
+    2. Counts the number of rooms in each group (minimum 1)
+    3. Sums the area values for each group (NaN for rooms without area)
+    
+    Args:
+        input_excel_path: Path to Excel file containing individual rooms
+        input_room_name_column: Column name for room types/names in input file
+        input_area_column: Column name for area values in input file
+        output_room_name_column: Column name for room types/names in output
+        output_area_column: Column name for area values in output
+        output_count_column: Column name for count values in output
+        output_path: Optional path to save the results as Excel
+        layout_config: Optional ExcelLayoutConfig for custom formatting
+        
+    Returns:
+        pd.DataFrame: Aggregated room program with columns:
+            - {output_room_name_column} (from input_room_name_column)
+            - {output_area_column} (sum of areas for each room type, NaN for rooms without area)
+            - {output_count_column} (number of rooms of each type, minimum 1)
+    """
+    try:
+        # Load input Excel file
+        df = pd.read_excel(input_excel_path)
+        
+        if df.empty:
+            raise ValueError("Input Excel file is empty")
+            
+        # Verify required columns exist
+        missing_columns = []
+        for col, col_name in [
+            (input_room_name_column, "room name"),
+            (input_area_column, "area")
+        ]:
+            if col not in df.columns:
+                missing_columns.append(f"{col_name} ({col})")
+                
+        if missing_columns:
+            raise ValueError(f"Missing required columns in input Excel: {', '.join(missing_columns)}")
+            
+        # Group by room name and calculate metrics
+        result = df.groupby(input_room_name_column).agg({
+            input_area_column: lambda x: x.sum() if not x.isna().all() else pd.NA  # Sum areas, return NA if all are NA
+        }).reset_index()
+        
+        # Add count column (count all rooms, minimum 1)
+        result[output_count_column] = df.groupby(input_room_name_column).size().clip(lower=1).values
+        
+        # Rename columns for clarity
+        result.columns = [output_room_name_column, output_area_column, output_count_column]
+        
+        # Export to Excel if path provided
+        if output_path:
+            # Create output directory if it doesn't exist
+            output_dir = os.path.dirname(output_path)
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+                
+            # Use default config if none provided
+            config = layout_config or ExcelLayoutConfig(
+                horizontal_lines=True,
+                vertical_lines=True,
+                bold_headers=True,
+                auto_column_width=True
+            )
+            
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                result.to_excel(writer, index=False, sheet_name='Room Program')
+                worksheet = writer.sheets['Room Program']
+                
+                # Apply styling based on config
+                if config.bold_headers:
+                    for cell in worksheet[1]:
+                        cell.font = openpyxl.styles.Font(bold=True)
+                        if config.header_color:
+                            cell.fill = openpyxl.styles.PatternFill(
+                                start_color=config.header_color,
+                                end_color=config.header_color,
+                                fill_type='solid'
+                            )
+                
+                # Set number format
+                number_format = config.number_format
+                for row in worksheet.iter_rows(min_row=2):
+                    for cell in row:
+                        if isinstance(cell.value, (int, float)):
+                            cell.number_format = number_format
+                
+                # Auto-adjust column widths
+                if config.auto_column_width:
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column = [cell for cell in column]
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) > max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = (max_length + 2)
+                        worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error grouping rooms: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return pd.DataFrame()
+
+def compare_room_names(
+    metadata_actual_df: pd.DataFrame,
+    target_program_df: pd.DataFrame,
+    target_room_name_column: str = "Raumtypenname",
+    actual_room_name_column: str = "Name",
+    output_dir: Optional[str] = None,
+    building_name: Optional[str] = None,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -> pd.DataFrame:
+    """
+    Compare room names between IFC spaces and a room program.
+    
+    This function:
+    1. Filters IFC spaces from the metadata DataFrame
+    2. Gets all unique room names from both sources
+    3. Compares the two sets and identifies:
+       - Rooms in IFC but not in Excel
+       - Rooms in Excel but not in IFC
+       - Rooms present in both
+    4. Creates two Excel files:
+       - All room name comparisons
+       - Project-specific rooms (only in IFC)
+    
+    Args:
+        metadata_actual_df: DataFrame containing IFC metadata including spaces (actual state)
+        target_program_df: DataFrame containing room program information (target state)
+        target_room_name_column: Column name in Excel containing target room names (default: "Raumtypenname")
+        actual_room_name_column: Column name in IFC containing actual room names (default: "Name")
+        output_dir: Directory where Excel files should be saved
+        building_name: Name of the building (used in output filenames)
+        layout_config: Optional ExcelLayoutConfig for custom formatting
+        
+    Returns:
+        pd.DataFrame: Comparison table with columns:
+            - Room Name: Name of the room
+            - Status: One of:
+                * "Only in IFC" - Room exists in IFC but not in Excel
+                * "Only in Excel" - Room exists in Excel but not in IFC
+                * "In Both" - Room exists in both files
+    """
+    try:
+        # Create output paths if directory is provided
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            building_prefix = f"{building_name}_" if building_name else ""
+            output_path = os.path.join(output_dir, f"{building_prefix}room_name_comparison.xlsx")
+            project_specific_output_path = os.path.join(output_dir, f"{building_prefix}project_specific_rooms.xlsx")
+        else:
+            output_path = None
+            project_specific_output_path = None
+
+        # Filter for IFC spaces
+        ifc_spaces_df = metadata_actual_df[metadata_actual_df['IfcEntity'] == 'IfcSpace']
+        
+        # Get room names from IFC and convert to lowercase, filtering out None values
+        ifc_rooms = set(ifc_spaces_df[actual_room_name_column].dropna().str.lower().unique())
+        
+        # Get room names from Excel and convert to lowercase, filtering out None values
+        excel_rooms = set(target_program_df[target_room_name_column].dropna().str.lower().unique())
+        
+        # Create comparison DataFrame
+        all_rooms = ifc_rooms.union(excel_rooms)
+        data = []
+        project_specific_rooms = []
+        
+        for room in sorted(all_rooms):
+            if room in ifc_rooms and room in excel_rooms:
+                status = "In Both"
+            elif room in ifc_rooms:
+                status = "Only in IFC"
+                project_specific_rooms.append(room)
+            else:
+                status = "Only in Excel"
+                
+            data.append({
+                "Room Name": room,
+                "Status": status
+            })
+            
+        result = pd.DataFrame(data)
+        
+        # Create project-specific rooms DataFrame
+        project_specific_df = pd.DataFrame({
+            "Project Specific Room Name": sorted(project_specific_rooms)
+        })
+        
+        # Export comparison to Excel if path provided
+        if output_path:
+            # Use default config if none provided
+            config = layout_config or ExcelLayoutConfig(
+                horizontal_lines=True,
+                vertical_lines=True,
+                bold_headers=True,
+                auto_column_width=True
+            )
+            
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                result.to_excel(writer, index=False, sheet_name='Room Name Comparison')
+                worksheet = writer.sheets['Room Name Comparison']
+                
+                # Apply styling based on config
+                if config.bold_headers:
+                    for cell in worksheet[1]:
+                        cell.font = openpyxl.styles.Font(bold=True)
+                        if config.header_color:
+                            cell.fill = openpyxl.styles.PatternFill(
+                                start_color=config.header_color,
+                                end_color=config.header_color,
+                                fill_type='solid'
+                            )
+                
+                # Auto-adjust column widths
+                if config.auto_column_width:
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column = [cell for cell in column]
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) > max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = (max_length + 2)
+                        worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+        
+        # Export project-specific rooms to Excel if path provided
+        if project_specific_output_path:
+            # Use default config if none provided
+            config = layout_config or ExcelLayoutConfig(
+                horizontal_lines=True,
+                vertical_lines=True,
+                bold_headers=True,
+                auto_column_width=True
+            )
+            
+            with pd.ExcelWriter(project_specific_output_path, engine='openpyxl') as writer:
+                project_specific_df.to_excel(writer, index=False, sheet_name='Project Specific Rooms')
+                worksheet = writer.sheets['Project Specific Rooms']
+                
+                # Apply styling based on config
+                if config.bold_headers:
+                    for cell in worksheet[1]:
+                        cell.font = openpyxl.styles.Font(bold=True)
+                        if config.header_color:
+                            cell.fill = openpyxl.styles.PatternFill(
+                                start_color=config.header_color,
+                                end_color=config.header_color,
+                                fill_type='solid'
+                            )
+                
+                # Auto-adjust column widths
+                if config.auto_column_width:
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column = [cell for cell in column]
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) > max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = (max_length + 2)
+                        worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error comparing room names: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return pd.DataFrame()
 

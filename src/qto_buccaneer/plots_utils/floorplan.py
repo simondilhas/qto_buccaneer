@@ -11,6 +11,7 @@ from qto_buccaneer.utils.plots_utils import (
     element_matches_conditions,
     apply_layout_settings
 )
+from qto_buccaneer.plots_utils.filter_parser import FilterParser
 
 def create_floorplan_per_storey(
     geometry_dir: str,
@@ -128,16 +129,20 @@ def create_single_plot(
     try:
         # For floor plans, create separate figures for each storey
         if plot_config.get('mode') == 'floor_plan':
-            # Get all storeys
+            # Get all storeys from the loader
             storey_ids = loader.by_type_index.get('IfcBuildingStorey', [])
+            print(f"\nFound {len(storey_ids)} storeys in by_type_index")
             storey_figures = {}
             
             for storey_id in storey_ids:
+                print(f"\nProcessing storey with ID {storey_id}")
                 storey = loader.properties['elements'].get(str(storey_id))
                 if not storey:
+                    print(f"No storey properties found for ID {storey_id}")
                     continue
                     
-                storey_name = storey.get('name', 'Unknown')
+                storey_name = storey.get('Name', 'Unknown')
+                print(f"Storey name: {storey_name}")
                 
                 # Create a new figure for this storey
                 fig = go.Figure()
@@ -158,7 +163,9 @@ def create_single_plot(
                 )
                 
                 storey_figures[storey_name] = fig
+                print(f"Added figure for storey {storey_name}")
                 
+            print(f"\nCreated figures for {len(storey_figures)} storeys")
             return storey_figures
         else:
             # Create single figure for non-floor plan views
@@ -182,74 +189,29 @@ def _process_plot_creation(
     storey_name: Optional[str] = None
 ) -> None:
     """Process plot creation based on configuration."""
+    print(f"\nProcessing plot creation for storey: {storey_name}")
+    
     # Apply layout settings
     apply_layout_settings(fig, plot_settings)
     
-    # Calculate bounds for layout and scale bar
-    all_x_coords, all_y_coords = _get_all_space_coordinates(loader)
+    # Get coordinates for current storey
     current_x_coords, current_y_coords = _get_current_storey_coordinates(loader, storey_name, plot_config)
     
+    print(f"Found {len(current_x_coords)} coordinates for current storey")
+    
     # Update layout with calculated bounds
-    if all_x_coords and all_y_coords:
-        optimal_layout = _calculate_optimal_layout(all_x_coords, all_y_coords)
+    if current_x_coords and current_y_coords:
+        optimal_layout = _calculate_optimal_layout(current_x_coords, current_y_coords)
         fig.update_layout(**optimal_layout)
     
     # Process each element in the plot configuration
     for element_config in plot_config.get('elements', []):
+        print(f"\nProcessing element: {element_config.get('name', 'unnamed')}")
         _process_element(fig, loader, element_config, plot_settings, storey_name, plot_config)
     
     # Add scale bar for 2D plots
     if plot_config.get('mode') == 'floor_plan' and current_x_coords and current_y_coords:
         _add_scale_bar(fig, [min(current_x_coords), max(current_x_coords)], [min(current_y_coords), max(current_y_coords)])
-
-def _apply_layout_settings(fig: go.Figure, plot_settings: Dict) -> None:
-    """Apply general layout settings to the figure."""
-    defaults = plot_settings['defaults']
-    layout_settings = {
-        'font': {
-            'family': defaults.get('font_family', 'Arial'),
-            'size': defaults.get('text_size', 12)
-        },
-        'showlegend': True,
-        'legend': {
-            'x': 0.98,
-            'y': 0.98,
-            'xanchor': 'right',
-            'yanchor': 'top',
-            'bgcolor': 'rgba(255, 255, 255, 0.8)',
-            'bordercolor': 'rgba(0, 0, 0, 0)',
-            'borderwidth': 0,
-            'orientation': 'v',
-            'traceorder': 'normal',
-            'itemwidth': 30,
-            'itemsizing': 'constant',
-            'tracegroupgap': 0
-        },
-        'paper_bgcolor': defaults.get('background_color', 'white'),
-        'plot_bgcolor': defaults.get('background_color', 'white'),
-        'margin': {
-            'l': 5,
-            'r': 5,
-            't': 5,
-            'b': 25,
-            'pad': 0
-        },
-        'autosize': False
-    }
-    fig.update_layout(**layout_settings)
-
-def _get_all_space_coordinates(loader: IfcJsonLoader) -> Tuple[List[float], List[float]]:
-    """Get coordinates from all spaces for layout calculation."""
-    x_coords = []
-    y_coords = []
-    for space_id in loader.by_type_index.get('IfcSpace', []):
-        space = loader.properties['elements'].get(str(space_id))
-        if space:
-            geometry = loader.get_geometry(str(space_id))
-            if geometry:
-                x_coords.extend([v[0] for v in geometry['vertices']])
-                y_coords.extend([v[1] for v in geometry['vertices']])
-    return x_coords, y_coords
 
 def _get_current_storey_coordinates(
     loader: IfcJsonLoader,
@@ -260,13 +222,17 @@ def _get_current_storey_coordinates(
     x_coords = []
     y_coords = []
     if plot_config.get('mode') == 'floor_plan':
-        for space_id in loader.by_type_index.get('IfcSpace', []):
-            space = loader.properties['elements'].get(str(space_id))
-            if space and (not storey_name or loader.get_storey_for_space(str(space_id)) == storey_name):
-                geometry = loader.get_geometry(str(space_id))
-                if geometry:
-                    x_coords.extend([v[0] for v in geometry['vertices']])
-                    y_coords.extend([v[1] for v in geometry['vertices']])
+        # Get all spaces in the current storey
+        space_ids = loader.get_spaces_in_storey(storey_name) if storey_name else []
+        print(f"Found {len(space_ids)} spaces in storey {storey_name}")
+        
+        for space_id in space_ids:
+            # Ensure space_id is a string
+            space_id_str = str(space_id)
+            geometry = loader.get_geometry(space_id_str)
+            if geometry and 'vertices' in geometry:
+                x_coords.extend([v[0] for v in geometry['vertices']])
+                y_coords.extend([v[1] for v in geometry['vertices']])
     return x_coords, y_coords
 
 def _process_element(
@@ -299,86 +265,6 @@ def _process_element(
             storey_name, plot_config, element_type == 'IfcSpace'
         )
 
-def _space_matches_conditions(space: Dict, element_type: Optional[str], conditions: List[List[str]]) -> bool:
-    """Check if a space matches all filter conditions.
-    
-    Args:
-        space: Space dictionary containing properties
-        element_type: Required element type (e.g., 'IfcSpace')
-        conditions: List of lists of conditions. Each inner list represents an OR group,
-                   and the outer list represents AND groups.
-        
-    Returns:
-        True if space matches all conditions, False otherwise
-    """
-    # First check the type
-    if element_type and space.get('type') != element_type:
-        return False
-    
-    # Then check other conditions
-    for or_group in conditions:
-        # At least one condition in the OR group must be true
-        or_group_matched = False
-        for condition in or_group:
-            # Split condition into key and value
-            if '=' in condition:
-                key, value = condition.split('=', 1)
-                key = key.strip()
-                value = value.strip()
-                
-                # Check if the condition is met
-                if key in space.get('properties', {}):
-                    if str(space['properties'][key]) == value:
-                        or_group_matched = True
-                        break
-                elif key in space:
-                    if str(space[key]) == value:
-                        or_group_matched = True
-                        break
-        
-        # If no condition in the OR group matched, the whole AND fails
-        if not or_group_matched:
-            return False
-    
-    # All conditions passed
-    return True
-
-def _get_matching_spaces(
-    loader: IfcJsonLoader,
-    element_type: Optional[str],
-    filter_conditions: List[List[str]],
-    storey_name: Optional[str]
-) -> List[Dict]:
-    """Get spaces that match the filter conditions.
-    
-    Args:
-        loader: IfcJsonLoader instance
-        element_type: Required element type (e.g., 'IfcSpace')
-        filter_conditions: List of lists of conditions to filter by
-        storey_name: Optional storey name to filter by
-        
-    Returns:
-        List of matching space dictionaries
-    """
-    matching_spaces = []
-    
-    for space_id in loader.by_type_index.get('IfcSpace', []):
-        space = loader.properties['elements'].get(str(space_id))
-        if not space:
-            continue
-            
-        # Check storey filter
-        if storey_name:
-            space_storey = loader.get_storey_for_space(str(space_id))
-            if space_storey != storey_name:
-                continue
-        
-        # Check filter conditions
-        if _space_matches_conditions(space, element_type, filter_conditions):
-            matching_spaces.append(space)
-    
-    return matching_spaces
-
 def _add_spaces_to_plot(
     fig: go.Figure,
     loader: IfcJsonLoader,
@@ -394,8 +280,16 @@ def _add_spaces_to_plot(
     color_by = element_config.get('color_by')
     fixed_color = element_config.get('color')
     
-    # Get spaces that match the filter conditions
-    matching_spaces = _get_matching_spaces(loader, element_type, conditions, storey_name)
+    # Get spaces that match the filter conditions and are in the current storey
+    space_ids = loader.get_spaces_in_storey(storey_name) if storey_name else []
+    matching_spaces = []
+    
+    for space_id in space_ids:
+        # Ensure space_id is a string
+        space_id_str = str(space_id)
+        space = loader.properties['elements'].get(space_id_str)
+        if space and _space_matches_conditions(space, element_type, conditions):
+            matching_spaces.append(space)
     
     # Group spaces and calculate areas
     grouped_spaces, total_areas = _group_spaces(matching_spaces, color_by, element_config)
@@ -434,9 +328,7 @@ def _group_spaces(
         # Get group value
         group_value = None
         if color_by:
-            if color_by in space.get('properties', {}):
-                group_value = space['properties'][color_by]
-            elif color_by in space:
+            if color_by in space:
                 group_value = space[color_by]
         else:
             group_value = element_config.get('name', 'Unknown')
@@ -449,8 +341,8 @@ def _group_spaces(
             grouped_spaces[group_value].append(space)
             
             # Add to total area
-            if 'properties' in space and 'Qto_SpaceBaseQuantities.NetFloorArea' in space['properties']:
-                area = space['properties']['Qto_SpaceBaseQuantities.NetFloorArea']
+            if 'Qto_SpaceBaseQuantities.NetFloorArea' in space:
+                area = space['Qto_SpaceBaseQuantities.NetFloorArea']
                 if isinstance(area, (int, float)):
                     total_areas[group_value] += area
     
@@ -480,7 +372,8 @@ def _add_single_space_to_plot(
 ) -> None:
     """Add a single space to the plot."""
     # Get geometry using the numeric ID
-    geometry = loader.get_geometry(str(space.get('id')))
+    space_id = str(space.get('id'))
+    geometry = loader.get_geometry(space_id)
     if not geometry:
         return
         
@@ -500,16 +393,13 @@ def _add_single_space_to_plot(
     space_name = None
     space_area = None
     is_gfa = False
-    if 'properties' in space:
-        if 'LongName' in space['properties']:
-            space_name = space['properties']['LongName']
-        if 'Qto_SpaceBaseQuantities.NetFloorArea' in space['properties']:
-            space_area = space['properties']['Qto_SpaceBaseQuantities.NetFloorArea']
-            is_gfa = True
-    elif 'LongName' in space:
+    if 'LongName' in space:
         space_name = space['LongName']
     elif 'name' in space:
         space_name = space['name']
+    if 'Qto_SpaceBaseQuantities.NetFloorArea' in space:
+        space_area = space['Qto_SpaceBaseQuantities.NetFloorArea']
+        is_gfa = True
     
     # For legend, use the group name which already contains the total area
     legend_name = group_name if show_in_legend else None
@@ -1241,3 +1131,7 @@ def _add_wall_to_plot(
                 legendgroup=group_value,  # Group with the dummy trace
                 zorder=1
             ))
+
+def _space_matches_conditions(space: Dict, element_type: Optional[str], conditions: List[List[str]]) -> bool:
+    """Check if a space matches the filter conditions."""
+    return FilterParser.element_matches_conditions(space, element_type, conditions)

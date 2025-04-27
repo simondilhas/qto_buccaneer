@@ -311,11 +311,7 @@ def _element_matches_conditions(element: Dict, conditions: List[List[str]]) -> b
                 value = value.strip()
                 
                 # Check if the condition is met
-                if key in element.get('properties', {}):
-                    if str(element['properties'][key]).lower() == value.lower():
-                        or_group_matched = True
-                        break
-                elif key in element:
+                if key in element:
                     if str(element[key]).lower() == value.lower():
                         or_group_matched = True
                         break
