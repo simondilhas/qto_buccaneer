@@ -226,7 +226,7 @@ If None, will use default_language from config.</dd>
 </dl></div>
 </dd>
 <dt id="qto_buccaneer.reports.compare_room_names"><code class="name flex">
-<span>def <span class="ident">compare_room_names</span></span>(<span>metadata_actual_df: pandas.core.frame.DataFrame,<br>target_program_df: pandas.core.frame.DataFrame,<br>target_room_name_column: str = 'Raumtypenname',<br>actual_room_name_column: str = 'Name',<br>output_dir: str | None = None,<br>building_name: str | None = None,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> pandas.core.frame.DataFrame</span>
+<span>def <span class="ident">compare_room_names</span></span>(<span>metadata_actual_df: pandas.core.frame.DataFrame,<br>target_program_df: pandas.core.frame.DataFrame,<br>target_room_name_column: str = 'Raumtypenname',<br>actual_room_name_column: str = 'Name',<br>output_dir: str | None = None,<br>building_name: str | None = None,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> dict</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -241,49 +241,23 @@ If None, will use default_language from config.</dd>
     output_dir: Optional[str] = None,
     building_name: Optional[str] = None,
     layout_config: Optional[ExcelLayoutConfig] = None
-) -&gt; pd.DataFrame:
+) -&gt; dict:
     &#34;&#34;&#34;
     Compare room names between IFC spaces and a room program.
-    
-    This function:
-    1. Filters IFC spaces from the metadata DataFrame
-    2. Gets all unique room names from both sources
-    3. Compares the two sets and identifies:
-       - Rooms in IFC but not in Excel
-       - Rooms in Excel but not in IFC
-       - Rooms present in both
-    4. Creates two Excel files:
-       - All room name comparisons
-       - Project-specific rooms (only in IFC)
     
     Args:
         metadata_actual_df: DataFrame containing IFC metadata including spaces (actual state)
         target_program_df: DataFrame containing room program information (target state)
-        target_room_name_column: Column name in Excel containing target room names (default: &#34;Raumtypenname&#34;)
-        actual_room_name_column: Column name in IFC containing actual room names (default: &#34;Name&#34;)
+        target_room_name_column: Column name in Excel containing target room names
+        actual_room_name_column: Column name in IFC containing actual room names
         output_dir: Directory where Excel files should be saved
         building_name: Name of the building (used in output filenames)
         layout_config: Optional ExcelLayoutConfig for custom formatting
         
     Returns:
-        pd.DataFrame: Comparison table with columns:
-            - Room Name: Name of the room
-            - Status: One of:
-                * &#34;Only in IFC&#34; - Room exists in IFC but not in Excel
-                * &#34;Only in Excel&#34; - Room exists in Excel but not in IFC
-                * &#34;In Both&#34; - Room exists in both files
+        dict: Dictionary containing the comparison results in a format suitable for the building summary
     &#34;&#34;&#34;
     try:
-        # Create output paths if directory is provided
-        if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
-            building_prefix = f&#34;{building_name}_&#34; if building_name else &#34;&#34;
-            output_path = os.path.join(output_dir, f&#34;{building_prefix}room_name_comparison.xlsx&#34;)
-            project_specific_output_path = os.path.join(output_dir, f&#34;{building_prefix}project_specific_rooms.xlsx&#34;)
-        else:
-            output_path = None
-            project_specific_output_path = None
-
         # Filter for IFC spaces
         ifc_spaces_df = metadata_actual_df[metadata_actual_df[&#39;IfcEntity&#39;] == &#39;IfcSpace&#39;]
         
@@ -293,129 +267,52 @@ If None, will use default_language from config.</dd>
         # Get room names from Excel and convert to lowercase, filtering out None values
         excel_rooms = set(target_program_df[target_room_name_column].dropna().str.lower().unique())
         
-        # Create comparison DataFrame
+        # Create comparison DataFrame for Excel export
         all_rooms = ifc_rooms.union(excel_rooms)
         data = []
-        project_specific_rooms = []
-        
         for room in sorted(all_rooms):
-            if room in ifc_rooms and room in excel_rooms:
-                status = &#34;In Both&#34;
-            elif room in ifc_rooms:
-                status = &#34;Only in IFC&#34;
-                project_specific_rooms.append(room)
-            else:
-                status = &#34;Only in Excel&#34;
-                
-            data.append({
+            room_data = {
                 &#34;Room Name&#34;: room,
-                &#34;Status&#34;: status
-            })
+                &#34;Status&#34;: &#34;In Both&#34; if room in ifc_rooms and room in excel_rooms else &#34;Only in IFC&#34; if room in ifc_rooms else &#34;Only in Excel&#34;,
+                &#34;GlobalId&#34;: &#34;&#34;  # Default empty GlobalId
+            }
             
-        result = pd.DataFrame(data)
-        
-        # Create project-specific rooms DataFrame
-        project_specific_df = pd.DataFrame({
-            &#34;Project Specific Room Name&#34;: sorted(project_specific_rooms)
-        })
-        
-        # Export comparison to Excel if path provided
-        if output_path:
-            # Use default config if none provided
-            config = layout_config or ExcelLayoutConfig(
-                horizontal_lines=True,
-                vertical_lines=True,
-                bold_headers=True,
-                auto_column_width=True
-            )
+            # Add GlobalId for rooms that exist in IFC
+            if room in ifc_rooms:
+                ifc_room = ifc_spaces_df[ifc_spaces_df[actual_room_name_column].str.lower() == room]
+                if not ifc_room.empty:
+                    room_data[&#34;GlobalId&#34;] = ifc_room[&#34;GlobalId&#34;].iloc[0]
             
-            with pd.ExcelWriter(output_path, engine=&#39;openpyxl&#39;) as writer:
-                result.to_excel(writer, index=False, sheet_name=&#39;Room Name Comparison&#39;)
-                worksheet = writer.sheets[&#39;Room Name Comparison&#39;]
-                
-                # Apply styling based on config
-                if config.bold_headers:
-                    for cell in worksheet[1]:
-                        cell.font = openpyxl.styles.Font(bold=True)
-                        if config.header_color:
-                            cell.fill = openpyxl.styles.PatternFill(
-                                start_color=config.header_color,
-                                end_color=config.header_color,
-                                fill_type=&#39;solid&#39;
-                            )
-                
-                # Auto-adjust column widths
-                if config.auto_column_width:
-                    for column in worksheet.columns:
-                        max_length = 0
-                        column = [cell for cell in column]
-                        for cell in column:
-                            try:
-                                if len(str(cell.value)) &gt; max_length:
-                                    max_length = len(str(cell.value))
-                            except:
-                                pass
-                        adjusted_width = (max_length + 2)
-                        worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
-        
-        # Export project-specific rooms to Excel if path provided
-        if project_specific_output_path:
-            # Use default config if none provided
-            config = layout_config or ExcelLayoutConfig(
-                horizontal_lines=True,
-                vertical_lines=True,
-                bold_headers=True,
-                auto_column_width=True
-            )
+            data.append(room_data)
             
-            with pd.ExcelWriter(project_specific_output_path, engine=&#39;openpyxl&#39;) as writer:
-                project_specific_df.to_excel(writer, index=False, sheet_name=&#39;Project Specific Rooms&#39;)
-                worksheet = writer.sheets[&#39;Project Specific Rooms&#39;]
-                
-                # Apply styling based on config
-                if config.bold_headers:
-                    for cell in worksheet[1]:
-                        cell.font = openpyxl.styles.Font(bold=True)
-                        if config.header_color:
-                            cell.fill = openpyxl.styles.PatternFill(
-                                start_color=config.header_color,
-                                end_color=config.header_color,
-                                fill_type=&#39;solid&#39;
-                            )
-                
-                # Auto-adjust column widths
-                if config.auto_column_width:
-                    for column in worksheet.columns:
-                        max_length = 0
-                        column = [cell for cell in column]
-                        for cell in column:
-                            try:
-                                if len(str(cell.value)) &gt; max_length:
-                                    max_length = len(str(cell.value))
-                            except:
-                                pass
-                        adjusted_width = (max_length + 2)
-                        worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+        detailed_df = pd.DataFrame(data)
         
-        return result
+        # Create RoomComparisonResult instance
+        comparison = RoomComparisonResult(detailed_df, ifc_rooms, excel_rooms)
+        
+        # Export to Excel if output directory provided
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            building_prefix = f&#34;{building_name}_&#34; if building_name else &#34;&#34;
+            output_path = os.path.join(output_dir, f&#34;{building_prefix}room_name_comparison.xlsx&#34;)
+            comparison.to_excel(output_path, layout_config)
+        
+        return comparison.to_yaml()
         
     except Exception as e:
         print(f&#34;Error comparing room names: {str(e)}&#34;)
         import traceback
         traceback.print_exc()
-        return pd.DataFrame()</code></pre>
+        return {
+            &#34;room_comparison&#34;: {
+                &#34;status&#34;: &#34;error&#34;,
+                &#34;summary&#34;: f&#34;Error comparing room names: {str(e)}&#34;,
+                &#34;target&#34;: {},
+                &#34;ifc&#34;: {}
+            }
+        }</code></pre>
 </details>
 <div class="desc"><p>Compare room names between IFC spaces and a room program.</p>
-<p>This function:
-1. Filters IFC spaces from the metadata DataFrame
-2. Gets all unique room names from both sources
-3. Compares the two sets and identifies:
-- Rooms in IFC but not in Excel
-- Rooms in Excel but not in IFC
-- Rooms present in both
-4. Creates two Excel files:
-- All room name comparisons
-- Project-specific rooms (only in IFC)</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>metadata_actual_df</code></strong></dt>
@@ -423,9 +320,9 @@ If None, will use default_language from config.</dd>
 <dt><strong><code>target_program_df</code></strong></dt>
 <dd>DataFrame containing room program information (target state)</dd>
 <dt><strong><code>target_room_name_column</code></strong></dt>
-<dd>Column name in Excel containing target room names (default: "Raumtypenname")</dd>
+<dd>Column name in Excel containing target room names</dd>
 <dt><strong><code>actual_room_name_column</code></strong></dt>
-<dd>Column name in IFC containing actual room names (default: "Name")</dd>
+<dd>Column name in IFC containing actual room names</dd>
 <dt><strong><code>output_dir</code></strong></dt>
 <dd>Directory where Excel files should be saved</dd>
 <dt><strong><code>building_name</code></strong></dt>
@@ -435,13 +332,8 @@ If None, will use default_language from config.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>pd.DataFrame</code></dt>
-<dd>Comparison table with columns:
-- Room Name: Name of the room
-- Status: One of:
-* "Only in IFC" - Room exists in IFC but not in Excel
-* "Only in Excel" - Room exists in Excel but not in IFC
-* "In Both" - Room exists in both files</dd>
+<dt><code>dict</code></dt>
+<dd>Dictionary containing the comparison results in a format suitable for the building summary</dd>
 </dl></div>
 </dd>
 <dt id="qto_buccaneer.reports.create_room_program_from_excel"><code class="name flex">
@@ -1966,6 +1858,299 @@ class ReportStyleConfig:
 </dd>
 </dl>
 </dd>
+<dt id="qto_buccaneer.reports.RoomComparisonResult"><code class="flex name class">
+<span>class <span class="ident">RoomComparisonResult</span></span>
+<span>(</span><span>detailed_df: pandas.core.frame.DataFrame, ifc_rooms: set, excel_rooms: set)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RoomComparisonResult:
+    &#34;&#34;&#34;Class to hold and format room comparison results.&#34;&#34;&#34;
+    
+    def __init__(self, detailed_df: pd.DataFrame, ifc_rooms: set, excel_rooms: set):
+        self.detailed_df = detailed_df
+        self.ifc_rooms = ifc_rooms
+        self.excel_rooms = excel_rooms
+        
+        # Calculate summary statistics
+        self.total_target_rooms = len(excel_rooms)
+        self.total_ifc_rooms = len(ifc_rooms)
+        self.matching_rooms = len(ifc_rooms.intersection(excel_rooms))
+        self.missing_rooms = list(excel_rooms - ifc_rooms)
+        self.extra_rooms = list(ifc_rooms - excel_rooms)
+        
+        # Determine status
+        if not self.missing_rooms and not self.extra_rooms:
+            self.status = &#34;passed&#34;
+        elif self.missing_rooms:
+            self.status = &#34;failed-rooms missing in ifc&#34;
+        else:
+            self.status = &#34;failed-rooms added in ifc&#34;
+    
+    def to_yaml(self) -&gt; dict:
+        &#34;&#34;&#34;Generate YAML summary of the comparison.&#34;&#34;&#34;
+        summary = {
+            &#34;type&#34;: &#34;room_comparison&#34;,
+            &#34;status&#34;: self.status,
+            &#34;summary&#34;: f&#34;{self.matching_rooms} of {self.total_target_rooms} rooms found in IFC&#34;,
+            &#34;target&#34;: {
+                &#34;total_rooms&#34;: self.total_target_rooms,
+                &#34;found_rooms&#34;: self.matching_rooms,
+                &#34;missing_rooms&#34;: len(self.missing_rooms)
+            },
+            &#34;ifc&#34;: {
+                &#34;total_rooms&#34;: self.total_ifc_rooms,
+                &#34;matching_rooms&#34;: self.matching_rooms,
+                &#34;extra_rooms&#34;: len(self.extra_rooms)
+            }
+        }
+        
+        # Add issue details if there are any
+        if self.status != &#34;passed&#34;:
+            summary[&#34;issues&#34;] = {}
+            if self.missing_rooms:
+                summary[&#34;issues&#34;][&#34;missing_rooms&#34;] = [
+                    {&#34;name&#34;: room} for room in sorted(self.missing_rooms)
+                ]
+            if self.extra_rooms:
+                # Get GlobalIds for extra rooms from the detailed DataFrame
+                extra_rooms_data = []
+                for room in sorted(self.extra_rooms):
+                    room_data = self.detailed_df[
+                        (self.detailed_df[&#34;Room Name&#34;].str.lower() == room) &amp; 
+                        (self.detailed_df[&#34;Status&#34;] == &#34;Only in IFC&#34;)
+                    ]
+                    if not room_data.empty:
+                        extra_rooms_data.append({
+                            &#34;global_id&#34;: room_data[&#34;GlobalId&#34;].iloc[0],
+                            &#34;LongName&#34;: room,
+                        })
+                    else:
+                        extra_rooms_data.append({&#34;name&#34;: room})
+                summary[&#34;issues&#34;][&#34;extra_rooms&#34;] = extra_rooms_data
+        
+        return summary
+    
+    def to_dict(self) -&gt; dict:
+        &#34;&#34;&#34;Get all comparison data as a dictionary.&#34;&#34;&#34;
+        return {
+            &#34;detailed_df&#34;: self.detailed_df.to_dict(),
+            &#34;summary&#34;: self.to_yaml(),
+            &#34;status&#34;: self.status,
+            &#34;statistics&#34;: {
+                &#34;total_target_rooms&#34;: self.total_target_rooms,
+                &#34;total_ifc_rooms&#34;: self.total_ifc_rooms,
+                &#34;matching_rooms&#34;: self.matching_rooms,
+                &#34;missing_rooms_count&#34;: len(self.missing_rooms),
+                &#34;extra_rooms_count&#34;: len(self.extra_rooms)
+            }
+        }
+    
+    def to_excel(self, output_path: str, layout_config: Optional[ExcelLayoutConfig] = None) -&gt; None:
+        &#34;&#34;&#34;Export detailed comparison to Excel with formatting.&#34;&#34;&#34;
+        if self.detailed_df.empty:
+            print(&#34;Warning: No data to export to Excel!&#34;)
+            return
+            
+        # Make sure the output directory exists
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            
+        try:
+            # Use provided config or create default one
+            config = layout_config or ExcelLayoutConfig(
+                horizontal_lines=True,
+                vertical_lines=True,
+                bold_headers=True,
+                auto_column_width=True
+            )
+            
+            with pd.ExcelWriter(output_path, engine=&#39;openpyxl&#39;) as writer:
+                self.detailed_df.to_excel(writer, index=False, sheet_name=&#39;Room Name Comparison&#39;)
+                worksheet = writer.sheets[&#39;Room Name Comparison&#39;]
+                
+                # Apply styling based on config
+                if config.bold_headers:
+                    for cell in worksheet[1]:
+                        cell.font = openpyxl.styles.Font(bold=True)
+                        if config.header_color:
+                            cell.fill = openpyxl.styles.PatternFill(
+                                start_color=config.header_color,
+                                end_color=config.header_color,
+                                fill_type=&#39;solid&#39;
+                            )
+                
+                # Auto-adjust column widths
+                if config.auto_column_width:
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column = [cell for cell in column]
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) &gt; max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = (max_length + 2)
+                        worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+                        
+        except Exception as e:
+            print(f&#34;Error exporting to Excel: {str(e)}&#34;)
+            import traceback
+            traceback.print_exc()</code></pre>
+</details>
+<div class="desc"><p>Class to hold and format room comparison results.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="qto_buccaneer.reports.RoomComparisonResult.to_dict"><code class="name flex">
+<span>def <span class="ident">to_dict</span></span>(<span>self) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_dict(self) -&gt; dict:
+    &#34;&#34;&#34;Get all comparison data as a dictionary.&#34;&#34;&#34;
+    return {
+        &#34;detailed_df&#34;: self.detailed_df.to_dict(),
+        &#34;summary&#34;: self.to_yaml(),
+        &#34;status&#34;: self.status,
+        &#34;statistics&#34;: {
+            &#34;total_target_rooms&#34;: self.total_target_rooms,
+            &#34;total_ifc_rooms&#34;: self.total_ifc_rooms,
+            &#34;matching_rooms&#34;: self.matching_rooms,
+            &#34;missing_rooms_count&#34;: len(self.missing_rooms),
+            &#34;extra_rooms_count&#34;: len(self.extra_rooms)
+        }
+    }</code></pre>
+</details>
+<div class="desc"><p>Get all comparison data as a dictionary.</p></div>
+</dd>
+<dt id="qto_buccaneer.reports.RoomComparisonResult.to_excel"><code class="name flex">
+<span>def <span class="ident">to_excel</span></span>(<span>self,<br>output_path: str,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_excel(self, output_path: str, layout_config: Optional[ExcelLayoutConfig] = None) -&gt; None:
+    &#34;&#34;&#34;Export detailed comparison to Excel with formatting.&#34;&#34;&#34;
+    if self.detailed_df.empty:
+        print(&#34;Warning: No data to export to Excel!&#34;)
+        return
+        
+    # Make sure the output directory exists
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        
+    try:
+        # Use provided config or create default one
+        config = layout_config or ExcelLayoutConfig(
+            horizontal_lines=True,
+            vertical_lines=True,
+            bold_headers=True,
+            auto_column_width=True
+        )
+        
+        with pd.ExcelWriter(output_path, engine=&#39;openpyxl&#39;) as writer:
+            self.detailed_df.to_excel(writer, index=False, sheet_name=&#39;Room Name Comparison&#39;)
+            worksheet = writer.sheets[&#39;Room Name Comparison&#39;]
+            
+            # Apply styling based on config
+            if config.bold_headers:
+                for cell in worksheet[1]:
+                    cell.font = openpyxl.styles.Font(bold=True)
+                    if config.header_color:
+                        cell.fill = openpyxl.styles.PatternFill(
+                            start_color=config.header_color,
+                            end_color=config.header_color,
+                            fill_type=&#39;solid&#39;
+                        )
+            
+            # Auto-adjust column widths
+            if config.auto_column_width:
+                for column in worksheet.columns:
+                    max_length = 0
+                    column = [cell for cell in column]
+                    for cell in column:
+                        try:
+                            if len(str(cell.value)) &gt; max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    adjusted_width = (max_length + 2)
+                    worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+                    
+    except Exception as e:
+        print(f&#34;Error exporting to Excel: {str(e)}&#34;)
+        import traceback
+        traceback.print_exc()</code></pre>
+</details>
+<div class="desc"><p>Export detailed comparison to Excel with formatting.</p></div>
+</dd>
+<dt id="qto_buccaneer.reports.RoomComparisonResult.to_yaml"><code class="name flex">
+<span>def <span class="ident">to_yaml</span></span>(<span>self) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_yaml(self) -&gt; dict:
+    &#34;&#34;&#34;Generate YAML summary of the comparison.&#34;&#34;&#34;
+    summary = {
+        &#34;type&#34;: &#34;room_comparison&#34;,
+        &#34;status&#34;: self.status,
+        &#34;summary&#34;: f&#34;{self.matching_rooms} of {self.total_target_rooms} rooms found in IFC&#34;,
+        &#34;target&#34;: {
+            &#34;total_rooms&#34;: self.total_target_rooms,
+            &#34;found_rooms&#34;: self.matching_rooms,
+            &#34;missing_rooms&#34;: len(self.missing_rooms)
+        },
+        &#34;ifc&#34;: {
+            &#34;total_rooms&#34;: self.total_ifc_rooms,
+            &#34;matching_rooms&#34;: self.matching_rooms,
+            &#34;extra_rooms&#34;: len(self.extra_rooms)
+        }
+    }
+    
+    # Add issue details if there are any
+    if self.status != &#34;passed&#34;:
+        summary[&#34;issues&#34;] = {}
+        if self.missing_rooms:
+            summary[&#34;issues&#34;][&#34;missing_rooms&#34;] = [
+                {&#34;name&#34;: room} for room in sorted(self.missing_rooms)
+            ]
+        if self.extra_rooms:
+            # Get GlobalIds for extra rooms from the detailed DataFrame
+            extra_rooms_data = []
+            for room in sorted(self.extra_rooms):
+                room_data = self.detailed_df[
+                    (self.detailed_df[&#34;Room Name&#34;].str.lower() == room) &amp; 
+                    (self.detailed_df[&#34;Status&#34;] == &#34;Only in IFC&#34;)
+                ]
+                if not room_data.empty:
+                    extra_rooms_data.append({
+                        &#34;global_id&#34;: room_data[&#34;GlobalId&#34;].iloc[0],
+                        &#34;LongName&#34;: room,
+                    })
+                else:
+                    extra_rooms_data.append({&#34;name&#34;: room})
+            summary[&#34;issues&#34;][&#34;extra_rooms&#34;] = extra_rooms_data
+    
+    return summary</code></pre>
+</details>
+<div class="desc"><p>Generate YAML summary of the comparison.</p></div>
+</dd>
+</dl>
+</dd>
 </dl>
 </section>
 </article>
@@ -2027,6 +2212,14 @@ class ReportStyleConfig:
 <li><code><a title="qto_buccaneer.reports.ReportStyleConfig.margin_top" href="#qto_buccaneer.reports.ReportStyleConfig.margin_top">margin_top</a></code></li>
 <li><code><a title="qto_buccaneer.reports.ReportStyleConfig.page_size" href="#qto_buccaneer.reports.ReportStyleConfig.page_size">page_size</a></code></li>
 <li><code><a title="qto_buccaneer.reports.ReportStyleConfig.to_css" href="#qto_buccaneer.reports.ReportStyleConfig.to_css">to_css</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="qto_buccaneer.reports.RoomComparisonResult" href="#qto_buccaneer.reports.RoomComparisonResult">RoomComparisonResult</a></code></h4>
+<ul class="">
+<li><code><a title="qto_buccaneer.reports.RoomComparisonResult.to_dict" href="#qto_buccaneer.reports.RoomComparisonResult.to_dict">to_dict</a></code></li>
+<li><code><a title="qto_buccaneer.reports.RoomComparisonResult.to_excel" href="#qto_buccaneer.reports.RoomComparisonResult.to_excel">to_excel</a></code></li>
+<li><code><a title="qto_buccaneer.reports.RoomComparisonResult.to_yaml" href="#qto_buccaneer.reports.RoomComparisonResult.to_yaml">to_yaml</a></code></li>
 </ul>
 </li>
 </ul>
