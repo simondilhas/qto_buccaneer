@@ -48,6 +48,8 @@ class BuildingSummary:
         self.template_path = project_root / "config" / "building_summary_template.yaml"
         self.data = self._load_template()
         self._initialize_data()
+        # Store the building directory path for relative path conversion
+        self.building_dir = path.parent
 
     def _initialize_data(self):
         """Initialize the data structure if it doesn't exist."""
@@ -111,6 +113,26 @@ class BuildingSummary:
         """
         self.data["name"] = name
 
+    def _convert_to_relative_path(self, path: Union[str, Path]) -> str:
+        """
+        Convert an absolute path to a path relative to the building directory.
+        
+        Args:
+            path: The path to convert (can be string or Path)
+            
+        Returns:
+            str: The relative path as a string
+        """
+        if isinstance(path, str):
+            path = Path(path)
+        try:
+            # Try to make the path relative to the building directory
+            relative_path = path.relative_to(self.building_dir)
+            return str(relative_path)
+        except ValueError:
+            # If the path is not under the building directory, return it as is
+            return str(path)
+
     def _add_dict(self, data: dict, group: str) -> None:
         """Add data to a dictionary-type group."""
         if group not in self.data:
@@ -119,7 +141,14 @@ class BuildingSummary:
         if group == "checks":
             self.data[group] = data
         else:
-            self.data[group].update(data)
+            # Convert any paths in the data to relative paths
+            converted_data = {}
+            for key, value in data.items():
+                if isinstance(value, (str, Path)) and any(ext in str(value).lower() for ext in ['.ifc', '.json', '.xlsx', '.yaml', '.yml']):
+                    converted_data[key] = self._convert_to_relative_path(value)
+                else:
+                    converted_data[key] = value
+            self.data[group].update(converted_data)
 
     def _add_list(self, data: dict, group: str) -> None:
         """Add data to a list-type group."""
@@ -132,12 +161,19 @@ class BuildingSummary:
         if isinstance(self.data[group], dict):
             self.data[group] = []
         if isinstance(data, dict):
+            # Convert any paths in the data to relative paths
+            converted_data = {}
+            for key, value in data.items():
+                if isinstance(value, (str, Path)) and any(ext in str(value).lower() for ext in ['.ifc', '.json', '.xlsx', '.yaml', '.yml']):
+                    converted_data[key] = self._convert_to_relative_path(value)
+                else:
+                    converted_data[key] = value
             # Check if the data already exists in the list
             for entry in self.data[group]:
-                if entry == data:
+                if entry == converted_data:
                     return
             # Add the data as a new entry in the list
-            self.data[group].append(data)
+            self.data[group].append(converted_data)
         else:
             # Check if the data already exists in the list
             if data not in self.data[group]:
