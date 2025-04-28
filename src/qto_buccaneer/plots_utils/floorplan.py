@@ -4,6 +4,7 @@ import yaml
 from pathlib import Path
 from datetime import datetime
 import json
+import math
 
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
 from qto_buccaneer.utils.plots_utils import (
@@ -395,8 +396,8 @@ def _add_single_space_to_plot(
     is_gfa = False
     if 'LongName' in space:
         space_name = space['LongName']
-    elif 'name' in space:
-        space_name = space['name']
+    elif 'Name' in space:
+        space_name = space['Name']
     if 'Qto_SpaceBaseQuantities.NetFloorArea' in space:
         space_area = space['Qto_SpaceBaseQuantities.NetFloorArea']
         is_gfa = True
@@ -560,54 +561,328 @@ def _add_geometry_to_plot(
             _add_wall_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
             print("Wall visualization completed")  # Debug log
 
-def _create_door_symbol(
-    width: float,
-    height: float,
-    center_x: float,
-    center_y: float,
+def _create_oriented_symbol(
+    vertices: List[List[float]],
+    symbol_type: str,
     line_width: float = 1,
     line_extension: float = 2.5
 ) -> Tuple[List[float], List[float], List[float], List[float]]:
-    """Create coordinates for a door symbol with a white square and a perpendicular line.
+    """Create coordinates for a door or window symbol with proper orientation and scaling.
     
     Args:
-        width: Width of the door
-        height: Height of the door
-        center_x: X coordinate of the door center
-        center_y: Y coordinate of the door center
+        vertices: List of vertices [[x1,y1,z1], [x2,y2,z2], ...]
+        symbol_type: Either 'door' or 'window'
         line_width: Width of the line (default: 1)
         line_extension: Factor to extend the line beyond the door (default: 2.5)
         
     Returns:
         Tuple of (rect_x, rect_y, line_x, line_y) coordinates
     """
-    # Create square vertices
+    # Project vertices to 2D by ignoring z-coordinate
+    vertices_2d = [[v[0], v[1]] for v in vertices]
+    
+    if len(vertices_2d) < 4:
+        return [], [], [], []
+    
+    # Find edges and their properties
+    edges = []
+    for i in range(len(vertices_2d)):
+        v1 = vertices_2d[i]
+        v2 = vertices_2d[(i + 1) % len(vertices_2d)]
+        dx = v2[0] - v1[0]
+        dy = v2[1] - v1[1]
+        length = math.sqrt(dx*dx + dy*dy)
+        angle = math.atan2(dy, dx)
+        edges.append((v1, v2, length, angle))
+    
+    # Sort edges by length to find the longest edges (opening) and shortest edges (thickness)
+    edges.sort(key=lambda x: x[2], reverse=True)
+    opening_edges = edges[:2]  # Two longest edges
+    thickness_edges = edges[-2:]  # Two shortest edges
+    
+    # Get the wall thickness from the shorter edges
+    thickness = thickness_edges[0][2]  # Length of one of the thickness edges
+    
+    # Use the first opening edge as reference
+    v1, v2, length, angle = opening_edges[0]
+    
+    # Calculate the center point of the opening
+    center_x = (v1[0] + v2[0]) / 2
+    center_y = (v1[1] + v2[1]) / 2
+    
+    # Calculate the perpendicular vector (normalized)
+    perp_dx = -math.sin(angle)
+    perp_dy = math.cos(angle)
+    
+    # Create rectangle vertices in local coordinates
+    # Rectangle is centered at origin
+    half_length = length / 2
+    half_thickness = thickness / 2
+    local_rect_x = [-half_length, half_length, half_length, -half_length, -half_length]
+    local_rect_y = [-half_thickness, -half_thickness, half_thickness, half_thickness, -half_thickness]
+    
+    # Create line coordinates based on symbol type
+    if symbol_type == 'door':
+        # Door: perpendicular line at midpoint
+        local_line_x = [0, 0]
+        local_line_y = [-half_thickness, -half_thickness - thickness * line_extension]
+    else:
+        # Window: centered line along opening
+        local_line_x = [-half_length, half_length]
+        local_line_y = [0, 0]
+    
+    # Rotate and translate coordinates
+    rect_x, rect_y = [], []
+    line_x, line_y = [], []
+    
+    # Rotation matrix
+    cos_a = math.cos(angle)
+    sin_a = math.sin(angle)
+    
+    # Transform rectangle vertices
+    for x, y in zip(local_rect_x, local_rect_y):
+        # First rotate around origin
+        rotated_x = x * cos_a - y * sin_a
+        rotated_y = x * sin_a + y * cos_a
+        # Then translate to center point
+        rect_x.append(rotated_x + center_x)
+        rect_y.append(rotated_y + center_y)
+    
+    # Transform line vertices
+    for x, y in zip(local_line_x, local_line_y):
+        # First rotate around origin
+        rotated_x = x * cos_a - y * sin_a
+        rotated_y = x * sin_a + y * cos_a
+        # Then translate to center point
+        line_x.append(rotated_x + center_x)
+        line_y.append(rotated_y + center_y)
+    
+    return rect_x, rect_y, line_x, line_y
+
+def _create_door_symbol(
+    vertices: List[List[float]],
+    line_width: float = 1,
+    line_extension: float = 2.5
+) -> Tuple[List[float], List[float], List[float], List[float]]:
+    """Create coordinates for a door symbol with a white square and a perpendicular line."""
+    return _create_oriented_symbol(vertices, 'door', line_width, line_extension)
+
+def _add_window_to_plot(
+    fig: go.Figure,
+    loader: IfcJsonLoader,
+    element_config: Dict,
+    element_type: Optional[str],
+    conditions: List[List[str]],
+    plot_settings: Dict,
+    storey_name: Optional[str] = None,
+    plot_config: Optional[Dict] = None
+) -> None:
+    """Add windows to the plot as white rectangles with a thin black border and a thin center line."""
+    # Get all window elements
+    window_ids = loader.by_type_index.get('IfcWindow', [])
+    print(f"Found {len(window_ids)} windows in by_type_index")
+    
+    for window_id in window_ids:
+        print(f"Processing window with ID {window_id}")
+        # Get the window element using the numeric ID
+        window = loader.properties['elements'].get(str(window_id))
+        if not window:
+            print(f"No window properties found for ID {window_id}")
+            continue
+            
+        # Get geometry using the numeric ID
+        geometry = loader.get_geometry(str(window_id))
+        if not geometry:
+            print(f"No geometry found for window {window_id}")
+            continue
+        if 'vertices' not in geometry:
+            print(f"No vertices found for window {window_id}")
+            continue
+            
+        # Get the window's storey using the numeric ID
+        if storey_name:
+            window_storey = loader.get_storey_for_element(str(window_id))
+            if window_storey:
+                # Get the average Z coordinate of the window
+                z_coords = [v[2] for v in geometry['vertices']]
+                window_z = sum(z_coords) / len(z_coords)
+                print(f"Window {window_id} Z coordinate: {window_z:.3f}")
+                
+                # Get the storey elevation
+                storey_data = None
+                for storey in loader.properties['elements'].values():
+                    if storey.get('type') == 'IfcBuildingStorey' and storey.get('Name') == storey_name:
+                        storey_data = storey
+                        break
+                
+                if storey_data and 'Elevation' in storey_data:
+                    storey_elevation = float(storey_data['Elevation'])
+                    print(f"Storey {storey_name} elevation: {storey_elevation:.3f}")
+                    
+                    # Check if window is within reasonable range of storey elevation (±2m)
+                    if abs(window_z - storey_elevation) > 2.0:
+                        print(f"Window {window_id} not in storey {storey_name} (elevation difference: {abs(window_z - storey_elevation):.3f}m)")
+                        continue
+                elif window_storey != storey_name:
+                    print(f"Window {window_id} not in storey {storey_name}")
+                    continue
+            
+        # Create window symbol using the vertices directly
+        rect_x, rect_y, line_x, line_y = _create_window_symbol(geometry['vertices'])
+        
+        if not rect_x:  # Skip if no valid window symbol could be created
+            continue
+        
+        # Add the window rectangle with a thin black border
+        fig.add_trace(go.Scatter(
+            x=rect_x,
+            y=rect_y,
+            fill='toself',
+            fillcolor='white',
+            line=dict(color='black', width=1),  # Add thin black border
+            mode='lines',
+            showlegend=False,
+            zorder=2
+        ))
+        
+        # Add the center line representing the glass with higher z-order and thinner line
+        if line_x and line_y:  # Only add line if we have coordinates
+            fig.add_trace(go.Scatter(
+                x=line_x,
+                y=line_y,
+                line=dict(color='black', width=1),  # Make line thinner
+                mode='lines',
+                showlegend=False,
+                zorder=10  # Increase z-order to ensure visibility on top
+            ))
+
+def _create_window_symbol(
+    vertices: List[List[float]],
+    line_width: float = 1
+) -> Tuple[List[float], List[float], List[float], List[float]]:
+    """Create coordinates for a window symbol using actual geometry.
+    Handles both rectangular and non-rectangular windows."""
+    
+    # Project vertices to 2D
+    vertices_2d = [[v[0], v[1]] for v in vertices]
+    
+    # Remove duplicate vertices with tolerance
+    unique_vertices = []
+    tolerance = 0.0001
+    for v in vertices_2d:
+        is_duplicate = False
+        for u in unique_vertices:
+            if (abs(v[0] - u[0]) < tolerance and abs(v[1] - u[1]) < tolerance):
+                is_duplicate = True
+                break
+        if not is_duplicate:
+            unique_vertices.append(v)
+    
+    if len(unique_vertices) < 3:
+        print("Warning: Not enough unique vertices for window symbol")
+        return [], [], [], []
+    
+    # Find all edges and their lengths
+    edges = []
+    for i in range(len(unique_vertices)):
+        v1 = unique_vertices[i]
+        v2 = unique_vertices[(i + 1) % len(unique_vertices)]
+        dx = v2[0] - v1[0]
+        dy = v2[1] - v1[1]
+        length = math.sqrt(dx*dx + dy*dy)
+        if length > tolerance:  # Only consider non-zero length edges
+            edges.append({
+                'start': v1,
+                'end': v2,
+                'length': length,
+                'direction': [dx/length, dy/length]
+            })
+    
+    if not edges:
+        print("Warning: No valid edges found")
+        return [], [], [], []
+    
+    # Sort edges by length (descending)
+    edges.sort(key=lambda e: e['length'], reverse=True)
+    
+    # Determine if we have a rectangular window (two pairs of equal length edges)
+    is_rectangular = (len(edges) >= 4 and 
+                     abs(edges[0]['length'] - edges[1]['length']) < tolerance and
+                     abs(edges[2]['length'] - edges[3]['length']) < tolerance)
+    
+    # Get the opening edge (longest edge)
+    opening_edge = edges[0]
+    
+    # Calculate window thickness
+    if is_rectangular:
+        # For rectangular windows, use the shorter edge length
+        thickness = edges[2]['length']
+    else:
+        # For non-rectangular windows, calculate minimum perpendicular distance
+        thickness = float('inf')
+        edge_start = opening_edge['start']
+        edge_end = opening_edge['end']
+        edge_dir = opening_edge['direction']
+        
+        for v in unique_vertices:
+            # Skip vertices that are on the opening edge
+            if (abs(v[0] - edge_start[0]) < tolerance and abs(v[1] - edge_start[1]) < tolerance) or \
+               (abs(v[0] - edge_end[0]) < tolerance and abs(v[1] - edge_end[1]) < tolerance):
+                continue
+            
+            # Calculate perpendicular distance from point to opening edge line
+            dx = v[0] - edge_start[0]
+            dy = v[1] - edge_start[1]
+            dist = abs(dx * (-edge_dir[1]) + dy * edge_dir[0])  # Cross product for perpendicular distance
+            thickness = min(thickness, dist)
+        
+        if thickness == float('inf'):
+            thickness = opening_edge['length'] * 0.1  # Fallback: use 10% of opening length
+    
+    # Calculate the center point of the window
+    # Use the midpoint of the opening edge as the reference point
+    edge_start = opening_edge['start']
+    edge_end = opening_edge['end']
+    edge_dir = opening_edge['direction']
+    
+    # Calculate the center point of the opening edge
+    center_x = (edge_start[0] + edge_end[0]) / 2
+    center_y = (edge_start[1] + edge_end[1]) / 2
+    
+    # Calculate perpendicular direction
+    perp_dir = [-edge_dir[1], edge_dir[0]]
+    
+    # Create rectangle coordinates centered on the opening edge
+    half_length = opening_edge['length'] / 2
+    half_thickness = thickness / 2
+    
+    # Create the rectangle vertices
     rect_x = [
-        center_x - width/2,
-        center_x + width/2,
-        center_x + width/2,
-        center_x - width/2,
-        center_x - width/2
-    ]
-    rect_y = [
-        center_y - height/2,
-        center_y - height/2,
-        center_y + height/2,
-        center_y + height/2,
-        center_y - height/2
+        center_x - edge_dir[0] * half_length - perp_dir[0] * half_thickness,  # Bottom left
+        center_x + edge_dir[0] * half_length - perp_dir[0] * half_thickness,  # Bottom right
+        center_x + edge_dir[0] * half_length + perp_dir[0] * half_thickness,  # Top right
+        center_x - edge_dir[0] * half_length + perp_dir[0] * half_thickness,  # Top left
+        center_x - edge_dir[0] * half_length - perp_dir[0] * half_thickness   # Close polygon
     ]
     
-    # Create perpendicular line coordinates
-    if width > height:
-        # Horizontal door - draw vertical line
-        line_length = height * line_extension
-        line_x = [center_x, center_x]
-        line_y = [center_y - line_length/2, center_y + line_length/2]
-    else:
-        # Vertical door - draw horizontal line
-        line_length = width * line_extension
-        line_x = [center_x - line_length/2, center_x + line_length/2]
-        line_y = [center_y, center_y]
+    rect_y = [
+        center_y - edge_dir[1] * half_length - perp_dir[1] * half_thickness,  # Bottom left
+        center_y + edge_dir[1] * half_length - perp_dir[1] * half_thickness,  # Bottom right
+        center_y + edge_dir[1] * half_length + perp_dir[1] * half_thickness,  # Top right
+        center_y - edge_dir[1] * half_length + perp_dir[1] * half_thickness,  # Top left
+        center_y - edge_dir[1] * half_length - perp_dir[1] * half_thickness   # Close polygon
+    ]
+    
+    # Create line along the opening edge
+    line_x = [
+        center_x - edge_dir[0] * half_length,
+        center_x + edge_dir[0] * half_length
+    ]
+    
+    line_y = [
+        center_y - edge_dir[1] * half_length,
+        center_y + edge_dir[1] * half_length
+    ]
     
     return rect_x, rect_y, line_x, line_y
 
@@ -650,23 +925,11 @@ def _add_door_to_plot(
                 print(f"Door {door_id} not in storey {storey_name}")
                 continue
             
-        # Get door vertices and calculate dimensions
-        vertices = geometry['vertices']
-        x_coords = [v[0] for v in vertices]
-        y_coords = [v[1] for v in vertices]
+        # Create door symbol using the vertices directly
+        rect_x, rect_y, line_x, line_y = _create_door_symbol(geometry['vertices'])
         
-        # Calculate door center and dimensions
-        min_x, max_x = min(x_coords), max(x_coords)
-        min_y, max_y = min(y_coords), max(y_coords)
-        width = max_x - min_x
-        height = max_y - min_y
-        
-        # Calculate center point
-        center_x = (min_x + max_x) / 2
-        center_y = (min_y + max_y) / 2
-        
-        # Create door symbol
-        rect_x, rect_y, line_x, line_y = _create_door_symbol(width, height, center_x, center_y)
+        if not rect_x:  # Skip if no valid door symbol could be created
+            continue
         
         # Add the door rectangle without border
         fig.add_trace(go.Scatter(
@@ -689,309 +952,6 @@ def _add_door_to_plot(
             showlegend=False,
             zorder=2
         ))
-
-def _create_window_symbol(
-    width: float,
-    height: float,
-    center_x: float,
-    center_y: float,
-    line_width: float = 2
-) -> Tuple[List[float], List[float], List[float], List[float]]:
-    """Create coordinates for a window symbol with a white rectangle and a centered line.
-    
-    Args:
-        width: Width of the window
-        height: Height of the window
-        center_x: X coordinate of the window center
-        center_y: Y coordinate of the window center
-        line_width: Width of the line (default: 2)
-        
-    Returns:
-        Tuple of (rect_x, rect_y, line_x, line_y) coordinates
-    """
-    # Create rectangle vertices
-    rect_x = [
-        center_x - width/2,
-        center_x + width/2,
-        center_x + width/2,
-        center_x - width/2,
-        center_x - width/2
-    ]
-    rect_y = [
-        center_y - height/2,
-        center_y - height/2,
-        center_y + height/2,
-        center_y + height/2,
-        center_y - height/2
-    ]
-    
-    # Create line coordinates
-    if width > height:
-        # Horizontal window - draw horizontal line
-        line_x = [center_x - width/2, center_x + width/2]
-        line_y = [center_y, center_y]
-    else:
-        # Vertical window - draw vertical line
-        line_x = [center_x, center_x]
-        line_y = [center_y - height/2, center_y + height/2]
-    
-    return rect_x, rect_y, line_x, line_y
-
-def _add_window_to_plot(
-    fig: go.Figure,
-    loader: IfcJsonLoader,
-    element_config: Dict,
-    element_type: Optional[str],
-    conditions: List[List[str]],
-    plot_settings: Dict,
-    storey_name: Optional[str] = None,
-    plot_config: Optional[Dict] = None
-) -> None:
-    """Add windows to the plot as white squares with a single thick line inside."""
-    # Get all window elements
-    window_ids = loader.by_type_index.get('IfcWindow', [])
-    print(f"Found {len(window_ids)} windows in by_type_index")
-    
-    for window_id in window_ids:
-        print(f"Processing window with ID {window_id}")
-        # Get the window element using the numeric ID
-        window = loader.properties['elements'].get(str(window_id))
-        if not window:
-            print(f"No window properties found for ID {window_id}")
-            continue
-            
-        # Get geometry using the numeric ID
-        geometry = loader.get_geometry(str(window_id))
-        if not geometry:
-            print(f"No geometry found for window {window_id}")
-            continue
-        if 'vertices' not in geometry:
-            print(f"No vertices found for window {window_id}")
-            continue
-            
-        # Get the window's storey using the numeric ID
-        if storey_name:
-            window_storey = loader.get_storey_for_element(str(window_id))
-            if window_storey and window_storey != storey_name:
-                print(f"Window {window_id} not in storey {storey_name}")
-                continue
-            
-        # Get window vertices and calculate dimensions
-        vertices = geometry['vertices']
-        
-        # For 2D view, we'll use all vertices and project them to 2D
-        # We'll use the vertices with the most common z-coordinate
-        z_coords = [v[2] for v in vertices]
-        most_common_z = max(set(z_coords), key=z_coords.count)
-        
-        # Filter vertices to those with the most common z-coordinate
-        x_coords = []
-        y_coords = []
-        for v in vertices:
-            if abs(v[2] - most_common_z) < 0.1:  # Allow small tolerance
-                x_coords.append(v[0])
-                y_coords.append(v[1])
-        
-        if not x_coords or not y_coords:
-            print(f"No valid 2D vertices found for window {window_id}")
-            continue
-            
-        # Calculate window center and dimensions
-        min_x, max_x = min(x_coords), max(x_coords)
-        min_y, max_y = min(y_coords), max(y_coords)
-        width = max_x - min_x
-        height = max_y - min_y
-        
-        # Calculate center point
-        center_x = (min_x + max_x) / 2
-        center_y = (min_y + max_y) / 2
-        
-        # Create window symbol
-        rect_x, rect_y, line_x, line_y = _create_window_symbol(width, height, center_x, center_y)
-        
-        # Add the window rectangle without border
-        fig.add_trace(go.Scatter(
-            x=rect_x,
-            y=rect_y,
-            fill='toself',
-            fillcolor='white',
-            line=dict(width=0),  # No border
-            mode='lines',
-            showlegend=False,
-            zorder=2
-        ))
-        
-        # Add the line
-        fig.add_trace(go.Scatter(
-            x=line_x,
-            y=line_y,
-            line=dict(color='black', width=2),  # Thicker line
-            mode='lines',
-            showlegend=False,
-            zorder=2
-        ))
-
-def _point_inside_polygon(x: float, y: float, poly: List[List[float]]) -> bool:
-    """Check if a point is inside a polygon using ray casting algorithm."""
-    n = len(poly)
-    inside = False
-    p1x, p1y = poly[0]
-    for i in range(1, n + 1):
-        p2x, p2y = poly[i % n]
-        if y > min(p1y, p2y):
-            if y <= max(p1y, p2y):
-                if x <= max(p1x, p2x):
-                    if p1y != p2y:
-                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-                    if p1x == p2x or x <= xinters:
-                        inside = not inside
-        p1x, p1y = p2x, p2y
-    return inside
-
-def _find_point_inside_polygon(poly: List[List[float]]) -> List[float]:
-    """Find a point that is guaranteed to be inside the polygon."""
-    # First try the center of the bounding box
-    x_coords = [p[0] for p in poly]
-    y_coords = [p[1] for p in poly]
-    center_x = sum(x_coords) / len(x_coords)
-    center_y = sum(y_coords) / len(y_coords)
-    
-    if _point_inside_polygon(center_x, center_y, poly):
-        return [center_x, center_y]
-    
-    # If center is outside, try points along a grid
-    min_x, max_x = min(x_coords), max(x_coords)
-    min_y, max_y = min(y_coords), max(y_coords)
-    
-    # Try points in a 3x3 grid
-    for x in [min_x + (max_x - min_x) * i/4 for i in range(1, 4)]:
-        for y in [min_y + (max_y - min_y) * i/4 for i in range(1, 4)]:
-            if _point_inside_polygon(x, y, poly):
-                return [x, y]
-    
-    # If no point found in grid, return the first vertex
-    return poly[0]
-
-def _calculate_optimal_layout(x_coords: List[float], y_coords: List[float]) -> Dict:
-    """Calculate optimal layout settings based on geometry."""
-    # Calculate bounds
-    x_min, x_max = min(x_coords), max(x_coords)
-    y_min, y_max = min(y_coords), max(y_coords)
-    
-    # Calculate dimensions
-    width = x_max - x_min
-    height = y_max - y_min
-    
-    # Fixed dimensions for A4-like size
-    base_width = 1000  # pixels
-    base_height = 600  # pixels
-    
-    # Calculate the aspect ratios
-    content_ratio = width / height
-    target_ratio = base_width / base_height
-    
-    # Add padding around content (20% on each side)
-    padding_factor = 0.2
-    padded_width = width * (1 + 2 * padding_factor)
-    padded_height = height * (1 + 2 * padding_factor)
-    
-    # Calculate the scaling factor to fit the padded content
-    if content_ratio > target_ratio:
-        # Content is wider than target, scale to width
-        scale = base_width / padded_width
-    else:
-        # Content is taller than target, scale to height
-        scale = base_height / padded_height
-    
-    # Calculate the centered ranges with padding
-    center_x = (x_max + x_min) / 2
-    center_y = (y_max + y_min) / 2
-    
-    # Calculate the range that will fill the space with padding
-    half_width = (base_width / scale) / 2
-    half_height = (base_height / scale) / 2
-    
-    x_range = [center_x - half_width, center_x + half_width]
-    y_range = [center_y - half_height, center_y + half_height]
-    
-    return {
-        'width': base_width,
-        'height': base_height,
-        'xaxis': {
-            'range': x_range,
-            'showgrid': False,
-            'zeroline': False,
-            'showticklabels': False,
-            'showline': False,
-            'scaleanchor': 'y',
-            'scaleratio': 1,
-            'domain': [0.01, 0.99]  # Use 98% of the width
-        },
-        'yaxis': {
-            'range': y_range,
-            'showgrid': False,
-            'zeroline': False,
-            'showticklabels': False,
-            'showline': False,
-            'scaleanchor': 'x',
-            'scaleratio': 1,
-            'domain': [0.01, 0.99]  # Use 98% of the height
-        }
-    }
-
-def _add_scale_bar(fig: go.Figure, x_range: List[float], y_range: List[float]) -> None:
-    """Add a scale bar to the plot that scales with zooming."""
-    # Calculate plot dimensions in real-world units
-    plot_width = max(x_range) - min(x_range)
-    plot_height = max(y_range) - min(y_range)
-    
-    # Choose a nice round length for the scale bar (e.g., 5m or 10m)
-    # Scale bar should be ~15% of the plot width
-    desired_scale_length = plot_width * 0.15
-    
-    # Round to a nice number (1, 2, 5, 10, etc.)
-    scale_lengths = [1, 2, 5, 10, 20, 50, 100]
-    scale_length = next(l for l in scale_lengths if l > desired_scale_length)
-    
-    # Position relative to content
-    # Place in bottom left corner with some margin from the content
-    x_start = min(x_range) + plot_width * 0.05  # 5% from left edge of content
-    y_pos = min(y_range) - plot_height * 0.05  # 5% below bottom of content
-    
-    # Add the scale bar line
-    fig.add_shape(
-        type="line",
-        x0=x_start,
-        x1=x_start + scale_length,
-        y0=y_pos,
-        y1=y_pos,
-        line=dict(color="black", width=2),
-        layer="above"
-    )
-    
-    # Add small vertical lines at ends
-    for x in [x_start, x_start + scale_length]:
-        fig.add_shape(
-            type="line",
-            x0=x,
-            x1=x,
-            y0=y_pos - plot_height * 0.01,  # 1% of plot height
-            y1=y_pos + plot_height * 0.01,
-            line=dict(color="black", width=2),
-            layer="above"
-        )
-    
-    # Add text label
-    fig.add_annotation(
-        x=x_start + scale_length/2,
-        y=y_pos,
-        text=f"{scale_length}m",
-        showarrow=False,
-        font=dict(size=12),
-        yshift=-20,  # Shift text down by 20 pixels
-        bgcolor="white",  # Add white background to make text more visible
-        borderpad=2
-    )
 
 def _add_wall_to_plot(
     fig: go.Figure,
@@ -1135,3 +1095,213 @@ def _add_wall_to_plot(
 def _space_matches_conditions(space: Dict, element_type: Optional[str], conditions: List[List[str]]) -> bool:
     """Check if a space matches the filter conditions."""
     return FilterParser.element_matches_conditions(space, element_type, conditions)
+
+def _calculate_optimal_layout(x_coords: List[float], y_coords: List[float]) -> Dict:
+    """Calculate optimal layout settings based on coordinate bounds.
+    
+    Args:
+        x_coords: List of x coordinates
+        y_coords: List of y coordinates
+        
+    Returns:
+        Dictionary with layout settings including margins and aspect ratio
+    """
+    # Calculate bounds
+    x_min, x_max = min(x_coords), max(x_coords)
+    y_min, y_max = min(y_coords), max(y_coords)
+    
+    # Calculate dimensions
+    width = x_max - x_min
+    height = y_max - y_min
+    
+    # Add margins (10% of the larger dimension)
+    margin = max(width, height) * 0.1
+    x_min -= margin
+    x_max += margin
+    y_min -= margin
+    y_max += margin
+    
+    return {
+        'xaxis': {
+            'range': [x_min, x_max],
+            'scaleanchor': 'y',
+            'scaleratio': 1,
+            'showgrid': False
+        },
+        'yaxis': {
+            'range': [y_min, y_max],
+            'showgrid': False
+        },
+        'showlegend': True,
+        'plot_bgcolor': 'white',
+        'paper_bgcolor': 'white'
+    }
+
+def _find_point_inside_polygon(polygon: List[Tuple[float, float]]) -> Tuple[float, float]:
+    """Find a point that is guaranteed to be inside a polygon.
+    
+    Args:
+        polygon: List of (x,y) coordinates forming a closed polygon
+        
+    Returns:
+        Tuple of (x,y) coordinates of a point inside the polygon
+    """
+    # Find the bounding box of the polygon
+    x_coords = [p[0] for p in polygon]
+    y_coords = [p[1] for p in polygon]
+    min_x, max_x = min(x_coords), max(x_coords)
+    min_y, max_y = min(y_coords), max(y_coords)
+    
+    # Start with the center of the bounding box
+    center_x = (min_x + max_x) / 2
+    center_y = (min_y + max_y) / 2
+    
+    # If the center is inside the polygon, use it
+    if _is_point_inside_polygon(center_x, center_y, polygon):
+        return center_x, center_y
+    
+    # Otherwise, try points along a line from center to each vertex
+    for vertex in polygon:
+        # Calculate direction vector from center to vertex
+        dx = vertex[0] - center_x
+        dy = vertex[1] - center_y
+        length = math.sqrt(dx*dx + dy*dy)
+        if length == 0:
+            continue
+            
+        # Try points at 25%, 50%, and 75% of the distance
+        for t in [0.25, 0.5, 0.75]:
+            test_x = center_x + dx * t
+            test_y = center_y + dy * t
+            if _is_point_inside_polygon(test_x, test_y, polygon):
+                return test_x, test_y
+    
+    # If all else fails, return the center (might be outside but better than nothing)
+    return center_x, center_y
+
+def _is_point_inside_polygon(x: float, y: float, polygon: List[Tuple[float, float]]) -> bool:
+    """Check if a point is inside a polygon using ray casting algorithm.
+    
+    Args:
+        x: X coordinate of point to test
+        y: Y coordinate of point to test
+        polygon: List of (x,y) coordinates forming a closed polygon
+        
+    Returns:
+        True if point is inside polygon, False otherwise
+    """
+    n = len(polygon)
+    inside = False
+    
+    p1x, p1y = polygon[0]
+    for i in range(1, n + 1):
+        p2x, p2y = polygon[i % n]
+        if y > min(p1y, p2y):
+            if y <= max(p1y, p2y):
+                if x <= max(p1x, p2x):
+                    if p1y != p2y:
+                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                    if p1x == p2x or x <= xinters:
+                        inside = not inside
+        p1x, p1y = p2x, p2y
+    
+    return inside
+
+def _add_scale_bar(
+    fig: go.Figure,
+    x_range: List[float],
+    y_range: List[float]
+) -> None:
+    """Add a scale bar to the floor plan visualization.
+    
+    Args:
+        fig: The plotly figure to add the scale bar to
+        x_range: List of [min_x, max_x] coordinates
+        y_range: List of [min_y, max_y] coordinates
+    """
+    # Calculate the size of the plot
+    x_size = x_range[1] - x_range[0]
+    y_size = y_range[1] - y_range[0]
+    
+    # Determine a reasonable scale bar length (10% of the smaller dimension)
+    scale_length = min(x_size, y_size) * 0.1
+    
+    # Round the scale length to a nice number
+    nice_length = _round_to_nice_number(scale_length)
+    
+    # Position the scale bar in the bottom right corner
+    # Leave some margin (5% of the respective dimension)
+    x_margin = x_size * 0.05
+    y_margin = y_size * 0.05
+    
+    # Calculate the position
+    x_start = x_range[1] - x_margin - nice_length
+    x_end = x_range[1] - x_margin
+    y_pos = y_range[0] + y_margin
+    
+    # Add the scale bar line
+    fig.add_trace(go.Scatter(
+        x=[x_start, x_end],
+        y=[y_pos, y_pos],
+        mode='lines',
+        line=dict(color='black', width=2),
+        showlegend=False,
+        hoverinfo='skip'
+    ))
+    
+    # Add tick marks
+    tick_length = y_size * 0.01  # 1% of y dimension
+    fig.add_trace(go.Scatter(
+        x=[x_start, x_start],
+        y=[y_pos - tick_length/2, y_pos + tick_length/2],
+        mode='lines',
+        line=dict(color='black', width=2),
+        showlegend=False,
+        hoverinfo='skip'
+    ))
+    fig.add_trace(go.Scatter(
+        x=[x_end, x_end],
+        y=[y_pos - tick_length/2, y_pos + tick_length/2],
+        mode='lines',
+        line=dict(color='black', width=2),
+        showlegend=False,
+        hoverinfo='skip'
+    ))
+    
+    # Add the scale label
+    fig.add_annotation(
+        x=(x_start + x_end) / 2,
+        y=y_pos + tick_length,
+        text=f"{nice_length:.1f} m",
+        showarrow=False,
+        font=dict(size=12),
+        xanchor='center',
+        yanchor='bottom'
+    )
+
+def _round_to_nice_number(value: float) -> float:
+    """Round a number to a nice, human-readable value.
+    
+    Args:
+        value: The value to round
+        
+    Returns:
+        A rounded value that is a multiple of 1, 2, or 5 times a power of 10
+    """
+    # Find the order of magnitude
+    magnitude = 10 ** math.floor(math.log10(value))
+    
+    # Normalize the value
+    normalized = value / magnitude
+    
+    # Round to the nearest nice number
+    if normalized < 1.5:
+        nice = 1
+    elif normalized < 3:
+        nice = 2
+    elif normalized < 7:
+        nice = 5
+    else:
+        nice = 10
+    
+    return nice * magnitude

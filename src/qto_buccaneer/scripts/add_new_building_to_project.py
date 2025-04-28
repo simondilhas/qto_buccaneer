@@ -10,6 +10,7 @@ import yaml
 import argparse
 from pathlib import Path
 from typing import Union, Optional
+from qto_buccaneer.scripts.building_summary import BuildingSummary
 
 def get_project_root() -> Path:
     """Get the root directory of the project."""
@@ -152,79 +153,97 @@ def _update_workflow_config(project_path: Union[Path, str], building_name: str) 
 def add_building_to_project(project_name: str, building_name: str, source_files_folder: Optional[Union[Path, str]] = None):
     """
     Add a new building to an existing project.
-    Creates the necessary folder structure based on the workflow configuration.
-    Optionally copies files from a source folder to the building's folders.
+    
+    This function:
+    1. Creates the necessary folder structure based on the workflow configuration
+    2. Updates the workflow configuration with the new building
+    3. Optionally copies files from a source folder to the building's folders
+    4. Creates a building summary YAML file with metadata about the building
     
     Args:
         project_name (str): Name of the project (with __public or __private tag)
         building_name (str): Name of the new building to add
         source_files_folder (Optional[Union[Path, str]]): Path to folder containing files to copy
+    
+    Returns:
+        None
+    
+    Raises:
+        ValueError: If the project doesn't exist or has invalid configuration
     """
     try:
-        # Get the root directory of the project
-        root_dir = get_project_root()
+        # Get project root and validate project path
+        project_root = get_project_root()
+        project_path = project_root / "projects" / project_name
         
-        # Define project path
-        project_path = root_dir / "projects" / project_name
-        
-        # Check if project exists
         if not project_path.exists():
-            raise ValueError(f"Project '{project_name}' not found in {project_path}")
-        
+            raise ValueError(f"Project '{project_name}' not found in {project_root / 'projects'}")
+            
         # Load workflow configuration
         workflow_config_path = project_path / "00_workflow_config.yaml"
         if not workflow_config_path.exists():
             raise ValueError(f"Workflow configuration not found in {workflow_config_path}")
-        
+            
         with open(workflow_config_path, 'r') as f:
             config = yaml.safe_load(f)
-        
+            
         # Get building folders from config
         building_folders = config.get('building_folder', [])
         if not building_folders:
             raise ValueError("No building folders defined in workflow configuration")
-        
+            
         # Create building directory and subfolders
         building_path = project_path / "buildings" / building_name
-        
-        # Check if building already exists
-        if building_path.exists():
-            print(f"Building '{building_name}' already exists, skipping...")
-            return
-        
-        # 1. First update the workflow config
-        _update_workflow_config(project_path, building_name)
-        
-        # 2. Create the folder structure
         building_path.mkdir(parents=True, exist_ok=True)
         
         # Create all required subfolders
         for folder in building_folders:
-            folder_path = building_path / folder
-            folder_path.mkdir(parents=True, exist_ok=True)
-            print(f"Created folder: {folder_path}")
+            (building_path / folder).mkdir(parents=True, exist_ok=True)
+            print(f"Created folder: {folder}")
         
-        # 3. Copy files from source folder if provided
+        # Create building summary in the building folder
+        summary_path = building_path / f"{building_name}_summary.yaml"
+        
+        # Only create summary if it doesn't exist
+        if not summary_path.exists():
+            # Create and update building summary using template
+            summary = BuildingSummary(summary_path)
+            summary.set_name(building_name)  # Set the actual building name
+            summary.add_metric("description", f"This is {building_name}")
+            summary.save()
+            print(f"Created building summary for '{building_name}'")
+        else:
+            print(f"Building summary for '{building_name}' already exists, skipping creation")
+        
+        # Update workflow configuration
+        _update_workflow_config(project_path, building_name)
+        
+        # Copy files if source folder is provided
         if source_files_folder:
             _copy_files_to_building(source_files_folder, building_path, building_name)
-        
-        print(f"\nBuilding '{building_name}' added successfully to project '{project_name}'")
-        print(f"Location: {building_path}")
+            
+        print(f"Successfully added building '{building_name}' to project '{project_name}'")
         
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
+        print(f"Error adding building to project: {e}", file=sys.stderr)
         raise
 
-def add_new_building_to_project_from_list(project_name: str, buildings: list[str]):
+def add_new_building_to_project_from_list(project_name: str, buildings: list[Union[str, dict]]) -> None:
     """
-    Add multiple buildings to an existing project.
-    Creates the necessary folder structure for each building.
+    Add multiple buildings to a project from a list of building names or dictionaries.
     
     Args:
-        project_name (str): Name of the project (with __public or __private tag)
-        buildings (list[str]): List of building names to add
+        project_name (str): Name of the project
+        buildings (list[Union[str, dict]]): List of building names or dictionaries with 'name' key
+    
+    Example:
+        >>> add_new_building_to_project_from_list("example_project__public", ["Building1", "Building2"])
+        >>> # Or with dictionaries:
+        >>> add_new_building_to_project_from_list("example_project__public", [{"name": "Building1"}, {"name": "Building2"}])
     """
-    for building_name in buildings:
+    for building in buildings:
+        # Extract building name from dictionary if needed
+        building_name = building["name"] if isinstance(building, dict) else building
         add_building_to_project(project_name, building_name)
 
 def create_buildings_from_files(input_folder_path: Union[Path, str], project_path: Union[Path, str], target_folder: str = "00_original_input_data") -> None:

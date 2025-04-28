@@ -16,6 +16,6 @@ project_name = config["project_name"]
 buildings_list = config["buildings"]
 
 add_new_building_to_project_from_list(
-    building_names=buildings_list, 
-    project_name=project_name)
+    project_name=project_name,
+    buildings=buildings_list)
 

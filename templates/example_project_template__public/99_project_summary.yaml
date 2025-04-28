@@ -1,0 +1,11 @@
+summary_version: 1.0
+project_name: "Example Project"
+project_description: "This is an example project"
+buildings:
+  - name: "Building 1"
+    description: "This is building 1"
+    metrics:
+      gross_floor_area_m2: 12300
+      net_floor_area_m2: 9800
+      number_of_spaces: 154
+    results_file: "Building_1/Building_1_results.yaml"

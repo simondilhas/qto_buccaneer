@@ -146,10 +146,11 @@ plots:
             - "LongName"
             - "Qto_SpaceBaseQuantities.NetFloorArea"
           size: 10
-      - name: "Doors"
-        filter: "type=IfcDoor"
-        label: none
-      - name: "Windows"
+      # TODO: Add doors and windows to the plot fi
+      #- name: "Doors"
+      #  filter: "type=IfcDoor"
+      #  label: none
+      #- name: "Windows"
         filter: "type=IfcWindow"
         label: none
   walls_by_relationships:

@@ -33,6 +33,9 @@ buildings:
   - name: "repair_change_value_3"
     repairs: []
   - name: "repair_change_value_4"
+    repairs: []
+  - name: "repair_change_value_5"
+    repairs: []
 
 building_folder:
   - "00_original_input_data"
