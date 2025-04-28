@@ -53,234 +53,27 @@ el.replaceWith(d);
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def extract_ifc_metadata(ifc_file_path, output_json_path=None):
-    logger.info(f&#34;Opening IFC file for metadata extraction: {ifc_file_path}&#34;)
+    &#34;&#34;&#34;Extract metadata from an IFC file and optionally save to JSON.&#34;&#34;&#34;
     ifc_file = ifcopenshell.open(ifc_file_path)
+    logger.info(f&#34;Opening IFC file for metadata extraction: {ifc_file_path}&#34;)
 
-    elements_data = []
-    classification_id_map = {}  # Map IFC entity to our internal classification ID
-    system_id_map = {}  # Map IFC entity to our internal system ID
+    # Build basic mappings
+    globalid_to_id, all_elements = _build_element_id_mapping(ifc_file)
+    project = all_elements[0]  # First element is the project
+    child_to_parent = _build_parent_child_mapping(ifc_file, project, globalid_to_id)
 
-    # Build GlobalId to ID map
-    globalid_to_id = {}
-    all_elements = []
+    # Extract classification and system data
+    classification_id_map, classification_data, next_id = _extract_classification_data(
+        ifc_file, all_elements, len(all_elements) + 1
+    )
+    system_id_map, system_data = _extract_system_data(ifc_file, all_elements, next_id)
 
-    # First get the project
-    project = ifc_file.by_type(&#34;IfcProject&#34;)[0]  # There should be exactly one project
-    all_elements.append(project)
-
-    # Then get all products
-    for el in ifc_file.by_type(&#34;IfcProduct&#34;):
-        if el.is_a(&#34;IfcOpeningElement&#34;):
-            continue  # Skip openings
-        all_elements.append(el)
-
-    logger.debug(f&#34;Found {len(all_elements)} elements (including project, excluding openings)&#34;)
-
-    # First pass: gather basic info and collect classifications
+    # Build element records
+    elements_data = classification_data + system_data
     for idx, el in enumerate(all_elements, start=1):
-        globalid_to_id[el.GlobalId] = idx
-
-    # Build parent-child mapping from Aggregates and Containment relations
-    child_to_parent = {}
-
-    # Project is the root, so all sites should point to it
-    for site in ifc_file.by_type(&#34;IfcSite&#34;):
-        child_to_parent[site.GlobalId] = project.GlobalId
-
-    for rel in ifc_file.by_type(&#34;IfcRelAggregates&#34;):
-        if rel.RelatedObjects:
-            parent = rel.RelatingObject
-            for child in rel.RelatedObjects:
-                child_to_parent[child.GlobalId] = parent.GlobalId
-
-    for rel in ifc_file.by_type(&#34;IfcRelContainedInSpatialStructure&#34;):
-        if rel.RelatedElements:
-            parent = rel.RelatingStructure
-            for child in rel.RelatedElements:
-                # Only set parent if not already set by Aggregates (prefer Aggregates)
-                if child.GlobalId not in child_to_parent:
-                    child_to_parent[child.GlobalId] = parent.GlobalId
-
-    # First collect all unique classifications and systems
-    counter = len(all_elements) + 1  # Start after regular elements
-    
-    # Collect classifications
-    for el in all_elements:
-        if hasattr(el, &#34;HasAssociations&#34;):
-            for association in el.HasAssociations:
-                if association.is_a(&#34;IfcRelAssociatesClassification&#34;):
-                    classification = association.RelatingClassification
-                    classification_key = str(classification)
-                    if classification_key not in classification_id_map:
-                        if classification.is_a(&#34;IfcClassificationReference&#34;):
-                            classification_data = {
-                                &#34;id&#34;: counter,
-                                &#34;parent_id&#34;: None,
-                                &#34;GlobalId&#34;: getattr(classification, &#34;GlobalId&#34;, None),
-                                &#34;IfcEntity&#34;: &#34;IfcClassificationReference&#34;,
-                                &#34;Name&#34;: str(getattr(classification, &#34;Name&#34;, &#34;&#34;)),
-                                &#34;Description&#34;: str(getattr(classification, &#34;Description&#34;, &#34;&#34;)),
-                                &#34;Location&#34;: str(getattr(classification, &#34;Location&#34;, &#34;&#34;)),
-                                &#34;ItemReference&#34;: str(getattr(classification, &#34;ItemReference&#34;, &#34;&#34;)),
-                                &#34;ReferencedSource&#34;: str(getattr(classification, &#34;ReferencedSource&#34;, &#34;&#34;))
-                            }
-                        elif classification.is_a(&#34;IfcClassification&#34;):
-                            classification_data = {
-                                &#34;id&#34;: counter,
-                                &#34;parent_id&#34;: None,
-                                &#34;GlobalId&#34;: getattr(classification, &#34;GlobalId&#34;, None),
-                                &#34;IfcEntity&#34;: &#34;IfcClassification&#34;,
-                                &#34;Name&#34;: str(getattr(classification, &#34;Name&#34;, &#34;&#34;)),
-                                &#34;Description&#34;: str(getattr(classification, &#34;Description&#34;, &#34;&#34;)),
-                                &#34;Location&#34;: str(getattr(classification, &#34;Location&#34;, &#34;&#34;)),
-                                &#34;Edition&#34;: str(getattr(classification, &#34;Edition&#34;, &#34;&#34;)),
-                                &#34;EditionDate&#34;: str(getattr(classification, &#34;EditionDate&#34;, &#34;&#34;))
-                            }
-                        elements_data.append(classification_data)
-                        classification_id_map[classification_key] = counter
-                        counter += 1
-                elif association.is_a(&#34;IfcRelAssociatesLibrary&#34;):
-                    library = association.RelatingLibrary
-                    library_key = str(library)
-                    if library_key not in classification_id_map:
-                        library_data = {
-                            &#34;id&#34;: counter,
-                            &#34;parent_id&#34;: None,
-                            &#34;GlobalId&#34;: getattr(library, &#34;GlobalId&#34;, None),
-                            &#34;IfcEntity&#34;: &#34;IfcLibraryReference&#34;,
-                            &#34;Name&#34;: str(getattr(library, &#34;Name&#34;, &#34;&#34;)),
-                            &#34;Description&#34;: str(getattr(library, &#34;Description&#34;, &#34;&#34;)),
-                            &#34;Version&#34;: str(getattr(library, &#34;Version&#34;, &#34;&#34;)),
-                            &#34;VersionDate&#34;: str(getattr(library, &#34;VersionDate&#34;, &#34;&#34;))
-                        }
-                        elements_data.append(library_data)
-                        classification_id_map[library_key] = counter
-                        counter += 1
-
-    # Collect systems
-    for el in all_elements:
-        if hasattr(el, &#34;HasAssignments&#34;):
-            for assignment in el.HasAssignments:
-                if assignment.is_a(&#34;IfcRelAssignsToGroup&#34;):
-                    group = assignment.RelatingGroup
-                    if group.is_a(&#34;IfcSystem&#34;):
-                        system_key = str(group)
-                        if system_key not in system_id_map:
-                            system_data = {
-                                &#34;id&#34;: counter,
-                                &#34;parent_id&#34;: None,
-                                &#34;GlobalId&#34;: getattr(group, &#34;GlobalId&#34;, None),
-                                &#34;IfcEntity&#34;: &#34;IfcSystem&#34;,
-                                &#34;Name&#34;: str(getattr(group, &#34;Name&#34;, &#34;&#34;)),
-                                &#34;Description&#34;: str(getattr(group, &#34;Description&#34;, &#34;&#34;)),
-                                &#34;ObjectType&#34;: str(getattr(group, &#34;ObjectType&#34;, &#34;&#34;)),
-                                &#34;Type&#34;: &#34;System&#34;
-                            }
-                            elements_data.append(system_data)
-                            system_id_map[system_key] = counter
-                            counter += 1
-                elif assignment.is_a(&#34;IfcRelAssignsToProcess&#34;):
-                    process = assignment.RelatingProcess
-                    system_key = str(process)
-                    if system_key not in system_id_map:
-                        system_data = {
-                            &#34;id&#34;: counter,
-                            &#34;parent_id&#34;: None,
-                            &#34;GlobalId&#34;: getattr(process, &#34;GlobalId&#34;, None),
-                            &#34;IfcEntity&#34;: &#34;IfcProcess&#34;,
-                            &#34;Name&#34;: str(getattr(process, &#34;Name&#34;, &#34;&#34;)),
-                            &#34;Description&#34;: str(getattr(process, &#34;Description&#34;, &#34;&#34;)),
-                            &#34;ObjectType&#34;: str(getattr(process, &#34;ObjectType&#34;, &#34;&#34;)),
-                            &#34;Type&#34;: &#34;Process&#34;
-                        }
-                        elements_data.append(system_data)
-                        system_id_map[system_key] = counter
-                        counter += 1
-                elif assignment.is_a(&#34;IfcRelAssignsToResource&#34;):
-                    resource = assignment.RelatingResource
-                    system_key = str(resource)
-                    if system_key not in system_id_map:
-                        system_data = {
-                            &#34;id&#34;: counter,
-                            &#34;parent_id&#34;: None,
-                            &#34;GlobalId&#34;: getattr(resource, &#34;GlobalId&#34;, None),
-                            &#34;IfcEntity&#34;: &#34;IfcResource&#34;,
-                            &#34;Name&#34;: str(getattr(resource, &#34;Name&#34;, &#34;&#34;)),
-                            &#34;Description&#34;: str(getattr(resource, &#34;Description&#34;, &#34;&#34;)),
-                            &#34;ObjectType&#34;: str(getattr(resource, &#34;ObjectType&#34;, &#34;&#34;)),
-                            &#34;Type&#34;: &#34;Resource&#34;
-                        }
-                        elements_data.append(system_data)
-                        system_id_map[system_key] = counter
-                        counter += 1
-
-    # Now build full record for each element
-    for idx, el in enumerate(all_elements, start=1):
-        record = {
-            &#34;id&#34;: idx,
-            &#34;parent_id&#34;: None,
-            &#34;GlobalId&#34;: el.GlobalId,
-            &#34;IfcEntity&#34;: el.is_a(),
-            &#34;Classifications&#34;: [],  # List of classification IDs
-            &#34;Systems&#34;: []  # List of system IDs
-        }
-
-        parent_gid = child_to_parent.get(el.GlobalId)
-        if parent_gid:
-            record[&#34;parent_id&#34;] = globalid_to_id.get(parent_gid)
-
-        # Get all attributes from the element
-        for attr in dir(el):
-            if (not attr.startswith(&#39;_&#39;) and 
-                not callable(getattr(el, attr)) and
-                attr not in [
-                    &#39;ObjectPlacement&#39;, 
-                    &#39;OwnerHistory&#39;, 
-                    &#39;Representation&#39;,
-                    &#39;RepresentationContexts&#39;,
-                    &#39;UnitsInContext&#39;,
-                    &#39;file&#39;,
-                    &#39;IsDefinedBy&#39;,
-                    &#39;HasAssociations&#39;,
-                    &#39;IsDecomposedBy&#39;,
-                    &#39;Decomposes&#39;
-                ]):
-                value = getattr(el, attr, None)
-                # Handle entity instances
-                if hasattr(value, &#39;is_a&#39;):  # This is an IFC entity
-                    if hasattr(value, &#39;GlobalId&#39;):
-                        record[attr] = value.GlobalId
-                    else:
-                        record[attr] = str(value)
-                # Handle lists of entities
-                elif isinstance(value, (list, tuple)) and value and hasattr(value[0], &#39;is_a&#39;):
-                    record[attr] = [v.GlobalId if hasattr(v, &#39;GlobalId&#39;) else str(v) for v in value]
-                # Handle other values
-                else:
-                    record[attr] = value
-
-        # Property Sets (Psets)
-        if hasattr(el, &#34;IsDefinedBy&#34;):
-            for rel_def in el.IsDefinedBy:
-                if rel_def.is_a(&#34;IfcRelDefinesByProperties&#34;):
-                    prop_set = rel_def.RelatingPropertyDefinition
-                    if prop_set.is_a(&#34;IfcPropertySet&#34;):
-                        pset_name = prop_set.Name
-                        for prop in prop_set.HasProperties:
-                            prop_name = f&#34;{pset_name}.{prop.Name}&#34;
-                            prop_value = getattr(prop, &#34;NominalValue&#34;, None)
-                            if prop_value:
-                                try:
-                                    value = prop_value.wrappedValue
-                                    # Handle boolean values
-                                    if isinstance(value, bool):
-                                        record[prop_name] = value
-                                    else:
-                                        record[prop_name] = str(value)
-                                except AttributeError:
-                                    record[prop_name] = str(prop_value)
-
-        # Add classification references
+        record = _create_element_record(el, idx, globalid_to_id, child_to_parent)
+        
+        # Add classification and system references
         if hasattr(el, &#34;HasAssociations&#34;):
             for association in el.HasAssociations:
                 if association.is_a(&#34;IfcRelAssociatesClassification&#34;):
@@ -294,7 +87,6 @@ el.replaceWith(d);
                     if library_key in classification_id_map:
                         record[&#34;Classifications&#34;].append(classification_id_map[library_key])
 
-        # Add system references
         if hasattr(el, &#34;HasAssignments&#34;):
             for assignment in el.HasAssignments:
                 if assignment.is_a(&#34;IfcRelAssignsToGroup&#34;):
@@ -316,29 +108,17 @@ el.replaceWith(d);
 
         elements_data.append(record)
 
-    # Create DataFrame with explicit dtype mapping to preserve boolean values
-    df = pd.DataFrame(elements_data)
-    
-    # Convert boolean columns back to boolean type
-    for col in df.columns:
-        if df[col].dtype == &#39;object&#39;:
-            # Check if column contains boolean values
-            if df[col].isin([True, False]).any():
-                df[col] = df[col].astype(&#39;boolean&#39;)
-
+    # Save to JSON if requested
     if output_json_path:
-        os.makedirs(os.path.dirname(output_json_path), exist_ok=True)
-        # Create the final JSON structure with all elements
-        json_data = {
-            &#34;elements&#34;: {str(elem[&#34;id&#34;]): elem for elem in elements_data}
-        }
+        elements_dict = {str(elem[&#34;id&#34;]): elem for elem in elements_data}
+        json_data = {&#34;elements&#34;: elements_dict}
         with open(output_json_path, &#39;w&#39;) as f:
             json.dump(json_data, f, indent=2, ensure_ascii=False)
         logger.info(f&#34;Metadata saved to {output_json_path}&#34;)
 
-    return df</code></pre>
+    return elements_data</code></pre>
 </details>
-<div class="desc"></div>
+<div class="desc"><p>Extract metadata from an IFC file and optionally save to JSON.</p></div>
 </dd>
 <dt id="qto_buccaneer.utils.ifc_metadata_extractor.extract_metadata"><code class="name flex">
 <span>def <span class="ident">extract_metadata</span></span>(<span>ifc_file_path,<br>output_formats=['json', 'json_file', 'dataframe'],<br>output_dir=None,<br>project_name=None)</span>
@@ -374,95 +154,26 @@ el.replaceWith(d);
         output_dir.mkdir(parents=True, exist_ok=True)
 
     # Extract metadata
-    df = extract_ifc_metadata(ifc_file_path)
+    elements_data = extract_ifc_metadata(ifc_file_path)
 
     # Prepare return values
     return_values = []
 
+    # Create elements dictionary for JSON
+    elements_dict = {str(elem[&#34;id&#34;]): elem for elem in elements_data}
+    json_data = {&#34;elements&#34;: elements_dict}
+
     # Handle requested formats in order
     if &#34;dataframe&#34; in output_formats:
+        # Convert to DataFrame only if requested
+        df = pd.DataFrame(elements_data)
         return_values.append(df)
     
-    def convert_element(element):
-        &#34;&#34;&#34;Convert element fields to appropriate types.
-        - id: integer
-        - parent_id: integer or None
-        - booleans: preserved as bool
-        - NaN values: converted to None
-        - null values: preserved as None
-        - empty strings: preserved as empty strings
-        - arrays: preserved as arrays
-        - entity instances: converted to GlobalId or string representation
-        - file objects: converted to string representation
-        - All other fields: preserve original type
-        &#34;&#34;&#34;
-        # Convert id to integer
-        element[&#39;id&#39;] = int(element[&#39;id&#39;])
-        
-        # Convert parent_id to integer if not None and not NaN
-        if element[&#39;parent_id&#39;] is not None and not pd.isna(element[&#39;parent_id&#39;]):
-            element[&#39;parent_id&#39;] = int(element[&#39;parent_id&#39;])
-        else:
-            element[&#39;parent_id&#39;] = None
-        
-        # Handle all other fields
-        for key, value in element.items():
-            if isinstance(value, (list, np.ndarray)):
-                # Handle lists of values
-                if value and hasattr(value[0], &#39;is_a&#39;):  # List of entities
-                    element[key] = [v.GlobalId if hasattr(v, &#39;GlobalId&#39;) else str(v) for v in value]
-                else:
-                    # Preserve other arrays as is
-                    continue
-            elif pd.isna(value):
-                element[key] = None
-            elif isinstance(value, bool):
-                # Preserve boolean values
-                element[key] = bool(value)
-            elif isinstance(value, str):
-                # Preserve empty strings and $ values
-                element[key] = str(value)
-            elif hasattr(value, &#39;is_a&#39;):  # Single entity
-                if hasattr(value, &#39;GlobalId&#39;):
-                    element[key] = value.GlobalId
-                else:
-                    element[key] = str(value)
-            elif hasattr(value, &#39;read&#39;):  # File object
-                element[key] = str(value)
-            elif isinstance(value, float):
-                # Convert float values to appropriate type
-                if value.is_integer():
-                    element[key] = int(value)
-                else:
-                    element[key] = float(value)
-            elif isinstance(value, int):
-                # Preserve integer values
-                element[key] = int(value)
-            else:
-                # Convert any other non-serializable type to string
-                element[key] = str(value)
-            
-        return element
-    
-    def create_elements_dict(df):
-        &#34;&#34;&#34;Create a dictionary of elements with string keys (required by JSON)
-        but integer values for id and parent_id fields.&#34;&#34;&#34;
-        elements_dict = {}
-        for _, row in df.iterrows():
-            element = convert_element(row.to_dict())
-            # JSON requires string keys, but we keep id and parent_id as integers in the values
-            elements_dict[str(element[&#39;id&#39;])] = element
-        return elements_dict
-    
     if &#34;json&#34; in output_formats:
-        elements_dict = create_elements_dict(df)
-        json_data = {&#34;elements&#34;: elements_dict}
         return_values.append(json_data)
     
     if &#34;json_file&#34; in output_formats:
         json_path = output_dir / f&#34;{project_name}_metadata.json&#34;
-        elements_dict = create_elements_dict(df)
-        json_data = {&#34;elements&#34;: elements_dict}
         with open(json_path, &#39;w&#39;) as f:
             json.dump(json_data, f, indent=2, ensure_ascii=False)
         logger.info(f&#34;Metadata saved to {json_path}&#34;)
