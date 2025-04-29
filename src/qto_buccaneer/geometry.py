@@ -7,6 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urljoin
 from qto_buccaneer.tools.geometry.calculate_geometry_json_via_api import _upload_ifc_file, _validate_api_key
+from qto_buccaneer.utils.result_bundle import ResultBundle
 
 # Configure logging
 logging.basicConfig(
@@ -16,12 +17,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Load environment variables
-
+load_dotenv()
 
 def calculate_geometry_json_via_api(
     ifc_path: str,
     output_dir: str
-) -> str:
+) -> ResultBundle:
     """
     This module sends IFC geometry to an external FastAPI service 
     to convert it into JSON format for visualization.
@@ -38,7 +39,7 @@ def calculate_geometry_json_via_api(
         output_dir (str): Directory where the JSON file should be saved
         
     Returns:
-        str: Path to the output directory containing the generated JSON files
+        ResultBundle: A ResultBundle containing the geometry data and metadata
     """
     try:
         # Validate API key
@@ -48,7 +49,7 @@ def calculate_geometry_json_via_api(
         os.makedirs(output_dir, exist_ok=True)
         
         # Upload IFC file and get geometry data
-        _upload_ifc_file(
+        result_bundle = _upload_ifc_file(
             file_path=ifc_path,
             output_dir=output_dir,
             include_geometry=True,
@@ -57,7 +58,7 @@ def calculate_geometry_json_via_api(
         )
             
         logger.info(f"Geometry JSON files generated in directory: {output_dir}")
-        return output_dir
+        return result_bundle
         
     except Exception as e:
         logger.error(f"Error in calculate_geometry_json: {str(e)}", exc_info=True)

@@ -61,10 +61,9 @@ def _create_geometry_result_bundle(
     Returns:
         ResultBundle containing the geometry data and metadata
     """
-    # Create summary data as a dictionary with title and helper_data
+    # Create summary data with Geometry and Metadata JSON as top-level key
     summary = {
-        "title": "Geometry and Metadata JSON",
-        "helper_data": {
+        "Geometry and Metadata JSON": {
             "status": "success",
             "timestamp": datetime.now().isoformat(),
             "base_filename": base_filename,
