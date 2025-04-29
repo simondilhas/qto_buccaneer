@@ -13,7 +13,7 @@ from qto_buccaneer.tools.checks.compare_target_actual import RoomComparisonResul
 from qto_buccaneer.tools.checks.compare_target_actual import BuildingComparison, _save_results, _load_filter_config, _get_check_config
 import json
 from qto_buccaneer.utils.result_bundle import ResultBundle
-from qto_buccaneer.tools.enrich.compare_room_names import _create_comparison_df, _create_summary_data, _export_to_excel, _extract_ifc_rooms, _extract_excel_rooms, _create_error_result_bundle
+from qto_buccaneer.tools.checks.compare_room_names import _create_comparison_df, _create_summary_data, _export_to_excel, _extract_ifc_rooms, _extract_excel_rooms, _create_error_result_bundle
 
 
 def compare_room_names(
