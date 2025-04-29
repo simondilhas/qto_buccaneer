@@ -61,8 +61,8 @@ def _create_geometry_result_bundle(
     Returns:
         ResultBundle containing the geometry data and metadata
     """
-    # Create summary data as a list with title and helper_data
-    summary = [{
+    # Create summary data as a dictionary with title and helper_data
+    summary = {
         "title": "Geometry and Metadata JSON",
         "helper_data": {
             "status": "success",
@@ -72,7 +72,7 @@ def _create_geometry_result_bundle(
             "extracted_ifc_metadata": metadata or {},
             **(metadata or {})
         }
-    }]
+    }
     
     # Create the ResultBundle
     return ResultBundle(
