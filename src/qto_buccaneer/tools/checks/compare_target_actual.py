@@ -1,151 +1,21 @@
-from qto_buccaneer.reports import ExcelLayoutConfig
-from typing import Optional
-import pandas as pd
-import openpyxl
-import os
-import yaml
-import traceback
+"""
+Module for comparing target and actual building data.
+"""
 from dataclasses import dataclass
 from pathlib import Path
-from openpyxl.utils import get_column_letter
+from typing import Optional, Union, Dict, Any, List
+import pandas as pd
+import yaml
+import logging
+from qto_buccaneer.utils.result_bundle import ResultBundle
+from qto_buccaneer.utils.metadata_filter import MetadataFilter
 
-class RoomComparisonResult:
-    """Class to hold and format room comparison results."""
-    
-    def __init__(self, detailed_df: pd.DataFrame, ifc_rooms: set, excel_rooms: set):
-        self.detailed_df = detailed_df
-        self.ifc_rooms = ifc_rooms
-        self.excel_rooms = excel_rooms
-        
-        # Calculate summary statistics
-        self.total_target_rooms = len(excel_rooms)
-        self.total_ifc_rooms = len(ifc_rooms)
-        self.matching_rooms = len(ifc_rooms.intersection(excel_rooms))
-        self.missing_rooms = list(excel_rooms - ifc_rooms)
-        self.extra_rooms = list(ifc_rooms - excel_rooms)
-        
-        # Determine status
-        if not self.missing_rooms and not self.extra_rooms:
-            self.status = "passed"
-        elif self.missing_rooms:
-            self.status = "failed-rooms missing in ifc"
-        else:
-            self.status = "failed-rooms added in ifc"
-    
-    def to_yaml(self) -> dict:
-        """Generate YAML summary of the comparison."""
-        summary = {
-            "type": "room_comparison",
-            "status": self.status,
-            "summary": f"{self.matching_rooms} of {self.total_target_rooms} rooms found in IFC",
-            "target": {
-                "total_rooms": self.total_target_rooms,
-                "found_rooms": self.matching_rooms,
-                "missing_rooms": len(self.missing_rooms)
-            },
-            "ifc": {
-                "total_rooms": self.total_ifc_rooms,
-                "matching_rooms": self.matching_rooms,
-                "extra_rooms": len(self.extra_rooms)
-            }
-        }
-        
-        # Add issue details if there are any
-        if self.status != "passed":
-            summary["issues"] = {}
-            if self.missing_rooms:
-                summary["issues"]["missing_rooms"] = [
-                    {"name": room} for room in sorted(self.missing_rooms)
-                ]
-            if self.extra_rooms:
-                # Get GlobalIds for extra rooms from the detailed DataFrame
-                extra_rooms_data = []
-                for room in sorted(self.extra_rooms):
-                    room_data = self.detailed_df[
-                        (self.detailed_df["Room Name"].str.lower() == room) & 
-                        (self.detailed_df["Status"] == "Only in IFC")
-                    ]
-                    if not room_data.empty:
-                        extra_rooms_data.append({
-                            "global_id": room_data["GlobalId"].iloc[0],
-                            "LongName": room,
-                        })
-                    else:
-                        extra_rooms_data.append({"name": room})
-                summary["issues"]["extra_rooms"] = extra_rooms_data
-        
-        return summary
-    
-    def to_dict(self) -> dict:
-        """Get all comparison data as a dictionary."""
-        return {
-            "detailed_df": self.detailed_df.to_dict(),
-            "summary": self.to_yaml(),
-            "status": self.status,
-            "statistics": {
-                "total_target_rooms": self.total_target_rooms,
-                "total_ifc_rooms": self.total_ifc_rooms,
-                "matching_rooms": self.matching_rooms,
-                "missing_rooms_count": len(self.missing_rooms),
-                "extra_rooms_count": len(self.extra_rooms)
-            }
-        }
-    
-    def to_excel(self, output_path: str, layout_config: Optional[ExcelLayoutConfig] = None) -> None:
-        """Export detailed comparison to Excel with formatting."""
-        if self.detailed_df.empty:
-            print("Warning: No data to export to Excel!")
-            return
-            
-        # Make sure the output directory exists
-        output_dir = os.path.dirname(output_path)
-        if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
-            
-        try:
-            # Use provided config or create default one
-            config = layout_config or ExcelLayoutConfig(
-                horizontal_lines=True,
-                vertical_lines=True,
-                bold_headers=True,
-                auto_column_width=True
-            )
-            
-            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
-                self.detailed_df.to_excel(writer, index=False, sheet_name='Room Name Comparison')
-                worksheet = writer.sheets['Room Name Comparison']
-                
-                # Apply styling based on config
-                if config.bold_headers:
-                    for cell in worksheet[1]:
-                        cell.font = openpyxl.styles.Font(bold=True)
-                        if config.header_color:
-                            cell.fill = openpyxl.styles.PatternFill(
-                                start_color=config.header_color,
-                                end_color=config.header_color,
-                                fill_type='solid'
-                            )
-                
-                # Auto-adjust column widths
-                if config.auto_column_width:
-                    for column in worksheet.columns:
-                        max_length = 0
-                        column = [cell for cell in column]
-                        for cell in column:
-                            try:
-                                if len(str(cell.value)) > max_length:
-                                    max_length = len(str(cell.value))
-                            except:
-                                pass
-                        adjusted_width = (max_length + 2)
-                        worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
-                        
-        except Exception as e:
-            print(f"Error exporting to Excel: {str(e)}")
-            import traceback
-            traceback.print_exc()
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-
+# Constants
+EPSILON = 0.001  # Small value threshold for area comparisons
 
 class SafeLoader(yaml.SafeLoader):
     """Custom YAML loader that handles both scalar and sequence nodes."""
@@ -154,116 +24,156 @@ class SafeLoader(yaml.SafeLoader):
             return [self.construct_scalar(child) for child in node.value]
         return super().construct_scalar(node)
 
-
 @dataclass
-class BuildingComparison:
-    """Main data structure for building comparison results."""
+class ComparisonResult:
+    """Main data structure for comparison results."""
     merged_df: pd.DataFrame
-    return_values: list[str] 
-    area_target_column: str
-    area_actual_column: str
+    return_values: List[str]
+    area_target_column: Optional[str] = None
+    area_actual_column: Optional[str] = None
+    comparison_type: str = "area"  # "area" or "name"
     
-    def __post_init__(self):
-        """Initialize the comparison."""
-        pass
+    def to_result_bundle(self) -> ResultBundle:
+        """Convert the comparison to a ResultBundle."""
+        if self.comparison_type == "name":
+            return self._create_name_comparison_bundle()
+        return self._create_area_comparison_bundle()
     
-    def to_summary_yaml(self) -> dict:
-        """Generate YAML summary of the comparison."""
-        # Calculate statistics from merged DataFrame
+    def _create_name_comparison_bundle(self) -> ResultBundle:
+        """Create a ResultBundle for room name comparison."""
+        actual_name_col = self._find_name_column('_actual')
+        target_name_col = self._find_name_column('_target')
+        
+        ifc_rooms = set(self.merged_df[self.merged_df['status'] != 'missing'][actual_name_col].dropna().str.lower().unique())
+        excel_rooms = set(self.merged_df[self.merged_df['status'] != 'extra'][target_name_col].dropna().str.lower().unique())
+        
+        rooms_only_in_ifc = list(ifc_rooms - excel_rooms)
+        rooms_only_in_excel = list(excel_rooms - ifc_rooms)
+        
+        status = self._determine_name_comparison_status(rooms_only_in_excel, rooms_only_in_ifc)
+        
+        summary_data = {
+            "room_comparison": {
+                "status": status,
+                "summary": {
+                    "target_rooms": len(excel_rooms),
+                    "actual_rooms": len(ifc_rooms),
+                    "additional_rooms": len(rooms_only_in_ifc),
+                    "missing_rooms": len(rooms_only_in_excel)
+                },
+                "additional_rooms": sorted(rooms_only_in_ifc),
+                "missing_rooms": sorted(rooms_only_in_excel)
+            }
+        }
+        
+        return ResultBundle(dataframe=self.merged_df[self.return_values], json=summary_data)
+    
+    def _create_area_comparison_bundle(self) -> ResultBundle:
+        """Create a ResultBundle for area comparison."""
+        stats = self._calculate_area_statistics()
+        
+        summary_data = {
+            "name": "Target Program vs Actual Program",
+            "status": str(stats['status']),
+            "overview": {
+                "total_items": int(stats['total_items']),
+                "compliance_rate": float(stats['compliance_rate']),
+                "total_area": {
+                    "target": float(stats['total_target_area']),
+                    "actual": float(stats['total_actual_area']),
+                    "difference_pct": float(stats['total_area_diff_pct'])
+                }
+            },
+            "issues": {
+                "missing": int(stats['missing_items']),
+                "extra": int(stats['extra_items']),
+                "out_of_tolerance": int(stats['out_of_tolerance_items'])
+            }
+        }
+        
+        return ResultBundle(dataframe=self.merged_df[self.return_values], json=summary_data)
+    
+    def _find_name_column(self, suffix: str) -> str:
+        """Find the name column with the given suffix."""
+        col = next(
+            (col for col in self.merged_df.columns 
+             if col.endswith(suffix) and ('name' in col.lower() or 'longname' in col.lower())),
+            None
+        )
+        if col is None:
+            raise ValueError(f"No name column found with suffix {suffix}")
+        return col
+    
+    def _determine_name_comparison_status(self, missing_rooms: List[str], extra_rooms: List[str]) -> str:
+        """Determine the status of a name comparison."""
+        if not missing_rooms:
+            return "success"
+        if extra_rooms:
+            return "additional roomtypes used"
+        return "error"
+    
+    def _calculate_area_statistics(self) -> Dict[str, float]:
+        """Calculate statistics for area comparison."""
         total_items = len(self.merged_df)
         items_within_tolerance = len(self.merged_df[self.merged_df['status'] == 'within_tolerance'])
         missing_items = len(self.merged_df[self.merged_df['status'] == 'missing'])
         extra_items = len(self.merged_df[self.merged_df['status'] == 'extra'])
         
-        # Calculate total areas
         total_target_area = float(self.merged_df[self.area_target_column].sum())
         total_actual_area = float(self.merged_df[self.area_actual_column].sum())
         total_area_diff = float(total_actual_area - total_target_area)
         total_area_diff_pct = float((total_area_diff / total_target_area * 100) if total_target_area > 0 else 0)
         
-        # Determine status
-        if missing_items > 0:
-            status = "failed"
-        elif extra_items > 0:
-            status = "warning"
-        elif items_within_tolerance == total_items:
-            status = "passed"
-        else:
-            status = "warning"
+        status = self._determine_area_comparison_status(missing_items, extra_items, items_within_tolerance, total_items)
         
-        # Get problematic items
-        #problematic_df = self.merged_df[self.merged_df['status'] != 'within_tolerance']
-        #problematic_items = [
-        #    {
-        #        "category": str(row['target_key']),
-        #        "status": str(row['status']),
-        #        "name": str(row.get('name_target', row.get('name_actual', ''))),
-        #        "target": float(row['target_area']),
-        #        "actual": float(row['actual_area']),
-        #        "difference_pct": float(row['area_diff_pct'])
-        #    }
-        #    for _, row in problematic_df.iterrows()
-        #]
-        
-        summary = {
-            "name": "Target Program vs Actual Program",
-            "status": str(status),
-            "overview": {
-                "total_items": int(total_items),
-                "compliance_rate": float((items_within_tolerance / total_items * 100) if total_items > 0 else 0),
-                "total_area": {
-                    "target": float(total_target_area),
-                    "actual": float(total_actual_area),
-                    "difference_pct": float(total_area_diff_pct)
-                }
-            },
-            "issues": {
-                "missing": int(missing_items),
-                "extra": int(extra_items),
-                "out_of_tolerance": int(total_items - items_within_tolerance - missing_items - extra_items)
-            },
-            #"problematic_items": sorted(
-            #    problematic_items,
-            #    key=lambda x: abs(x["difference_pct"]),
-            #    reverse=True
-            #)[:10]
+        return {
+            'total_items': total_items,
+            'items_within_tolerance': items_within_tolerance,
+            'missing_items': missing_items,
+            'extra_items': extra_items,
+            'total_target_area': total_target_area,
+            'total_actual_area': total_actual_area,
+            'total_area_diff': total_area_diff,
+            'total_area_diff_pct': total_area_diff_pct,
+            'status': status,
+            'compliance_rate': float((items_within_tolerance / total_items * 100) if total_items > 0 else 0),
+            'out_of_tolerance_items': total_items - items_within_tolerance - missing_items - extra_items
         }
-        
-        return summary
     
-    def to_dict(self) -> dict:
-        """Convert the comparison data to a dictionary."""
-        return self.to_dataframe().to_dict(orient='records')
-    
-    def to_dataframe(self,) -> pd.DataFrame:
-        """Return the merged DataFrame with the spcified columns."""
-        return self.merged_df[self.return_values]
+    def _determine_area_comparison_status(self, missing_items: int, extra_items: int, 
+                                        items_within_tolerance: int, total_items: int) -> str:
+        """Determine the status of an area comparison."""
+        if missing_items > 0:
+            return "failed"
+        if extra_items > 0:
+            return "warning"
+        if items_within_tolerance == total_items:
+            return "passed"
+        return "warning"
 
-def _load_filter_config(filter_dir: str) -> dict:
+def load_filter_config(filter_dir: str) -> Dict[str, Any]:
     """Load filter configuration from file or string."""
     if Path(filter_dir).exists():
         with open(filter_dir, 'r') as f:
             return yaml.load(f, Loader=SafeLoader)
     return yaml.load(filter_dir, Loader=SafeLoader)
 
-def _get_check_config(filter_config: dict) -> dict:
+def get_check_config(filter_config: Dict[str, Any]) -> Dict[str, Any]:
     """Extract check configuration from filter config."""
     checks = filter_config.get('checks', [])
     if not checks:
         raise ValueError("No checks configuration found in YAML file")
     return checks[0]
 
-
-def _calculate_differences(
+def calculate_differences(
     merged_df: pd.DataFrame,
-    tolerance: float,  # e.g. 10.0 for ±10%
+    tolerance: float,
     target_area_column: str,
     actual_area_column: str,
     key_target_column: str,
     key_actual_column: str
 ) -> pd.DataFrame:
     """Calculate area differences and determine status based on percentage tolerance."""
-
     # Fill missing values
     merged_df[actual_area_column] = merged_df[actual_area_column].fillna(0.0)
     merged_df[target_area_column] = merged_df[target_area_column].fillna(0.0)
@@ -279,24 +189,21 @@ def _calculate_differences(
     )
 
     # Determine status
-    def get_status(row, key_target_column, key_actual_column, actual_area_column, target_area_column, tolerance):
+    def get_status(row):
         actual_area = row.get(actual_area_column, 0.0)
         target_area = row.get(target_area_column, 0.0)
-        key_target_column = row.get(key_target_column, None)
-
-        # Small value threshold
-        EPSILON = 0.001  # treat < 0.001 as zero
+        key_target = row.get(key_target_column, None)
 
         # 1. Missing → Target exists, actual missing
         if target_area > EPSILON and actual_area < EPSILON:
             return 'missing'
 
         # 2. Project-specific → Target exists (LongName present), no area planned, but actual area > 0
-        if pd.notna(key_target_column) and target_area < EPSILON and actual_area > EPSILON:
+        if pd.notna(key_target) and target_area < EPSILON and actual_area > EPSILON:
             return 'project_specific'
 
         # 3. Extra space → No target LongName, but actual area > 0
-        if pd.isna(key_target_column) and actual_area > EPSILON:
+        if pd.isna(key_target) and actual_area > EPSILON:
             return 'extra_space'
 
         # 4. Within tolerance
@@ -309,105 +216,252 @@ def _calculate_differences(
         # 5. Otherwise: Out of tolerance
         return 'out_of_tolerance'
 
-    merged_df['status'] = merged_df.apply(
-    lambda row: get_status(
-        row,
-        key_target_column=key_target_column,
-        key_actual_column=key_actual_column,
-        actual_area_column=actual_area_column,
-        target_area_column=target_area_column,
-        tolerance=tolerance
-    ),
-    axis=1
-)
-
+    merged_df['status'] = merged_df.apply(get_status, axis=1)
     return merged_df
 
-
-
-def _save_results(comparison: BuildingComparison, output_path: Path, building_name: str) -> None:
-    """Save comparison results to files."""
-    # Save YAML summary
-    summary = comparison.to_summary_yaml()
-    with open(output_path / f"{building_name}_summary.yaml", 'w') as f:
-        yaml.dump(summary, f)
+def apply_filter(df: pd.DataFrame, filter_str: str) -> pd.DataFrame:
+    """Apply filter to DataFrame if specified."""
+    if not filter_str:
+        return df
     
-    # Save DataFrame
-    df = comparison.to_dataframe()
-    df.to_excel(output_path / f"{building_name}_comparison.xlsx", index=False)
+    try:
+        return MetadataFilter.filter_df_from_str(df, filter_str)
+    except KeyError as e:
+        raise ValueError(f"Column {e} not found in DataFrame. Cannot apply filter.")
 
+def handle_duplicate_global_ids(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Handle duplicate Global IDs by aggregating their data.
+    
+    Args:
+        df: DataFrame containing the data with potential duplicate Global IDs
+        
+    Returns:
+        DataFrame with aggregated data for duplicate Global IDs
+    """
+    if 'GlobalId' not in df.columns:
+        return df
+        
+    # Find duplicates
+    duplicate_global_ids = df[df.duplicated(subset=['GlobalId'], keep=False)]
+    if duplicate_global_ids.empty:
+        return df
+        
+    logger.warning(f"Found {len(duplicate_global_ids)} rows with duplicate GlobalIds")
+    
+    # Define columns to aggregate
+    numeric_columns = df.select_dtypes(include=['float64', 'int64']).columns
+    string_columns = df.select_dtypes(include=['object']).columns
+    
+    # Group by GlobalId and aggregate
+    aggregation_dict = {
+        col: 'sum' if col in numeric_columns else 'first' 
+        for col in df.columns if col != 'GlobalId'
+    }
+    
+    # Perform the aggregation
+    df = df.groupby('GlobalId', as_index=False).agg(aggregation_dict)
+    
+    logger.info(f"Aggregated data for {len(duplicate_global_ids['GlobalId'].unique())} duplicate GlobalIds")
+    return df
 
 def compare_target_actual(
+    actual_df: pd.DataFrame,
     target_df: pd.DataFrame,
-    actual_metadata_df: pd.DataFrame,
+    config_path: Path,
     output_dir: str,
-    config_dir: str,
+    rule_name: str,
     building_name: str,
-) -> BuildingComparison:
+) -> ResultBundle:
     """
     Compare target and actual building data.
     
     Args:
-        target_df: DataFrame containing target room data
-        actual_metadata_df: DataFrame containing actual room data
+        actual_df: DataFrame containing actual IFC data
+        target_df: DataFrame containing target room program
+        config_path: Path to the config file
         output_dir: Directory to save output files
-        filter_dir: Either a YAML string or a path to a YAML file containing filter configuration
+        rule_name: Name of the rule to use from the config file
         building_name: Name of the building for output files
         
     Returns:
-        BuildingComparison object containing comparison results
+        ResultBundle containing comparison results
     """
     # Create output directory
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     
     # Load and process configuration
-    filter_config = _load_filter_config(config_dir)
-    check_config = _get_check_config(filter_config)
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config file not found at {config_path}")
+        
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    # Find the matching rule
+    check_config = None
+    for check in config.get('checks', []):
+        if isinstance(check, dict):
+            # Check if this is the room name comparison rule
+            if rule_name == 'room_name_comparison' and not check.get('area_target_column') and not check.get('area_actual_column'):
+                check_config = check
+                break
+            # Check if this is the room name and area comparison rule
+            elif rule_name == 'room_name_and_area_comparison' and check.get('area_target_column') and check.get('area_actual_column'):
+                check_config = check
+                break
+            
+    if not check_config:
+        available_rules = []
+        for check in config.get('checks', []):
+            if isinstance(check, dict):
+                if check.get('area_target_column') and check.get('area_actual_column'):
+                    available_rules.append('room_name_and_area_comparison')
+                else:
+                    available_rules.append('room_name_comparison')
+        raise ValueError(f"Rule '{rule_name}' not found in config file. Available rules: {list(set(available_rules))}")
     
     # Extract configuration values
     target_key = check_config['key_target_column']
-    target_area_column = check_config['area_target_column']
+    target_area_column = check_config.get('area_target_column')
     actual_key = check_config['key_actual_column']
-    actual_area_column = check_config['area_actual_column']
+    actual_area_column = check_config.get('area_actual_column')
     tolerance = check_config.get('tolerance', 0.1)
-    return_values = check_config.get('return_values', [])
     
+    # Determine comparison type
+    comparison_type = "name" if not (target_area_column and actual_area_column) else "area"
+    
+    # Combine return values from both target and actual
+    return_values = []
+    if 'return_values_target' in check_config:
+        return_values.extend([f"{col}_target" for col in check_config['return_values_target']])
+    if 'return_values_actual' in check_config:
+        return_values.extend([f"{col}_actual" for col in check_config['return_values_actual']])
+    
+    # Add calculated columns to return values
+    calculated_columns = ['status']  # Always include status
+    if comparison_type == "area":
+        calculated_columns.extend(['area_diff', 'area_diff_pct'])
+    return_values.extend(calculated_columns)
+    
+    # Apply filter if specified
     filter_str = check_config.get('filter', '')
     if filter_str:
-        actual_df = MetadataFilter.filter_df_from_str(actual_metadata_df, filter_str)
+        actual_df = apply_filter(actual_df, filter_str)
 
-
+    # Rename columns to avoid conflicts
+    actual_df = actual_df.copy()
     actual_df.columns = [f"{col}_actual" for col in actual_df.columns]
+    target_df = target_df.copy()
     target_df.columns = [f"{col}_target" for col in target_df.columns]
+    
+    # Log the merge keys for debugging
+    logger.info(f"Merge keys - Target: {target_key}_target, Actual: {actual_key}_actual")
+    
+    # Check for duplicates in the merge keys before merging
+    if target_df[f"{target_key}_target"].duplicated().any():
+        logger.warning(f"Found {target_df[f'{target_key}_target'].duplicated().sum()} duplicate values in target key")
+        # Keep only the first occurrence of each target key
+        target_df = target_df.drop_duplicates(subset=[f"{target_key}_target"], keep='first')
+    
+    if actual_df[f"{actual_key}_actual"].duplicated().any():
+        logger.warning(f"Found {actual_df[f'{actual_key}_actual'].duplicated().sum()} duplicate values in actual key")
+        # Keep only the first occurrence of each actual key
+        actual_df = actual_df.drop_duplicates(subset=[f"{actual_key}_actual"], keep='first')
+    
+    # Merge dataframes
+    try:
+        # First try a left join to match target with actual
+        merged_df = pd.merge(
+            target_df,
+            actual_df,
+            how='left',
+            left_on=[f"{target_key}_target"],
+            right_on=[f"{actual_key}_actual"],
+        )
         
-    merged_df = pd.merge(
-        target_df,
-        actual_df,
-        how='outer',
-        left_on=[target_key],
-        right_on=[actual_key],
+        # Then find any actual items that weren't matched (extra items)
+        extra_items = actual_df[~actual_df[f"{actual_key}_actual"].isin(merged_df[f"{actual_key}_actual"])]
+        if not extra_items.empty:
+            # Create a new DataFrame for extra items with NaN for target columns
+            extra_df = pd.DataFrame(columns=merged_df.columns)
+            for col in actual_df.columns:
+                extra_df[col] = extra_items[col]
+            # Append extra items to the merged DataFrame
+            merged_df = pd.concat([merged_df, extra_df], ignore_index=True)
+            
+    except KeyError as e:
+        raise ValueError(f"Error during merge: {e}. Available columns in target_df: {target_df.columns.tolist()}, actual_df: {actual_df.columns.tolist()}")
+    
+    # Calculate differences if it's an area comparison
+    if comparison_type == "area":
+        merged_df = calculate_differences(
+            merged_df=merged_df, 
+            tolerance=tolerance, 
+            target_area_column=f"{target_area_column}_target",
+            actual_area_column=f"{actual_area_column}_actual",
+            key_target_column=f"{target_key}_target",
+            key_actual_column=f"{actual_key}_actual"
+        )
+    else:
+        # For name comparison, set status based on presence in target and actual
+        merged_df['status'] = merged_df.apply(
+            lambda row: 'missing' if pd.isna(row[f'{actual_key}_actual']) else 
+                       'extra' if pd.isna(row[f'{target_key}_target']) else 
+                       'match',
+            axis=1
+        )
+    
+    # Create ComparisonResult object
+    comparison = ComparisonResult(
+        merged_df=merged_df,
+        return_values=return_values,
+        area_target_column=f"{target_area_column}_target" if target_area_column else None,
+        area_actual_column=f"{actual_area_column}_actual" if actual_area_column else None,
+        comparison_type=comparison_type
     )
-    merged_df.to_excel(output_path / f"{building_name}_merged.xlsx", index=False)
     
-    merged_df_1 = _calculate_differences(
-        merged_df=merged_df, 
-        tolerance=tolerance, 
-        target_area_column=target_area_column,
-        actual_area_column=actual_area_column,
-        key_target_column=target_key,
-        key_actual_column=actual_key
-    )
-    
-    merged_df_1.to_excel(output_path / f"{building_name}_merged_1.xlsx", index=False)
-    
-    
-    # Create BuildingComparison object
-    comparison = BuildingComparison(merged_df, return_values=return_values, area_target_column=target_area_column, area_actual_column=actual_area_column)
+    # Get ResultBundle
+    result_bundle = comparison.to_result_bundle()
     
     # Save results
-    _save_results(comparison, output_path, building_name)
+    building_prefix = f"{building_name}_" if building_name else ""
     
-    return comparison
+    # Save Excel file
+    result_bundle.save_excel(output_path / f"{building_prefix}comparison.xlsx")
+    
+    # Create summary dictionary with only basic Python types
+    summary = {
+        "building_name": building_name,
+        "checks": [
+            {
+                "name": "Target Program vs Actual Program",
+                "status": str(result_bundle.json.get("status", "unknown")),
+                "overview": {
+                    "total_items": int(result_bundle.json.get("overview", {}).get("total_items", 0)),
+                    "compliance_rate": float(result_bundle.json.get("overview", {}).get("compliance_rate", 0.0)),
+                    "total_area": {
+                        "target": float(result_bundle.json.get("overview", {}).get("total_area", {}).get("target", 0.0)),
+                        "actual": float(result_bundle.json.get("overview", {}).get("total_area", {}).get("actual", 0.0)),
+                        "difference_pct": float(result_bundle.json.get("overview", {}).get("total_area", {}).get("difference_pct", 0.0))
+                    }
+                },
+                "issues": {
+                    "missing": int(result_bundle.json.get("issues", {}).get("missing", 0)),
+                    "extra": int(result_bundle.json.get("issues", {}).get("extra", 0)),
+                    "out_of_tolerance": int(result_bundle.json.get("issues", {}).get("out_of_tolerance", 0))
+                }
+            }
+        ],
+        "metrics": [],
+        "reports": [],
+        "data": {}
+    }
+    
+    # Save summary YAML using safe_dump
+    with open(output_path / f"{building_prefix}summary.yaml", 'w') as f:
+        yaml.safe_dump(summary, f, default_flow_style=False, sort_keys=False)
+    
+    return result_bundle
 
 

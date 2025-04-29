@@ -169,7 +169,7 @@ class MetadataFilter:
         """Parse a filter expression string into a filter dictionary.
         
         Examples:
-            >>> MetadataFilter._parse_filter_expression("type=IfcSpace AND (PredefinedType=EXTERNAL OR PredefinedType=INTERNAL)")
+            >>> MetadataFilter._parse_filter_expression("IfcEntity=IfcSpace AND (PredefinedType=EXTERNAL OR PredefinedType=INTERNAL)")
             {'IfcEntity': 'IfcSpace', 'PredefinedType': ['EXTERNAL', 'INTERNAL']}
             
             >>> MetadataFilter._parse_filter_expression("Area>25.0 AND Type=Office")
@@ -198,9 +198,6 @@ class MetadataFilter:
                         values.append(v)
                 
                 if key and values:
-                    # Map 'type' to 'IfcEntity'
-                    if key == 'type':
-                        key = 'IfcEntity'
                     filters[key] = values
                     
             # Handle comparison operators
@@ -212,14 +209,8 @@ class MetadataFilter:
                         value = value.strip()
                         try:
                             value = float(value)
-                            # Map 'type' to 'IfcEntity'
-                            if key == 'type':
-                                key = 'IfcEntity'
                             filters[key] = [(op, value)]
                         except ValueError:
-                            # Map 'type' to 'IfcEntity'
-                            if key == 'type':
-                                key = 'IfcEntity'
                             filters[key] = value
                         break
                         
@@ -228,9 +219,6 @@ class MetadataFilter:
                 key, value = part.split('=', 1)
                 key = key.strip()
                 value = value.strip()
-                # Map 'type' to 'IfcEntity'
-                if key == 'type':
-                    key = 'IfcEntity'
                 filters[key] = value
         
         return filters
