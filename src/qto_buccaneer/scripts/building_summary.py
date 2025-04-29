@@ -1,6 +1,7 @@
 from pathlib import Path
 import yaml
 from typing import Any, Dict, List, Optional, Union
+from qto_buccaneer.utils.yaml_utils import SafeLoader
 
 class BuildingSummary:
     """
@@ -14,7 +15,10 @@ class BuildingSummary:
         data (dict): The in-memory representation of the building summary data
 
     Example:
-        >>> summary = BuildingSummary(Path("building_summary.yaml"))
+        >>> summary = BuildingSummary(
+        ...     path=Path("building_summary.yaml"),
+        ...     building_name="Building A"
+        ... )
         >>> summary.load()
         >>> summary.set_name("Office Building A")
         >>> # Add data to groups
@@ -35,39 +39,42 @@ class BuildingSummary:
           - input_file: model.ifc
     """
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, building_name: str, template_path: Optional[Path] = None):
         """
-        Initialize a BuildingSummary instance.
+        Initialize the BuildingSummary object.
 
         Args:
-            path (Path): The path to the YAML file where the building summary data is stored
+            path: Path to the YAML file
+            building_name: Name of the building
+            template_path: Optional path to a template YAML file
         """
         self.path = path
-        # Get the project root from the path (go up 3 levels from the building folder)
-        project_root = path.parent.parent.parent
-        self.template_path = project_root / "config" / "building_summary_template.yaml"
-        self.data = self._load_template()
+        self.building_name = building_name
+        self.template_path = template_path
+        self.data = {}
         self._initialize_data()
         # Store the building directory path for relative path conversion
         self.building_dir = path.parent
+        # Set the building name in the data
+        self.set_name(building_name)
 
     def _initialize_data(self):
-        """Initialize the data structure if it doesn't exist."""
-        # Use the template data to initialize fields
-        template_data = self._load_template()
-        for field, default_value in template_data.items():
-            if field not in self.data:
-                self.data[field] = default_value
+        """Initialize the data structure with default values."""
+        self.data = {
+            "building_name": self.building_name,
+            "checks": [],
+            "metrics": [],
+            "reports": [],
+            "data": {},
+            "groups": {}
+        }
 
     def _load_template(self) -> dict:
-        """
-        Load the template YAML file.
-
-        Returns:
-            dict: The template data
-        """
-        with open(self.template_path, "r") as f:
-            return yaml.safe_load(f)
+        """Load data from the template file if it exists."""
+        if self.template_path and self.template_path.exists():
+            with open(self.template_path, "r") as f:
+                return yaml.load(f, Loader=SafeLoader)
+        return {}
 
     def load(self):
         """
@@ -77,12 +84,12 @@ class BuildingSummary:
             BuildingSummary: The instance itself for method chaining
 
         Example:
-            >>> summary = BuildingSummary(Path("building_summary.yaml"))
+            >>> summary = BuildingSummary(Path("building_summary.yaml"), "Building A")
             >>> summary.load()
         """
         if self.path.exists():
             with open(self.path, "r") as f:
-                self.data = yaml.safe_load(f)
+                self.data = yaml.load(f, Loader=SafeLoader)
                 self._initialize_data()
         return self
 
@@ -91,7 +98,7 @@ class BuildingSummary:
         Save the current building summary data to the YAML file.
 
         Example:
-            >>> summary = BuildingSummary(Path("building_summary.yaml"))
+            >>> summary = BuildingSummary(Path("building_summary.yaml"), "Building A")
             >>> summary.load()
             >>> summary.set_name("New Building")
             >>> summary.save()
@@ -107,7 +114,7 @@ class BuildingSummary:
             name (str): The new name for the building
 
         Example:
-            >>> summary = BuildingSummary(Path("building_summary.yaml"))
+            >>> summary = BuildingSummary(Path("building_summary.yaml"), "Building A")
             >>> summary.load()
             >>> summary.set_name("Residential Complex B")
         """
@@ -253,7 +260,7 @@ class BuildingSummary:
         Print the building summary data in a formatted way.
 
         Example:
-            >>> summary = BuildingSummary(Path("building_summary.yaml"))
+            >>> summary = BuildingSummary(Path("building_summary.yaml"), "Building A")
             >>> summary.load()
             >>> summary.set_name("Office Building A")
             >>> summary.add("total_area", 5000, group="measurements")

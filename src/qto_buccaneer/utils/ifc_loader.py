@@ -4,6 +4,8 @@ from typing import List, Optional, Any, Dict, Union, Literal
 from ifcopenshell.entity_instance import entity_instance
 import pandas as pd
 import time
+from functools import lru_cache
+import numpy as np
 
 IfcElement = Any
 
@@ -354,5 +356,39 @@ class IfcLoader:
         except Exception as e:
             print(f"Error: {e}")
             return pd.DataFrame(columns=list(data.keys()))
+
+    def get_entity_metadata_df(self, ifc_entity: str) -> pd.DataFrame:
+        """
+        Get metadata for all entities of a type as a DataFrame.
+        """
+        elements = self.model.by_type(ifc_entity)
+        data = []
+        for element in elements:
+            metadata = self.get_entity_metadata(element)
+            data.append(metadata)
+        return pd.DataFrame(data)
+
+    def get_entity_geometry_df(self, ifc_entity: str) -> pd.DataFrame:
+        """
+        Get geometry for all entities of a type as a DataFrame.
+        """
+        elements = self.model.by_type(ifc_entity)
+        data = []
+        for element in elements:
+            geometry = self.get_entity_geometry(element)
+            data.append(geometry)
+        return pd.DataFrame(data)
+
+    def get_filtered_elements(self, 
+                            ifc_entity: str, 
+                            filters: Optional[Dict[str, Any]] = None,
+                            logic: Literal["AND", "OR"] = "AND") -> pd.DataFrame:
+        """
+        Get elements of a type with optional filtering.
+        """
+        df = self.get_entity_metadata_df(ifc_entity)
+        if filters:
+            df = IfcFilter.filter_elements(df, filters, logic)
+        return df
 
    

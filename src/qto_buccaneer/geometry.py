@@ -166,8 +166,8 @@ def _upload_ifc_file(
                     
                     # Save the file directly in the output directory
                     output_path = os.path.join(output_dir, output_filename)
-                    with open(output_path, 'w') as f:
-                        json.dump(file_response.json(), f, indent=2)
+                    with open(output_path, 'w', encoding='utf-8') as f:
+                        json.dump(file_response.json(), f, indent=2, ensure_ascii=False)
                     logger.info(f"Saved {file_type} data to {output_path}")
                 else:
                     logger.error(f"Failed to download {file_type} data: {file_response.status_code}")
@@ -179,11 +179,11 @@ def _upload_ifc_file(
             
             # Save error response
             error_path = os.path.join(output_dir, 'error.json')
-            with open(error_path, 'w') as f:
+            with open(error_path, 'w', encoding='utf-8') as f:
                 json.dump({
                     'status_code': response.status_code,
                     'error': response.text
-                }, f, indent=2)
+                }, f, indent=2, ensure_ascii=False)
             logger.info(f"Error details saved to {error_path}")
             
     except Exception as e:
