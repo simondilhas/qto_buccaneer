@@ -73,7 +73,7 @@ class BuildingSummary:
         """Load data from the template file if it exists."""
         if self.template_path and self.template_path.exists():
             with open(self.template_path, "r") as f:
-                return yaml.load(f, Loader=SafeLoader)
+                return yaml.safe_load(f)
         return {}
 
     def load(self):
@@ -89,10 +89,12 @@ class BuildingSummary:
         """
         if self.path.exists():
             with open(self.path, "r") as f:
-                # Use FullLoader instead of SafeLoader to handle Python tuples
-                self.data = yaml.load(f, Loader=yaml.FullLoader)
+                # Use safe_load to ensure we don't load any Python objects
+                self.data = yaml.safe_load(f)
                 self._initialize_data()
         return self
+            
+
 
     def save(self):
         """

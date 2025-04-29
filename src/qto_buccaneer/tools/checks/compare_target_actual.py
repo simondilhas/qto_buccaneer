@@ -412,6 +412,53 @@ def compare_target_actual(
             axis=1
         )
     
+    # Calculate summary statistics directly
+    total_items = len(merged_df)
+    items_within_tolerance = len(merged_df[merged_df['status'] == 'within_tolerance'])
+    missing_items = len(merged_df[merged_df['status'] == 'missing'])
+    extra_items = len(merged_df[merged_df['status'] == 'extra'])
+    out_of_tolerance_items = total_items - items_within_tolerance - missing_items - extra_items
+    
+    if comparison_type == "area":
+        total_target_area = float(merged_df[f"{target_area_column}_target"].sum())
+        total_actual_area = float(merged_df[f"{actual_area_column}_actual"].sum())
+        total_area_diff = float(total_actual_area - total_target_area)
+        total_area_diff_pct = float((total_area_diff / total_target_area * 100) if total_target_area > 0 else 0)
+        compliance_rate = float((items_within_tolerance / total_items * 100) if total_items > 0 else 0)
+        status = "failed" if missing_items > 0 else "warning" if extra_items > 0 else "passed" if items_within_tolerance == total_items else "warning"
+    else:
+        # For name comparison
+        total_target_area = 0.0
+        total_actual_area = 0.0
+        total_area_diff = 0.0
+        total_area_diff_pct = 0.0
+        compliance_rate = float((items_within_tolerance / total_items * 100) if total_items > 0 else 0)
+        status = "success" if missing_items == 0 else "additional roomtypes used" if extra_items > 0 else "error"
+    
+    # Create summary dictionary with calculated values
+    summary = {
+        "checks": [
+            {
+                "name": "Target Program vs Actual Program",
+                "status": status,
+                "overview": {
+                    "total_items": total_items,
+                    "compliance_rate": compliance_rate,
+                    "total_area": {
+                        "target": total_target_area,
+                        "actual": total_actual_area,
+                        "difference_pct": total_area_diff_pct
+                    }
+                },
+                "issues": {
+                    "missing": missing_items,
+                    "extra": extra_items,
+                    "out_of_tolerance": out_of_tolerance_items
+                }
+            }
+        ]
+    }
+    
     # Create ComparisonResult object
     comparison = ComparisonResult(
         merged_df=merged_df,
@@ -430,37 +477,9 @@ def compare_target_actual(
     # Save Excel file
     result_bundle.save_excel(output_path / f"{building_prefix}comparison.xlsx")
     
-    # Create summary dictionary with only basic Python types
-    summary = {
-        "building_name": building_name,
-        "checks": [
-            {
-                "name": "Target Program vs Actual Program",
-                "status": str(result_bundle.json.get("status", "unknown")),
-                "overview": {
-                    "total_items": int(result_bundle.json.get("overview", {}).get("total_items", 0)),
-                    "compliance_rate": float(result_bundle.json.get("overview", {}).get("compliance_rate", 0.0)),
-                    "total_area": {
-                        "target": float(result_bundle.json.get("overview", {}).get("total_area", {}).get("target", 0.0)),
-                        "actual": float(result_bundle.json.get("overview", {}).get("total_area", {}).get("actual", 0.0)),
-                        "difference_pct": float(result_bundle.json.get("overview", {}).get("total_area", {}).get("difference_pct", 0.0))
-                    }
-                },
-                "issues": {
-                    "missing": int(result_bundle.json.get("issues", {}).get("missing", 0)),
-                    "extra": int(result_bundle.json.get("issues", {}).get("extra", 0)),
-                    "out_of_tolerance": int(result_bundle.json.get("issues", {}).get("out_of_tolerance", 0))
-                }
-            }
-        ],
-        "metrics": [],
-        "reports": [],
-        "data": {}
-    }
-    
-    # Save summary YAML using safe_dump
-    with open(output_path / f"{building_prefix}summary.yaml", 'w') as f:
-        yaml.safe_dump(summary, f, default_flow_style=False, sort_keys=False)
+    # Update the result bundle with the new summary and folderpath
+    result_bundle.summary = summary
+    result_bundle.folderpath = output_path
     
     return result_bundle
 
