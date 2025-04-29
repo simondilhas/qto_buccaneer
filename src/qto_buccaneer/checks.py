@@ -12,6 +12,7 @@ from qto_buccaneer.reports import ExcelLayoutConfig
 from qto_buccaneer.tools.checks.compare_target_actual import RoomComparisonResult
 from qto_buccaneer.tools.checks.compare_target_actual import BuildingComparison, _save_results, _load_filter_config, _get_check_config
 import json
+from qto_buccaneer.utils.result_bundle import ResultBundle
 
 def compare_room_names(
     metadata_actual_df: pd.DataFrame,
@@ -21,7 +22,7 @@ def compare_room_names(
     output_dir: Optional[str] = None,
     building_name: Optional[str] = None,
     layout_config: Optional[ExcelLayoutConfig] = None
-    ) -> dict:
+) -> ResultBundle:
     """
     Compare room names between IFC spaces and a room program.
     
@@ -35,64 +36,141 @@ def compare_room_names(
         layout_config: Optional ExcelLayoutConfig for custom formatting
         
     Returns:
-        dict: Dictionary containing the comparison results in a format suitable for the building summary
+        ResultBundle: A ResultBundle containing the comparison results
     """
     try:
-        # Filter for IFC spaces
-        ifc_spaces_df = metadata_actual_df[metadata_actual_df['IfcEntity'] == 'IfcSpace']
+        # Extract and normalize room names from both sources
+        ifc_rooms, ifc_spaces_df = _extract_ifc_rooms(metadata_actual_df, actual_room_name_column)
+        excel_rooms = _extract_excel_rooms(target_program_df, target_room_name_column)
         
-        # Get room names from IFC and convert to lowercase, filtering out None values
-        ifc_rooms = set(ifc_spaces_df[actual_room_name_column].dropna().str.lower().unique())
+        # Create detailed comparison DataFrame
+        detailed_df = _create_comparison_df(ifc_rooms, excel_rooms, ifc_spaces_df, actual_room_name_column)
         
-        # Get room names from Excel and convert to lowercase, filtering out None values
-        excel_rooms = set(target_program_df[target_room_name_column].dropna().str.lower().unique())
+        # Create summary data
+        result_data = _create_summary_data(ifc_rooms, excel_rooms)
         
-        # Create comparison DataFrame for Excel export
-        all_rooms = ifc_rooms.union(excel_rooms)
-        data = []
-        for room in sorted(all_rooms):
-            room_data = {
-                "Room Name": room,
-                "Status": "In Both" if room in ifc_rooms and room in excel_rooms else "Only in IFC" if room in ifc_rooms else "Only in Excel",
-                "GlobalId": ""  # Default empty GlobalId
-            }
-            
-            # Add GlobalId for rooms that exist in IFC
-            if room in ifc_rooms:
-                ifc_room = ifc_spaces_df[ifc_spaces_df[actual_room_name_column].str.lower() == room]
-                if not ifc_room.empty:
-                    room_data["GlobalId"] = ifc_room["GlobalId"].iloc[0]
-            
-            data.append(room_data)
-            
-        detailed_df = pd.DataFrame(data)
-        
-        # Create RoomComparisonResult instance
-        comparison = RoomComparisonResult(detailed_df, ifc_rooms, excel_rooms)
+        # Create ResultBundle
+        result_bundle = ResultBundle(
+            dataframe=detailed_df,
+            json=result_data,
+            folderpath=Path(output_dir) if output_dir else None,
+            summary=result_data,
+        )
         
         # Export to Excel if output directory provided
         if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
-            building_prefix = f"{building_name}_" if building_name else ""
-            output_path = os.path.join(output_dir, f"{building_prefix}room_name_comparison.xlsx")
-            comparison.to_excel(output_path, layout_config)
+            _export_to_excel(result_bundle, output_dir, building_name)
         
-        return comparison.to_yaml()
+        return result_bundle
         
     except Exception as e:
         print(f"Error comparing room names: {str(e)}")
         import traceback
         traceback.print_exc()
-        return {
-            "room_comparison": {
-                "status": "error",
-                "summary": f"Error comparing room names: {str(e)}",
-                "target": {},
-                "ifc": {}
-            }
-        }
+        return _create_error_result_bundle(str(e))
 
-   
+def _extract_ifc_rooms(metadata_df: pd.DataFrame, room_name_column: str) -> tuple[set, pd.DataFrame]:
+    """Extract and normalize room names from IFC metadata."""
+    ifc_spaces_df = metadata_df[metadata_df['IfcEntity'] == 'IfcSpace']
+    ifc_rooms = set(ifc_spaces_df[room_name_column].dropna().str.lower().unique())
+    return ifc_rooms, ifc_spaces_df
+
+def _extract_excel_rooms(target_df: pd.DataFrame, room_name_column: str) -> set:
+    """Extract and normalize room names from target program."""
+    return set(target_df[room_name_column].dropna().str.lower().unique())
+
+def _create_comparison_df(
+    ifc_rooms: set,
+    excel_rooms: set,
+    ifc_spaces_df: pd.DataFrame,
+    actual_room_name_column: str
+) -> pd.DataFrame:
+    """Create detailed comparison DataFrame with room status and GlobalIds."""
+    all_rooms = ifc_rooms.union(excel_rooms)
+    data = []
+    
+    for room in sorted(all_rooms):
+        room_data = {
+            "Room Name": room,
+            "Status": _get_room_status(room, ifc_rooms, excel_rooms),
+            "GlobalId": _get_room_global_id(room, ifc_rooms, ifc_spaces_df, actual_room_name_column)
+        }
+        data.append(room_data)
+    
+    return pd.DataFrame(data)
+
+def _get_room_status(room: str, ifc_rooms: set, excel_rooms: set) -> str:
+    """Determine the status of a room in the comparison."""
+    if room in ifc_rooms and room in excel_rooms:
+        return "In Both"
+    elif room in ifc_rooms:
+        return "Only in IFC"
+    else:
+        return "Only in Excel"
+
+def _get_room_global_id(
+    room: str,
+    ifc_rooms: set,
+    ifc_spaces_df: pd.DataFrame,
+    actual_room_name_column: str
+) -> str:
+    """Get the GlobalId for a room if it exists in IFC."""
+    if room in ifc_rooms:
+        ifc_room = ifc_spaces_df[ifc_spaces_df[actual_room_name_column].str.lower() == room]
+        if not ifc_room.empty:
+            return ifc_room["GlobalId"].iloc[0]
+    return ""
+
+def _create_summary_data(ifc_rooms: set, excel_rooms: set) -> dict:
+    """Create summary data for the ResultBundle.
+    
+    Status definitions:
+    - success: No rooms in Excel that aren't in IFC
+    - additional roomtypes used: Rooms exist only in IFC
+    """
+    rooms_only_in_ifc = list(ifc_rooms - excel_rooms)
+    rooms_only_in_excel = list(excel_rooms - ifc_rooms)
+    
+    # Determine status
+    if len(rooms_only_in_excel) == 0:
+        status = "success"
+    elif len(rooms_only_in_ifc) > 0:
+        status = "additional roomtypes used"
+    else:
+        status = "error"
+    
+    return {
+        "room_comparison": {
+            "status": status,
+            "summary": {
+                "target_rooms": len(excel_rooms),
+                "actual_rooms": len(ifc_rooms),
+                "additional_rooms": len(rooms_only_in_ifc),
+                "missing_rooms": len(rooms_only_in_excel)
+            },
+            "additional_rooms": sorted(rooms_only_in_ifc),
+            "missing_rooms": sorted(rooms_only_in_excel)
+        }
+    }
+
+def _export_to_excel(result_bundle: ResultBundle, output_dir: str, building_name: Optional[str]) -> None:
+    """Export the comparison results to Excel."""
+    building_prefix = f"{building_name}_" if building_name else ""
+    output_path = f"{building_prefix}room_name_comparison.xlsx"
+    result_bundle.save_excel(output_path)
+
+def _create_error_result_bundle(error_message: str) -> ResultBundle:
+    """Create a ResultBundle for error cases."""
+    error_data = {
+        "room_comparison": {
+            "status": "error",
+            "summary": f"Error comparing room names: {error_message}",
+            "target": {},
+            "ifc": {}
+        }
+    }
+    return ResultBundle(dataframe=None, json=error_data)
+
 def compare_target_actual(
     target_df: pd.DataFrame,
     actual_metadata_df: pd.DataFrame,
