@@ -41,6 +41,7 @@ def process_building(building: dict) -> None:
 
     #--------------------------------
     # Step 02: Add spatial data to IFC
+    # This steps adds the story information to the elements in the IFC file
     #--------------------------------
 
     spatial_data_path = add_spatial_data_to_ifc(
@@ -51,7 +52,8 @@ def process_building(building: dict) -> None:
     
     
     #--------------------------------
-    # Step 03: Enrich IFC with additional data
+    # Step 03: Enrich IFC with additional data 
+    # This step enriches the IFC file with additional data from the enrichment_space_table.xlsx file
     #--------------------------------
 
     enrichment_data_path = CONFIG_DIR / "enrichment_space_table.xlsx"

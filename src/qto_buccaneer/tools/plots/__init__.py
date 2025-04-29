@@ -45,7 +45,7 @@ Plot configurations are defined in YAML files and support:
 - Output formats
 """
 
-from qto_buccaneer.plots_utils.three_d import (
+from qto_buccaneer.tools.plots.three_d import (
     load_plot_config,
     create_single_plot,
 )

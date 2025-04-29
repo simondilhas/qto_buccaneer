@@ -89,7 +89,8 @@ class BuildingSummary:
         """
         if self.path.exists():
             with open(self.path, "r") as f:
-                self.data = yaml.load(f, Loader=SafeLoader)
+                # Use FullLoader instead of SafeLoader to handle Python tuples
+                self.data = yaml.load(f, Loader=yaml.FullLoader)
                 self._initialize_data()
         return self
 
@@ -103,8 +104,20 @@ class BuildingSummary:
             >>> summary.set_name("New Building")
             >>> summary.save()
         """
-        with open(self.path, "w") as f:
-            yaml.dump(self.data, f, default_flow_style=False, sort_keys=False, indent=2)
+        # Convert tuples to lists before saving
+        def convert_tuples_to_lists(obj):
+            if isinstance(obj, tuple):
+                return list(obj)
+            elif isinstance(obj, dict):
+                return {k: convert_tuples_to_lists(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_tuples_to_lists(item) for item in obj]
+            return obj
+
+        data_to_save = convert_tuples_to_lists(self.data)
+        
+        with open(self.path, 'w') as f:
+            yaml.dump(data_to_save, f, default_flow_style=False, sort_keys=False)
 
     def set_name(self, name: str):
         """

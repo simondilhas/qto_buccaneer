@@ -3,8 +3,8 @@
 from pathlib import Path
 import yaml
 
-from qto_buccaneer.plots_utils.floorplan import create_floorplan_per_storey
-from qto_buccaneer.plots_utils.three_d import create_3d_visualization
+from qto_buccaneer.tools.plots.floorplan import create_floorplan_per_storey
+from qto_buccaneer.tools.plots.three_d import create_3d_visualization
 
 def create_all_plots(
     geometry_dir: str,

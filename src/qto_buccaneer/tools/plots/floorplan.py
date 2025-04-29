@@ -12,7 +12,7 @@ from qto_buccaneer.utils.plots_utils import (
     element_matches_conditions,
     apply_layout_settings
 )
-from qto_buccaneer.plots_utils.filter_parser import FilterParser
+from qto_buccaneer.tools.plots.filter_parser import FilterParser
 
 def create_floorplan_per_storey(
     geometry_dir: str,
