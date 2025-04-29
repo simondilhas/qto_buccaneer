@@ -48,7 +48,7 @@ el.replaceWith(d);
 <dl>
 <dt id="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader"><code class="flex name class">
 <span>class <span class="ident">IfcJsonLoader</span></span>
-<span>(</span><span>geometry_json: List[Dict[str, Any]], properties_json: Dict[str, Any])</span>
+<span>(</span><span>json_paths: str | pathlib.Path | List[str | pathlib.Path] | None = None,<br>properties_json: dict | None = None)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -56,47 +56,295 @@ el.replaceWith(d);
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class IfcJsonLoader:
-    &#34;&#34;&#34;A class to load and manage IFC data from JSON files.
+    &#34;&#34;&#34;A class to load and manage IFC data from JSON files or pre-loaded JSON data.
     
     This class provides methods to access geometry and properties data from IFC models
-    that have been converted to JSON format.
+    that have been converted to JSON format. It can handle multiple geometry files or
+    pre-loaded JSON data.
     &#34;&#34;&#34;
+
+    # TODO:get_elements_by_type should be the template for the other methods return a pd.DataFrame
     
-    def __init__(self, geometry_json: List[Dict[str, Any]], properties_json: Dict[str, Any]):
-        &#34;&#34;&#34;Initialize the loader with geometry and properties data.
+    def __init__(self, 
+                 json_paths: Optional[Union[str, Path, List[Union[str, Path]]]] = None,
+                 properties_json: Optional[dict] = None):
+        &#34;&#34;&#34;
+        Initialize the loader.
         
         Args:
-            geometry_json: List of geometry objects, each containing an &#39;id&#39; and geometry data
-            properties_json: Dictionary containing elements and their properties
+            json_paths: Optional path or list of paths to IFC JSON files
+            properties_json: Optional pre-loaded properties JSON data
         &#34;&#34;&#34;
-        self.geometry = geometry_json
-        self.properties = properties_json
-        
-        # Create indexes for faster lookups using numeric IDs
-        self.geometry_index = {str(item[&#34;id&#34;]): item for item in self.geometry}
-        self.properties_index = {str(elem_id): elem for elem_id, elem in properties_json[&#34;elements&#34;].items()}
-        
-        # Build indexes from the data
-        self.by_type_index = {}
-        self.global_id_to_id = {}
-        
-        for elem_id, element in properties_json[&#34;elements&#34;].items():
-            # Build by_type index
-            ifc_entity = element.get(&#34;IfcEntity&#34;)
-            if ifc_entity:
-                if ifc_entity not in self.by_type_index:
-                    self.by_type_index[ifc_entity] = []
-                self.by_type_index[ifc_entity].append(int(elem_id))
+        if json_paths is not None:
+            # Convert single path to list
+            if isinstance(json_paths, (str, Path)):
+                json_paths = [json_paths]
+                
+            self.json_paths = [Path(p) for p in json_paths]
+            self.data = self._load_jsons()
+        elif properties_json is not None:
+            self.json_paths = None
+            self.data = properties_json
+        else:
+            raise ValueError(&#34;Either json_paths or properties_json must be provided&#34;)
             
-            # Build global_id to id mapping
-            global_id = element.get(&#34;GlobalId&#34;)
-            if global_id:
-                self.global_id_to_id[global_id] = elem_id
+        self.elements = self._process_elements()
+        self._geometry_loaded = False
         
-        # Initialize storey cache
-        self._storey_cache = {}  # element_id -&gt; storey_name
-        self._build_storey_cache()
-    
+    def add_geometry_files(self, json_paths: Union[str, Path, List[Union[str, Path]]]) -&gt; None:
+        &#34;&#34;&#34;Add additional geometry files to the loader.
+        
+        Args:
+            json_paths: Path or list of paths to additional IFC JSON files
+        &#34;&#34;&#34;
+        if self.json_paths is None:
+            raise ValueError(&#34;Cannot add geometry files when initialized with properties_json&#34;)
+            
+        # Convert single path to list
+        if isinstance(json_paths, (str, Path)):
+            json_paths = [json_paths]
+            
+        new_paths = [Path(p) for p in json_paths]
+        self.json_paths.extend(new_paths)
+        
+        # Load new data
+        new_data = self._load_jsons_from_paths(new_paths)
+        
+        # Update existing data
+        if isinstance(self.data, list):
+            self.data.extend(new_data)
+        else:
+            self.data = [self.data] + new_data
+            
+        # Reprocess elements to include new geometry
+        self.elements = self._process_elements()
+        self._geometry_loaded = False
+        
+    def _load_jsons_from_paths(self, paths: List[Path]) -&gt; List[dict]:
+        &#34;&#34;&#34;Load JSON files from specific paths.&#34;&#34;&#34;
+        all_data = []
+        for path in paths:
+            with open(path, &#39;r&#39;) as f:
+                all_data.extend(json.load(f))
+        return all_data
+        
+    def _load_jsons(self) -&gt; List[dict]:
+        &#34;&#34;&#34;Load all JSON files.&#34;&#34;&#34;
+        return self._load_jsons_from_paths(self.json_paths)
+            
+    def _process_elements(self) -&gt; Dict[str, dict]:
+        &#34;&#34;&#34;Process elements from all JSON data.&#34;&#34;&#34;
+        elements = {}
+        
+        # Handle both list and dict input
+        data_list = self.data if isinstance(self.data, list) else [self.data]
+        
+        for element in data_list:
+            element_id = element.get(&#39;ifc_global_id&#39;)
+            if not element_id:
+                continue
+                
+            # Basic properties
+            element_data = {
+                &#39;id&#39;: element.get(&#39;id&#39;),
+                &#39;type&#39;: element.get(&#39;ifc_type&#39;),
+                &#39;vertices&#39;: np.array(element.get(&#39;vertices&#39;, [])),
+                &#39;faces&#39;: np.array(element.get(&#39;faces&#39;, []))
+            }
+                
+            # If element already exists, merge geometry data
+            if element_id in elements:
+                existing = elements[element_id]
+                # Combine vertices and faces
+                existing[&#39;vertices&#39;] = np.vstack((existing[&#39;vertices&#39;], element_data[&#39;vertices&#39;]))
+                existing[&#39;faces&#39;] = np.vstack((existing[&#39;faces&#39;], element_data[&#39;faces&#39;]))
+            else:
+                elements[element_id] = element_data
+            
+        return elements
+        
+    def load_geometry(self) -&gt; None:
+        &#34;&#34;&#34;Load geometry data for all elements from all files.&#34;&#34;&#34;
+        if self._geometry_loaded:
+            return
+            
+        # Handle both list and dict input
+        data_list = self.data if isinstance(self.data, list) else [self.data]
+            
+        for element in data_list:
+            element_id = element.get(&#39;ifc_global_id&#39;)
+            if not element_id:
+                continue
+                
+            geometry = self._extract_geometry(element)
+            if geometry:
+                if &#39;geometry&#39; not in self.elements[element_id]:
+                    self.elements[element_id][&#39;geometry&#39;] = geometry
+                else:
+                    # Merge geometry data
+                    existing = self.elements[element_id][&#39;geometry&#39;]
+                    existing[&#39;vertices&#39;] = np.vstack((existing[&#39;vertices&#39;], geometry[&#39;vertices&#39;]))
+                    existing[&#39;faces&#39;] = np.vstack((existing[&#39;faces&#39;], geometry[&#39;faces&#39;]))
+                
+        self._geometry_loaded = True
+        
+    def load_geometry_for_element(self, element_id: str) -&gt; None:
+        &#34;&#34;&#34;Load geometry data for a specific element from all files.&#34;&#34;&#34;
+        if element_id not in self.elements:
+            return
+            
+        # Handle both list and dict input
+        data_list = self.data if isinstance(self.data, list) else [self.data]
+            
+        elements = [
+            e for e in data_list 
+            if e.get(&#39;ifc_global_id&#39;) == element_id
+        ]
+        
+        for element in elements:
+            geometry = self._extract_geometry(element)
+            if geometry:
+                if &#39;geometry&#39; not in self.elements[element_id]:
+                    self.elements[element_id][&#39;geometry&#39;] = geometry
+                else:
+                    # Merge geometry data
+                    existing = self.elements[element_id][&#39;geometry&#39;]
+                    existing[&#39;vertices&#39;] = np.vstack((existing[&#39;vertices&#39;], geometry[&#39;vertices&#39;]))
+                    existing[&#39;faces&#39;] = np.vstack((existing[&#39;faces&#39;], geometry[&#39;faces&#39;]))
+                
+    def _extract_geometry(self, element: dict) -&gt; Optional[dict]:
+        &#34;&#34;&#34;Extract geometry data from an element.&#34;&#34;&#34;
+        vertices = element.get(&#39;vertices&#39;)
+        faces = element.get(&#39;faces&#39;)
+        if not vertices or not faces:
+            return None
+            
+        return {
+            &#39;vertices&#39;: np.array(vertices),
+            &#39;faces&#39;: np.array(faces)
+        }
+        
+    def get_element(self, global_id: str, load_geometry: bool = False) -&gt; Optional[dict]:
+        &#34;&#34;&#34;Get an element by its GlobalId.
+        
+        Args:
+            global_id: The GlobalId of the element
+            load_geometry: Whether to load geometry data if not already loaded
+        &#34;&#34;&#34;
+        if load_geometry and not self._geometry_loaded:
+            self.load_geometry_for_element(global_id)
+            
+        return self.elements.get(global_id)
+        
+    def get_elements_by_type(self, ifc_entity: str) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;Get all element IDs for a given IFC entity type.
+        
+        Args:
+            ifc_entity: The IFC entity type to filter by (e.g., &#34;IfcSpace&#34;)
+            
+        Returns:
+            DataFrame containing element IDs and their metadata
+        &#34;&#34;&#34;
+        elements_data = []
+        
+        # Handle both list and dict input
+        data_list = self.data if isinstance(self.data, list) else [self.data]
+        
+        for data in data_list:
+            # Get elements from the nested structure
+            elements = data.get(&#39;elements&#39;, {})
+            
+            for element_id, element in elements.items():
+                if element.get(&#39;IfcEntity&#39;) == ifc_entity:
+                    # Create a dictionary with all available data
+                    element_data = {}
+                    
+                    # Add all fields from the element except geometry data
+                    for key, value in element.items():
+                        # Skip geometry-related fields
+                        if key in [&#39;vertices&#39;, &#39;faces&#39;, &#39;geometry&#39;]:
+                            continue
+                            
+                        # Handle nested properties
+                        if isinstance(value, dict):
+                            # Special handling for Qto_SpaceBaseQuantities
+                            if key == &#39;Qto_SpaceBaseQuantities&#39;:
+                                for nested_key, nested_value in value.items():
+                                    new_key = f&#34;{key}.{nested_key}&#34;
+                                    element_data[new_key] = nested_value
+                            else:
+                                for nested_key, nested_value in value.items():
+                                    new_key = f&#34;{key}.{nested_key}&#34;
+                                    element_data[new_key] = nested_value
+                        else:
+                            element_data[key] = value
+                    
+                    # Find storey by traversing up the parent chain
+                    current_id = element.get(&#39;parent_id&#39;)
+                    storey_name = &#39;Unknown&#39;
+                    
+                    while current_id is not None:
+                        current = elements.get(str(current_id))
+                        if not current:
+                            break
+                            
+                        if current.get(&#39;IfcEntity&#39;) == &#39;IfcBuildingStorey&#39;:
+                            storey_name = current.get(&#39;Name&#39;, &#39;Unknown&#39;)
+                            break
+                            
+                        current_id = current.get(&#39;parent_id&#39;)
+                    
+                    element_data[&#39;BuildingStorey&#39;] = storey_name
+                    elements_data.append(element_data)
+        
+        df = pd.DataFrame(elements_data)
+        print(&#34;\n=== DataFrame Columns ===&#34;)
+        print(f&#34;Available columns: {df.columns.tolist()}&#34;)
+        return df
+        
+    def get_elements_with_property(self, property_name: str, value: Union[str, float, int], load_geometry: bool = False) -&gt; List[dict]:
+        &#34;&#34;&#34;Get elements with a specific property value.
+        
+        Args:
+            property_name: The name of the property to check
+            value: The value to match
+            load_geometry: Whether to load geometry data if not already loaded
+        &#34;&#34;&#34;
+        if load_geometry and not self._geometry_loaded:
+            self.load_geometry()
+            
+        return [
+            element for element in self.elements.values()
+            if element[&#39;properties&#39;].get(property_name) == value
+        ]
+        
+    def get_elements_with_quantity(self, quantity_name: str, min_value: float = None, max_value: float = None, load_geometry: bool = False) -&gt; List[dict]:
+        &#34;&#34;&#34;Get elements with a quantity within a range.
+        
+        Args:
+            quantity_name: The name of the quantity to check
+            min_value: Minimum value (inclusive)
+            max_value: Maximum value (inclusive)
+            load_geometry: Whether to load geometry data if not already loaded
+        &#34;&#34;&#34;
+        if load_geometry and not self._geometry_loaded:
+            self.load_geometry()
+            
+        elements = []
+        for element in self.elements.values():
+            quantity = element[&#39;quantities&#39;].get(quantity_name)
+            if quantity is None:
+                continue
+                
+            if min_value is not None and quantity &lt; min_value:
+                continue
+            if max_value is not None and quantity &gt; max_value:
+                continue
+                
+            elements.append(element)
+            
+        return elements
+
     def _build_storey_cache(self):
         &#34;&#34;&#34;Build a cache of element_id -&gt; storey_name mappings.&#34;&#34;&#34;
         # First build storey name lookup
@@ -255,19 +503,259 @@ el.replaceWith(d);
         &#34;&#34;&#34;Get the storey name for an element by its ID.&#34;&#34;&#34;
         return self._storey_cache.get(str(element_id))</code></pre>
 </details>
-<div class="desc"><p>A class to load and manage IFC data from JSON files.</p>
+<div class="desc"><p>A class to load and manage IFC data from JSON files or pre-loaded JSON data.</p>
 <p>This class provides methods to access geometry and properties data from IFC models
-that have been converted to JSON format.</p>
-<p>Initialize the loader with geometry and properties data.</p>
+that have been converted to JSON format. It can handle multiple geometry files or
+pre-loaded JSON data.</p>
+<p>Initialize the loader.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>geometry_json</code></strong></dt>
-<dd>List of geometry objects, each containing an 'id' and geometry data</dd>
+<dt><strong><code>json_paths</code></strong></dt>
+<dd>Optional path or list of paths to IFC JSON files</dd>
 <dt><strong><code>properties_json</code></strong></dt>
-<dd>Dictionary containing elements and their properties</dd>
+<dd>Optional pre-loaded properties JSON data</dd>
 </dl></div>
 <h3>Methods</h3>
 <dl>
+<dt id="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.add_geometry_files"><code class="name flex">
+<span>def <span class="ident">add_geometry_files</span></span>(<span>self, json_paths: str | pathlib.Path | List[str | pathlib.Path]) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_geometry_files(self, json_paths: Union[str, Path, List[Union[str, Path]]]) -&gt; None:
+    &#34;&#34;&#34;Add additional geometry files to the loader.
+    
+    Args:
+        json_paths: Path or list of paths to additional IFC JSON files
+    &#34;&#34;&#34;
+    if self.json_paths is None:
+        raise ValueError(&#34;Cannot add geometry files when initialized with properties_json&#34;)
+        
+    # Convert single path to list
+    if isinstance(json_paths, (str, Path)):
+        json_paths = [json_paths]
+        
+    new_paths = [Path(p) for p in json_paths]
+    self.json_paths.extend(new_paths)
+    
+    # Load new data
+    new_data = self._load_jsons_from_paths(new_paths)
+    
+    # Update existing data
+    if isinstance(self.data, list):
+        self.data.extend(new_data)
+    else:
+        self.data = [self.data] + new_data
+        
+    # Reprocess elements to include new geometry
+    self.elements = self._process_elements()
+    self._geometry_loaded = False</code></pre>
+</details>
+<div class="desc"><p>Add additional geometry files to the loader.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>json_paths</code></strong></dt>
+<dd>Path or list of paths to additional IFC JSON files</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_element"><code class="name flex">
+<span>def <span class="ident">get_element</span></span>(<span>self, global_id: str, load_geometry: bool = False) ‑> dict | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_element(self, global_id: str, load_geometry: bool = False) -&gt; Optional[dict]:
+    &#34;&#34;&#34;Get an element by its GlobalId.
+    
+    Args:
+        global_id: The GlobalId of the element
+        load_geometry: Whether to load geometry data if not already loaded
+    &#34;&#34;&#34;
+    if load_geometry and not self._geometry_loaded:
+        self.load_geometry_for_element(global_id)
+        
+    return self.elements.get(global_id)</code></pre>
+</details>
+<div class="desc"><p>Get an element by its GlobalId.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>global_id</code></strong></dt>
+<dd>The GlobalId of the element</dd>
+<dt><strong><code>load_geometry</code></strong></dt>
+<dd>Whether to load geometry data if not already loaded</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_elements_by_type"><code class="name flex">
+<span>def <span class="ident">get_elements_by_type</span></span>(<span>self, ifc_entity: str) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_elements_by_type(self, ifc_entity: str) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;Get all element IDs for a given IFC entity type.
+    
+    Args:
+        ifc_entity: The IFC entity type to filter by (e.g., &#34;IfcSpace&#34;)
+        
+    Returns:
+        DataFrame containing element IDs and their metadata
+    &#34;&#34;&#34;
+    elements_data = []
+    
+    # Handle both list and dict input
+    data_list = self.data if isinstance(self.data, list) else [self.data]
+    
+    for data in data_list:
+        # Get elements from the nested structure
+        elements = data.get(&#39;elements&#39;, {})
+        
+        for element_id, element in elements.items():
+            if element.get(&#39;IfcEntity&#39;) == ifc_entity:
+                # Create a dictionary with all available data
+                element_data = {}
+                
+                # Add all fields from the element except geometry data
+                for key, value in element.items():
+                    # Skip geometry-related fields
+                    if key in [&#39;vertices&#39;, &#39;faces&#39;, &#39;geometry&#39;]:
+                        continue
+                        
+                    # Handle nested properties
+                    if isinstance(value, dict):
+                        # Special handling for Qto_SpaceBaseQuantities
+                        if key == &#39;Qto_SpaceBaseQuantities&#39;:
+                            for nested_key, nested_value in value.items():
+                                new_key = f&#34;{key}.{nested_key}&#34;
+                                element_data[new_key] = nested_value
+                        else:
+                            for nested_key, nested_value in value.items():
+                                new_key = f&#34;{key}.{nested_key}&#34;
+                                element_data[new_key] = nested_value
+                    else:
+                        element_data[key] = value
+                
+                # Find storey by traversing up the parent chain
+                current_id = element.get(&#39;parent_id&#39;)
+                storey_name = &#39;Unknown&#39;
+                
+                while current_id is not None:
+                    current = elements.get(str(current_id))
+                    if not current:
+                        break
+                        
+                    if current.get(&#39;IfcEntity&#39;) == &#39;IfcBuildingStorey&#39;:
+                        storey_name = current.get(&#39;Name&#39;, &#39;Unknown&#39;)
+                        break
+                        
+                    current_id = current.get(&#39;parent_id&#39;)
+                
+                element_data[&#39;BuildingStorey&#39;] = storey_name
+                elements_data.append(element_data)
+    
+    df = pd.DataFrame(elements_data)
+    print(&#34;\n=== DataFrame Columns ===&#34;)
+    print(f&#34;Available columns: {df.columns.tolist()}&#34;)
+    return df</code></pre>
+</details>
+<div class="desc"><p>Get all element IDs for a given IFC entity type.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ifc_entity</code></strong></dt>
+<dd>The IFC entity type to filter by (e.g., "IfcSpace")</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>DataFrame containing element IDs and their metadata</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_elements_with_property"><code class="name flex">
+<span>def <span class="ident">get_elements_with_property</span></span>(<span>self, property_name: str, value: str | float | int, load_geometry: bool = False) ‑> List[dict]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_elements_with_property(self, property_name: str, value: Union[str, float, int], load_geometry: bool = False) -&gt; List[dict]:
+    &#34;&#34;&#34;Get elements with a specific property value.
+    
+    Args:
+        property_name: The name of the property to check
+        value: The value to match
+        load_geometry: Whether to load geometry data if not already loaded
+    &#34;&#34;&#34;
+    if load_geometry and not self._geometry_loaded:
+        self.load_geometry()
+        
+    return [
+        element for element in self.elements.values()
+        if element[&#39;properties&#39;].get(property_name) == value
+    ]</code></pre>
+</details>
+<div class="desc"><p>Get elements with a specific property value.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>property_name</code></strong></dt>
+<dd>The name of the property to check</dd>
+<dt><strong><code>value</code></strong></dt>
+<dd>The value to match</dd>
+<dt><strong><code>load_geometry</code></strong></dt>
+<dd>Whether to load geometry data if not already loaded</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_elements_with_quantity"><code class="name flex">
+<span>def <span class="ident">get_elements_with_quantity</span></span>(<span>self,<br>quantity_name: str,<br>min_value: float = None,<br>max_value: float = None,<br>load_geometry: bool = False) ‑> List[dict]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_elements_with_quantity(self, quantity_name: str, min_value: float = None, max_value: float = None, load_geometry: bool = False) -&gt; List[dict]:
+    &#34;&#34;&#34;Get elements with a quantity within a range.
+    
+    Args:
+        quantity_name: The name of the quantity to check
+        min_value: Minimum value (inclusive)
+        max_value: Maximum value (inclusive)
+        load_geometry: Whether to load geometry data if not already loaded
+    &#34;&#34;&#34;
+    if load_geometry and not self._geometry_loaded:
+        self.load_geometry()
+        
+    elements = []
+    for element in self.elements.values():
+        quantity = element[&#39;quantities&#39;].get(quantity_name)
+        if quantity is None:
+            continue
+            
+        if min_value is not None and quantity &lt; min_value:
+            continue
+        if max_value is not None and quantity &gt; max_value:
+            continue
+            
+        elements.append(element)
+        
+    return elements</code></pre>
+</details>
+<div class="desc"><p>Get elements with a quantity within a range.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>quantity_name</code></strong></dt>
+<dd>The name of the quantity to check</dd>
+<dt><strong><code>min_value</code></strong></dt>
+<dd>Minimum value (inclusive)</dd>
+<dt><strong><code>max_value</code></strong></dt>
+<dd>Maximum value (inclusive)</dd>
+<dt><strong><code>load_geometry</code></strong></dt>
+<dd>Whether to load geometry data if not already loaded</dd>
+</dl></div>
+</dd>
 <dt id="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_geometry"><code class="name flex">
 <span>def <span class="ident">get_geometry</span></span>(<span>self, element_id: str) ‑> Dict[str, Any] | None</span>
 </code></dt>
@@ -415,6 +903,75 @@ that have been converted to JSON format.</p>
 <h2 id="returns">Returns</h2>
 <p>The storey name, or None if not found</p></div>
 </dd>
+<dt id="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.load_geometry"><code class="name flex">
+<span>def <span class="ident">load_geometry</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_geometry(self) -&gt; None:
+    &#34;&#34;&#34;Load geometry data for all elements from all files.&#34;&#34;&#34;
+    if self._geometry_loaded:
+        return
+        
+    # Handle both list and dict input
+    data_list = self.data if isinstance(self.data, list) else [self.data]
+        
+    for element in data_list:
+        element_id = element.get(&#39;ifc_global_id&#39;)
+        if not element_id:
+            continue
+            
+        geometry = self._extract_geometry(element)
+        if geometry:
+            if &#39;geometry&#39; not in self.elements[element_id]:
+                self.elements[element_id][&#39;geometry&#39;] = geometry
+            else:
+                # Merge geometry data
+                existing = self.elements[element_id][&#39;geometry&#39;]
+                existing[&#39;vertices&#39;] = np.vstack((existing[&#39;vertices&#39;], geometry[&#39;vertices&#39;]))
+                existing[&#39;faces&#39;] = np.vstack((existing[&#39;faces&#39;], geometry[&#39;faces&#39;]))
+            
+    self._geometry_loaded = True</code></pre>
+</details>
+<div class="desc"><p>Load geometry data for all elements from all files.</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.load_geometry_for_element"><code class="name flex">
+<span>def <span class="ident">load_geometry_for_element</span></span>(<span>self, element_id: str) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_geometry_for_element(self, element_id: str) -&gt; None:
+    &#34;&#34;&#34;Load geometry data for a specific element from all files.&#34;&#34;&#34;
+    if element_id not in self.elements:
+        return
+        
+    # Handle both list and dict input
+    data_list = self.data if isinstance(self.data, list) else [self.data]
+        
+    elements = [
+        e for e in data_list 
+        if e.get(&#39;ifc_global_id&#39;) == element_id
+    ]
+    
+    for element in elements:
+        geometry = self._extract_geometry(element)
+        if geometry:
+            if &#39;geometry&#39; not in self.elements[element_id]:
+                self.elements[element_id][&#39;geometry&#39;] = geometry
+            else:
+                # Merge geometry data
+                existing = self.elements[element_id][&#39;geometry&#39;]
+                existing[&#39;vertices&#39;] = np.vstack((existing[&#39;vertices&#39;], geometry[&#39;vertices&#39;]))
+                existing[&#39;faces&#39;] = np.vstack((existing[&#39;faces&#39;], geometry[&#39;faces&#39;]))</code></pre>
+</details>
+<div class="desc"><p>Load geometry data for a specific element from all files.</p></div>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -435,11 +992,18 @@ that have been converted to JSON format.</p>
 <li>
 <h4><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader">IfcJsonLoader</a></code></h4>
 <ul class="">
+<li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.add_geometry_files" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.add_geometry_files">add_geometry_files</a></code></li>
+<li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_element" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_element">get_element</a></code></li>
+<li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_elements_by_type" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_elements_by_type">get_elements_by_type</a></code></li>
+<li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_elements_with_property" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_elements_with_property">get_elements_with_property</a></code></li>
+<li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_elements_with_quantity" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_elements_with_quantity">get_elements_with_quantity</a></code></li>
 <li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_geometry" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_geometry">get_geometry</a></code></li>
 <li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_properties" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_properties">get_properties</a></code></li>
 <li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_spaces_in_storey" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_spaces_in_storey">get_spaces_in_storey</a></code></li>
 <li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_storey_for_element" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_storey_for_element">get_storey_for_element</a></code></li>
 <li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_storey_for_space" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.get_storey_for_space">get_storey_for_space</a></code></li>
+<li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.load_geometry" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.load_geometry">load_geometry</a></code></li>
+<li><code><a title="qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.load_geometry_for_element" href="#qto_buccaneer.utils.ifc_json_loader.IfcJsonLoader.load_geometry_for_element">load_geometry_for_element</a></code></li>
 </ul>
 </li>
 </ul>

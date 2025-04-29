@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>qto_buccaneer.checks API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>qto_buccaneer.checks</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="qto_buccaneer.checks.compare_target_actual"><code class="name flex">
+<span>def <span class="ident">compare_target_actual</span></span>(<span>target_df: pandas.core.frame.DataFrame,<br>actual_metadata_df: pandas.core.frame.DataFrame,<br>output_dir: str,<br>config_dir: str,<br>building_name: str) ‑> <a title="qto_buccaneer.checks.BuildingComparison" href="#qto_buccaneer.checks.BuildingComparison">BuildingComparison</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compare_target_actual(
+    target_df: pd.DataFrame,
+    actual_metadata_df: pd.DataFrame,
+    output_dir: str,
+    config_dir: str,
+    building_name: str,
+) -&gt; BuildingComparison:
+    &#34;&#34;&#34;
+    Compare target and actual building data.
+    
+    Args:
+        target_df: DataFrame containing target room data
+        actual_metadata_df: DataFrame containing actual room data
+        output_dir: Directory to save output files
+        filter_dir: Either a YAML string or a path to a YAML file containing filter configuration
+        building_name: Name of the building for output files
+        
+    Returns:
+        BuildingComparison object containing comparison results
+    &#34;&#34;&#34;
+    # Create output directory
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+    
+    # Load and process configuration
+    filter_config = _load_filter_config(config_dir)
+    check_config = _get_check_config(filter_config)
+    
+    # Extract configuration values
+    target_key = check_config[&#39;key_target_column&#39;]
+    target_area_column = check_config[&#39;area_target_column&#39;]
+    actual_key = check_config[&#39;key_actual_column&#39;]
+    actual_area_column = check_config[&#39;area_actual_column&#39;]
+    tolerance = check_config.get(&#39;tolerance&#39;, 0.1)
+    return_values = check_config.get(&#39;return_values&#39;, [])
+    
+    filter_str = check_config.get(&#39;filter&#39;, &#39;&#39;)
+    if filter_str:
+        actual_df = MetadataFilter.filter_df_from_str(actual_metadata_df, filter_str)
+        
+    merged_df = pd.merge(
+        target_df,
+        actual_df,
+        how=&#39;outer&#39;,
+        left_on=[target_key],
+        right_on=[actual_key],
+        suffixes=(&#39;_target&#39;, &#39;_actual&#39;)
+    )
+    merged_df.to_excel(output_path / f&#34;{building_name}_merged.xlsx&#34;, index=False)
+    
+    merged_df_1 = _calculate_differences(
+        merged_df=merged_df, 
+        tolerance=tolerance, 
+        target_area_column=target_area_column,
+        actual_area_column=actual_area_column,
+        key_target_column=target_key,
+        key_actual_column=actual_key
+    )
+    
+    merged_df_1.to_excel(output_path / f&#34;{building_name}_merged_1.xlsx&#34;, index=False)
+    
+    
+    # Create BuildingComparison object
+    comparison = BuildingComparison(merged_df, return_values=return_values, area_target_column=target_area_column, area_actual_column=actual_area_column)
+    
+    # Save results
+    _save_results(comparison, output_path, building_name)
+    
+    return comparison</code></pre>
+</details>
+<div class="desc"><p>Compare target and actual building data.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>target_df</code></strong></dt>
+<dd>DataFrame containing target room data</dd>
+<dt><strong><code>actual_metadata_df</code></strong></dt>
+<dd>DataFrame containing actual room data</dd>
+<dt><strong><code>output_dir</code></strong></dt>
+<dd>Directory to save output files</dd>
+<dt><strong><code>filter_dir</code></strong></dt>
+<dd>Either a YAML string or a path to a YAML file containing filter configuration</dd>
+<dt><strong><code>building_name</code></strong></dt>
+<dd>Name of the building for output files</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>BuildingComparison object containing comparison results</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="qto_buccaneer.checks.BuildingComparison"><code class="flex name class">
+<span>class <span class="ident">BuildingComparison</span></span>
+<span>(</span><span>merged_df: pandas.core.frame.DataFrame,<br>return_values: list[str],<br>area_target_column: str,<br>area_actual_column: str)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class BuildingComparison:
+    &#34;&#34;&#34;Main data structure for building comparison results.&#34;&#34;&#34;
+    merged_df: pd.DataFrame
+    return_values: list[str] 
+    area_target_column: str
+    area_actual_column: str
+    
+    def __post_init__(self):
+        &#34;&#34;&#34;Initialize the comparison.&#34;&#34;&#34;
+        pass
+    
+    def to_summary_yaml(self) -&gt; dict:
+        &#34;&#34;&#34;Generate YAML summary of the comparison.&#34;&#34;&#34;
+        # Calculate statistics from merged DataFrame
+        total_items = len(self.merged_df)
+        items_within_tolerance = len(self.merged_df[self.merged_df[&#39;status&#39;] == &#39;within_tolerance&#39;])
+        missing_items = len(self.merged_df[self.merged_df[&#39;status&#39;] == &#39;missing&#39;])
+        extra_items = len(self.merged_df[self.merged_df[&#39;status&#39;] == &#39;extra&#39;])
+        
+        # Calculate total areas
+        total_target_area = float(self.merged_df[self.area_target_column].sum())
+        total_actual_area = float(self.merged_df[self.area_actual_column].sum())
+        total_area_diff = float(total_actual_area - total_target_area)
+        total_area_diff_pct = float((total_area_diff / total_target_area * 100) if total_target_area &gt; 0 else 0)
+        
+        # Determine status
+        if missing_items &gt; 0:
+            status = &#34;failed&#34;
+        elif extra_items &gt; 0:
+            status = &#34;warning&#34;
+        elif items_within_tolerance == total_items:
+            status = &#34;passed&#34;
+        else:
+            status = &#34;warning&#34;
+        
+        # Get problematic items
+        #problematic_df = self.merged_df[self.merged_df[&#39;status&#39;] != &#39;within_tolerance&#39;]
+        #problematic_items = [
+        #    {
+        #        &#34;category&#34;: str(row[&#39;target_key&#39;]),
+        #        &#34;status&#34;: str(row[&#39;status&#39;]),
+        #        &#34;name&#34;: str(row.get(&#39;name_target&#39;, row.get(&#39;name_actual&#39;, &#39;&#39;))),
+        #        &#34;target&#34;: float(row[&#39;target_area&#39;]),
+        #        &#34;actual&#34;: float(row[&#39;actual_area&#39;]),
+        #        &#34;difference_pct&#34;: float(row[&#39;area_diff_pct&#39;])
+        #    }
+        #    for _, row in problematic_df.iterrows()
+        #]
+        
+        summary = {
+            &#34;name&#34;: &#34;Target Program vs Actual Program&#34;,
+            &#34;status&#34;: str(status),
+            &#34;overview&#34;: {
+                &#34;total_items&#34;: int(total_items),
+                &#34;compliance_rate&#34;: float((items_within_tolerance / total_items * 100) if total_items &gt; 0 else 0),
+                &#34;total_area&#34;: {
+                    &#34;target&#34;: float(total_target_area),
+                    &#34;actual&#34;: float(total_actual_area),
+                    &#34;difference_pct&#34;: float(total_area_diff_pct)
+                }
+            },
+            &#34;issues&#34;: {
+                &#34;missing&#34;: int(missing_items),
+                &#34;extra&#34;: int(extra_items),
+                &#34;out_of_tolerance&#34;: int(total_items - items_within_tolerance - missing_items - extra_items)
+            },
+            #&#34;problematic_items&#34;: sorted(
+            #    problematic_items,
+            #    key=lambda x: abs(x[&#34;difference_pct&#34;]),
+            #    reverse=True
+            #)[:10]
+        }
+        
+        return summary
+    
+    def to_dict(self) -&gt; dict:
+        &#34;&#34;&#34;Convert the comparison data to a dictionary.&#34;&#34;&#34;
+        return self.to_dataframe().to_dict(orient=&#39;records&#39;)
+    
+    def to_dataframe(self,) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;Return the merged DataFrame with the spcified columns.&#34;&#34;&#34;
+        return self.merged_df[self.return_values]</code></pre>
+</details>
+<div class="desc"><p>Main data structure for building comparison results.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="qto_buccaneer.checks.BuildingComparison.area_actual_column"><code class="name">var <span class="ident">area_actual_column</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.checks.BuildingComparison.area_target_column"><code class="name">var <span class="ident">area_target_column</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.checks.BuildingComparison.merged_df"><code class="name">var <span class="ident">merged_df</span> : pandas.core.frame.DataFrame</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.checks.BuildingComparison.return_values"><code class="name">var <span class="ident">return_values</span> : list[str]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="qto_buccaneer.checks.BuildingComparison.to_dataframe"><code class="name flex">
+<span>def <span class="ident">to_dataframe</span></span>(<span>self) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_dataframe(self,) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;Return the merged DataFrame with the spcified columns.&#34;&#34;&#34;
+    return self.merged_df[self.return_values]</code></pre>
+</details>
+<div class="desc"><p>Return the merged DataFrame with the spcified columns.</p></div>
+</dd>
+<dt id="qto_buccaneer.checks.BuildingComparison.to_dict"><code class="name flex">
+<span>def <span class="ident">to_dict</span></span>(<span>self) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_dict(self) -&gt; dict:
+    &#34;&#34;&#34;Convert the comparison data to a dictionary.&#34;&#34;&#34;
+    return self.to_dataframe().to_dict(orient=&#39;records&#39;)</code></pre>
+</details>
+<div class="desc"><p>Convert the comparison data to a dictionary.</p></div>
+</dd>
+<dt id="qto_buccaneer.checks.BuildingComparison.to_summary_yaml"><code class="name flex">
+<span>def <span class="ident">to_summary_yaml</span></span>(<span>self) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_summary_yaml(self) -&gt; dict:
+    &#34;&#34;&#34;Generate YAML summary of the comparison.&#34;&#34;&#34;
+    # Calculate statistics from merged DataFrame
+    total_items = len(self.merged_df)
+    items_within_tolerance = len(self.merged_df[self.merged_df[&#39;status&#39;] == &#39;within_tolerance&#39;])
+    missing_items = len(self.merged_df[self.merged_df[&#39;status&#39;] == &#39;missing&#39;])
+    extra_items = len(self.merged_df[self.merged_df[&#39;status&#39;] == &#39;extra&#39;])
+    
+    # Calculate total areas
+    total_target_area = float(self.merged_df[self.area_target_column].sum())
+    total_actual_area = float(self.merged_df[self.area_actual_column].sum())
+    total_area_diff = float(total_actual_area - total_target_area)
+    total_area_diff_pct = float((total_area_diff / total_target_area * 100) if total_target_area &gt; 0 else 0)
+    
+    # Determine status
+    if missing_items &gt; 0:
+        status = &#34;failed&#34;
+    elif extra_items &gt; 0:
+        status = &#34;warning&#34;
+    elif items_within_tolerance == total_items:
+        status = &#34;passed&#34;
+    else:
+        status = &#34;warning&#34;
+    
+    # Get problematic items
+    #problematic_df = self.merged_df[self.merged_df[&#39;status&#39;] != &#39;within_tolerance&#39;]
+    #problematic_items = [
+    #    {
+    #        &#34;category&#34;: str(row[&#39;target_key&#39;]),
+    #        &#34;status&#34;: str(row[&#39;status&#39;]),
+    #        &#34;name&#34;: str(row.get(&#39;name_target&#39;, row.get(&#39;name_actual&#39;, &#39;&#39;))),
+    #        &#34;target&#34;: float(row[&#39;target_area&#39;]),
+    #        &#34;actual&#34;: float(row[&#39;actual_area&#39;]),
+    #        &#34;difference_pct&#34;: float(row[&#39;area_diff_pct&#39;])
+    #    }
+    #    for _, row in problematic_df.iterrows()
+    #]
+    
+    summary = {
+        &#34;name&#34;: &#34;Target Program vs Actual Program&#34;,
+        &#34;status&#34;: str(status),
+        &#34;overview&#34;: {
+            &#34;total_items&#34;: int(total_items),
+            &#34;compliance_rate&#34;: float((items_within_tolerance / total_items * 100) if total_items &gt; 0 else 0),
+            &#34;total_area&#34;: {
+                &#34;target&#34;: float(total_target_area),
+                &#34;actual&#34;: float(total_actual_area),
+                &#34;difference_pct&#34;: float(total_area_diff_pct)
+            }
+        },
+        &#34;issues&#34;: {
+            &#34;missing&#34;: int(missing_items),
+            &#34;extra&#34;: int(extra_items),
+            &#34;out_of_tolerance&#34;: int(total_items - items_within_tolerance - missing_items - extra_items)
+        },
+        #&#34;problematic_items&#34;: sorted(
+        #    problematic_items,
+        #    key=lambda x: abs(x[&#34;difference_pct&#34;]),
+        #    reverse=True
+        #)[:10]
+    }
+    
+    return summary</code></pre>
+</details>
+<div class="desc"><p>Generate YAML summary of the comparison.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="qto_buccaneer.checks.SafeLoader"><code class="flex name class">
+<span>class <span class="ident">SafeLoader</span></span>
+<span>(</span><span>stream)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SafeLoader(yaml.SafeLoader):
+    &#34;&#34;&#34;Custom YAML loader that handles both scalar and sequence nodes.&#34;&#34;&#34;
+    def construct_scalar(self, node):
+        if isinstance(node, yaml.SequenceNode):
+            return [self.construct_scalar(child) for child in node.value]
+        return super().construct_scalar(node)</code></pre>
+</details>
+<div class="desc"><p>Custom YAML loader that handles both scalar and sequence nodes.</p>
+<p>Initialize the scanner.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>yaml.loader.SafeLoader</li>
+<li>yaml.reader.Reader</li>
+<li>yaml.scanner.Scanner</li>
+<li>yaml.parser.Parser</li>
+<li>yaml.composer.Composer</li>
+<li>yaml.constructor.SafeConstructor</li>
+<li>yaml.constructor.BaseConstructor</li>
+<li>yaml.resolver.Resolver</li>
+<li>yaml.resolver.BaseResolver</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="qto_buccaneer.checks.SafeLoader.construct_scalar"><code class="name flex">
+<span>def <span class="ident">construct_scalar</span></span>(<span>self, node)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def construct_scalar(self, node):
+    if isinstance(node, yaml.SequenceNode):
+        return [self.construct_scalar(child) for child in node.value]
+    return super().construct_scalar(node)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="qto_buccaneer" href="index.html">qto_buccaneer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="qto_buccaneer.checks.compare_target_actual" href="#qto_buccaneer.checks.compare_target_actual">compare_target_actual</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="qto_buccaneer.checks.BuildingComparison" href="#qto_buccaneer.checks.BuildingComparison">BuildingComparison</a></code></h4>
+<ul class="two-column">
+<li><code><a title="qto_buccaneer.checks.BuildingComparison.area_actual_column" href="#qto_buccaneer.checks.BuildingComparison.area_actual_column">area_actual_column</a></code></li>
+<li><code><a title="qto_buccaneer.checks.BuildingComparison.area_target_column" href="#qto_buccaneer.checks.BuildingComparison.area_target_column">area_target_column</a></code></li>
+<li><code><a title="qto_buccaneer.checks.BuildingComparison.merged_df" href="#qto_buccaneer.checks.BuildingComparison.merged_df">merged_df</a></code></li>
+<li><code><a title="qto_buccaneer.checks.BuildingComparison.return_values" href="#qto_buccaneer.checks.BuildingComparison.return_values">return_values</a></code></li>
+<li><code><a title="qto_buccaneer.checks.BuildingComparison.to_dataframe" href="#qto_buccaneer.checks.BuildingComparison.to_dataframe">to_dataframe</a></code></li>
+<li><code><a title="qto_buccaneer.checks.BuildingComparison.to_dict" href="#qto_buccaneer.checks.BuildingComparison.to_dict">to_dict</a></code></li>
+<li><code><a title="qto_buccaneer.checks.BuildingComparison.to_summary_yaml" href="#qto_buccaneer.checks.BuildingComparison.to_summary_yaml">to_summary_yaml</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="qto_buccaneer.checks.SafeLoader" href="#qto_buccaneer.checks.SafeLoader">SafeLoader</a></code></h4>
+<ul class="">
+<li><code><a title="qto_buccaneer.checks.SafeLoader.construct_scalar" href="#qto_buccaneer.checks.SafeLoader.construct_scalar">construct_scalar</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

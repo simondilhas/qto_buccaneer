@@ -48,7 +48,7 @@ el.replaceWith(d);
 <dl>
 <dt id="qto_buccaneer.scripts.building_summary.BuildingSummary"><code class="flex name class">
 <span>class <span class="ident">BuildingSummary</span></span>
-<span>(</span><span>path: pathlib.Path)</span>
+<span>(</span><span>path: pathlib.Path,<br>building_name: str,<br>template_path: pathlib.Path | None = None)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -67,7 +67,10 @@ el.replaceWith(d);
         data (dict): The in-memory representation of the building summary data
 
     Example:
-        &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;))
+        &gt;&gt;&gt; summary = BuildingSummary(
+        ...     path=Path(&#34;building_summary.yaml&#34;),
+        ...     building_name=&#34;Building A&#34;
+        ... )
         &gt;&gt;&gt; summary.load()
         &gt;&gt;&gt; summary.set_name(&#34;Office Building A&#34;)
         &gt;&gt;&gt; # Add data to groups
@@ -88,39 +91,42 @@ el.replaceWith(d);
           - input_file: model.ifc
     &#34;&#34;&#34;
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, building_name: str, template_path: Optional[Path] = None):
         &#34;&#34;&#34;
-        Initialize a BuildingSummary instance.
+        Initialize the BuildingSummary object.
 
         Args:
-            path (Path): The path to the YAML file where the building summary data is stored
+            path: Path to the YAML file
+            building_name: Name of the building
+            template_path: Optional path to a template YAML file
         &#34;&#34;&#34;
         self.path = path
-        # Get the project root from the path (go up 3 levels from the building folder)
-        project_root = path.parent.parent.parent
-        self.template_path = project_root / &#34;config&#34; / &#34;building_summary_template.yaml&#34;
-        self.data = self._load_template()
+        self.building_name = building_name
+        self.template_path = template_path
+        self.data = {}
         self._initialize_data()
         # Store the building directory path for relative path conversion
         self.building_dir = path.parent
+        # Set the building name in the data
+        self.set_name(building_name)
 
     def _initialize_data(self):
-        &#34;&#34;&#34;Initialize the data structure if it doesn&#39;t exist.&#34;&#34;&#34;
-        # Use the template data to initialize fields
-        template_data = self._load_template()
-        for field, default_value in template_data.items():
-            if field not in self.data:
-                self.data[field] = default_value
+        &#34;&#34;&#34;Initialize the data structure with default values.&#34;&#34;&#34;
+        self.data = {
+            &#34;building_name&#34;: self.building_name,
+            &#34;checks&#34;: [],
+            &#34;metrics&#34;: [],
+            &#34;reports&#34;: [],
+            &#34;data&#34;: {},
+            &#34;groups&#34;: {}
+        }
 
     def _load_template(self) -&gt; dict:
-        &#34;&#34;&#34;
-        Load the template YAML file.
-
-        Returns:
-            dict: The template data
-        &#34;&#34;&#34;
-        with open(self.template_path, &#34;r&#34;) as f:
-            return yaml.safe_load(f)
+        &#34;&#34;&#34;Load data from the template file if it exists.&#34;&#34;&#34;
+        if self.template_path and self.template_path.exists():
+            with open(self.template_path, &#34;r&#34;) as f:
+                return yaml.load(f, Loader=SafeLoader)
+        return {}
 
     def load(self):
         &#34;&#34;&#34;
@@ -130,12 +136,12 @@ el.replaceWith(d);
             BuildingSummary: The instance itself for method chaining
 
         Example:
-            &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;))
+            &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;), &#34;Building A&#34;)
             &gt;&gt;&gt; summary.load()
         &#34;&#34;&#34;
         if self.path.exists():
             with open(self.path, &#34;r&#34;) as f:
-                self.data = yaml.safe_load(f)
+                self.data = yaml.load(f, Loader=SafeLoader)
                 self._initialize_data()
         return self
 
@@ -144,7 +150,7 @@ el.replaceWith(d);
         Save the current building summary data to the YAML file.
 
         Example:
-            &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;))
+            &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;), &#34;Building A&#34;)
             &gt;&gt;&gt; summary.load()
             &gt;&gt;&gt; summary.set_name(&#34;New Building&#34;)
             &gt;&gt;&gt; summary.save()
@@ -160,7 +166,7 @@ el.replaceWith(d);
             name (str): The new name for the building
 
         Example:
-            &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;))
+            &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;), &#34;Building A&#34;)
             &gt;&gt;&gt; summary.load()
             &gt;&gt;&gt; summary.set_name(&#34;Residential Complex B&#34;)
         &#34;&#34;&#34;
@@ -306,7 +312,7 @@ el.replaceWith(d);
         Print the building summary data in a formatted way.
 
         Example:
-            &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;))
+            &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;), &#34;Building A&#34;)
             &gt;&gt;&gt; summary.load()
             &gt;&gt;&gt; summary.set_name(&#34;Office Building A&#34;)
             &gt;&gt;&gt; summary.add(&#34;total_area&#34;, 5000, group=&#34;measurements&#34;)
@@ -341,7 +347,10 @@ The data is stored in a YAML file and can be easily manipulated through the clas
 <dd>The in-memory representation of the building summary data</dd>
 </dl>
 <h2 id="example">Example</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; summary = BuildingSummary(Path(&quot;building_summary.yaml&quot;))
+<pre><code class="language-python-repl">&gt;&gt;&gt; summary = BuildingSummary(
+...     path=Path(&quot;building_summary.yaml&quot;),
+...     building_name=&quot;Building A&quot;
+... )
 &gt;&gt;&gt; summary.load()
 &gt;&gt;&gt; summary.set_name(&quot;Office Building A&quot;)
 &gt;&gt;&gt; # Add data to groups
@@ -361,11 +370,15 @@ Ratings:
 Files:
   - input_file: model.ifc
 </code></pre>
-<p>Initialize a BuildingSummary instance.</p>
+<p>Initialize the BuildingSummary object.</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>path</code></strong> :&ensp;<code>Path</code></dt>
-<dd>The path to the YAML file where the building summary data is stored</dd>
+<dt><strong><code>path</code></strong></dt>
+<dd>Path to the YAML file</dd>
+<dt><strong><code>building_name</code></strong></dt>
+<dd>Name of the building</dd>
+<dt><strong><code>template_path</code></strong></dt>
+<dd>Optional path to a template YAML file</dd>
 </dl></div>
 <h3>Methods</h3>
 <dl>
@@ -527,12 +540,12 @@ Files:
         BuildingSummary: The instance itself for method chaining
 
     Example:
-        &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;))
+        &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;), &#34;Building A&#34;)
         &gt;&gt;&gt; summary.load()
     &#34;&#34;&#34;
     if self.path.exists():
         with open(self.path, &#34;r&#34;) as f:
-            self.data = yaml.safe_load(f)
+            self.data = yaml.load(f, Loader=SafeLoader)
             self._initialize_data()
     return self</code></pre>
 </details>
@@ -543,7 +556,7 @@ Files:
 <dd>The instance itself for method chaining</dd>
 </dl>
 <h2 id="example">Example</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; summary = BuildingSummary(Path(&quot;building_summary.yaml&quot;))
+<pre><code class="language-python-repl">&gt;&gt;&gt; summary = BuildingSummary(Path(&quot;building_summary.yaml&quot;), &quot;Building A&quot;)
 &gt;&gt;&gt; summary.load()
 </code></pre></div>
 </dd>
@@ -560,7 +573,7 @@ Files:
     Print the building summary data in a formatted way.
 
     Example:
-        &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;))
+        &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;), &#34;Building A&#34;)
         &gt;&gt;&gt; summary.load()
         &gt;&gt;&gt; summary.set_name(&#34;Office Building A&#34;)
         &gt;&gt;&gt; summary.add(&#34;total_area&#34;, 5000, group=&#34;measurements&#34;)
@@ -586,7 +599,7 @@ Files:
 </details>
 <div class="desc"><p>Print the building summary data in a formatted way.</p>
 <h2 id="example">Example</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; summary = BuildingSummary(Path(&quot;building_summary.yaml&quot;))
+<pre><code class="language-python-repl">&gt;&gt;&gt; summary = BuildingSummary(Path(&quot;building_summary.yaml&quot;), &quot;Building A&quot;)
 &gt;&gt;&gt; summary.load()
 &gt;&gt;&gt; summary.set_name(&quot;Office Building A&quot;)
 &gt;&gt;&gt; summary.add(&quot;total_area&quot;, 5000, group=&quot;measurements&quot;)
@@ -609,7 +622,7 @@ Measurements:
     Save the current building summary data to the YAML file.
 
     Example:
-        &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;))
+        &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;), &#34;Building A&#34;)
         &gt;&gt;&gt; summary.load()
         &gt;&gt;&gt; summary.set_name(&#34;New Building&#34;)
         &gt;&gt;&gt; summary.save()
@@ -619,7 +632,7 @@ Measurements:
 </details>
 <div class="desc"><p>Save the current building summary data to the YAML file.</p>
 <h2 id="example">Example</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; summary = BuildingSummary(Path(&quot;building_summary.yaml&quot;))
+<pre><code class="language-python-repl">&gt;&gt;&gt; summary = BuildingSummary(Path(&quot;building_summary.yaml&quot;), &quot;Building A&quot;)
 &gt;&gt;&gt; summary.load()
 &gt;&gt;&gt; summary.set_name(&quot;New Building&quot;)
 &gt;&gt;&gt; summary.save()
@@ -641,7 +654,7 @@ Measurements:
         name (str): The new name for the building
 
     Example:
-        &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;))
+        &gt;&gt;&gt; summary = BuildingSummary(Path(&#34;building_summary.yaml&#34;), &#34;Building A&#34;)
         &gt;&gt;&gt; summary.load()
         &gt;&gt;&gt; summary.set_name(&#34;Residential Complex B&#34;)
     &#34;&#34;&#34;
@@ -654,7 +667,7 @@ Measurements:
 <dd>The new name for the building</dd>
 </dl>
 <h2 id="example">Example</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; summary = BuildingSummary(Path(&quot;building_summary.yaml&quot;))
+<pre><code class="language-python-repl">&gt;&gt;&gt; summary = BuildingSummary(Path(&quot;building_summary.yaml&quot;), &quot;Building A&quot;)
 &gt;&gt;&gt; summary.load()
 &gt;&gt;&gt; summary.set_name(&quot;Residential Complex B&quot;)
 </code></pre></div>

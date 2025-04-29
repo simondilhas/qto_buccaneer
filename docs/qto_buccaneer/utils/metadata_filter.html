@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>qto_buccaneer.utils.metadata_filter API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>qto_buccaneer.utils.metadata_filter</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="qto_buccaneer.utils.metadata_filter.MetadataFilter"><code class="flex name class">
+<span>class <span class="ident">MetadataFilter</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MetadataFilter:
+    &#34;&#34;&#34;Filter structured metadata based on criteria.
+    
+    Examples:
+        Basic filtering:
+        &gt;&gt;&gt; df = pd.DataFrame({
+        ...     &#39;Name&#39;: [&#39;Room 101&#39;, &#39;Room 102&#39;, &#39;Room 103&#39;],
+        ...     &#39;Area&#39;: [20.0, 25.0, 30.0],
+        ...     &#39;Type&#39;: [&#39;Office&#39;, &#39;Meeting&#39;, &#39;Office&#39;]
+        ... })
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Simple equality filter
+        &gt;&gt;&gt; filters = {&#39;Type&#39;: &#39;Office&#39;}
+        &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df(df, filters)
+        &gt;&gt;&gt; print(filtered_df)
+        &gt;&gt;&gt; # Output:
+        &gt;&gt;&gt; #      Name  Area    Type
+        &gt;&gt;&gt; # 0  Room 101  20.0  Office
+        &gt;&gt;&gt; # 2  Room 103  30.0  Office
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Multiple values filter (OR)
+        &gt;&gt;&gt; filters = {&#39;Type&#39;: [&#39;Office&#39;, &#39;Meeting&#39;]}
+        &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df(df, filters)
+        &gt;&gt;&gt; print(filtered_df)
+        &gt;&gt;&gt; # Output:
+        &gt;&gt;&gt; #      Name  Area      Type
+        &gt;&gt;&gt; # 0  Room 101  20.0    Office
+        &gt;&gt;&gt; # 1  Room 102  25.0  Meeting
+        &gt;&gt;&gt; # 2  Room 103  30.0    Office
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Comparison filter
+        &gt;&gt;&gt; filters = {&#39;Area&#39;: [(&#39;&gt;&#39;, 25.0)]}
+        &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df(df, filters)
+        &gt;&gt;&gt; print(filtered_df)
+        &gt;&gt;&gt; # Output:
+        &gt;&gt;&gt; #      Name  Area    Type
+        &gt;&gt;&gt; # 2  Room 103  30.0  Office
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Complex filter with AND logic
+        &gt;&gt;&gt; filters = {
+        ...     &#39;Type&#39;: &#39;Office&#39;,
+        ...     &#39;Area&#39;: [(&#39;&gt;&#39;, 20.0)]
+        ... }
+        &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df(df, filters, logic=&#39;AND&#39;)
+        &gt;&gt;&gt; print(filtered_df)
+        &gt;&gt;&gt; # Output:
+        &gt;&gt;&gt; #      Name  Area    Type
+        &gt;&gt;&gt; # 2  Room 103  30.0  Office
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Complex filter with OR logic
+        &gt;&gt;&gt; filters = {
+        ...     &#39;Type&#39;: &#39;Office&#39;,
+        ...     &#39;Area&#39;: [(&#39;&gt;&#39;, 25.0)]
+        ... }
+        &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df(df, filters, logic=&#39;OR&#39;)
+        &gt;&gt;&gt; print(filtered_df)
+        &gt;&gt;&gt; # Output:
+        &gt;&gt;&gt; #      Name  Area    Type
+        &gt;&gt;&gt; # 0  Room 101  20.0  Office
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Filter using string expression
+        &gt;&gt;&gt; filter_str = &#34;Type=Office AND Area&gt;20.0&#34;
+        &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, filter_str)
+        &gt;&gt;&gt; print(filtered_df)
+        &gt;&gt;&gt; # Output:
+        &gt;&gt;&gt; #      Name  Area    Type
+        &gt;&gt;&gt; # 2  Room 103  30.0  Office
+    &#34;&#34;&#34;
+    
+    @staticmethod
+    def filter_df(df: pd.DataFrame, 
+                 filters: Dict[str, Any], 
+                 logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;AND&#34;) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;
+        Filter a DataFrame of metadata based on criteria.
+        
+        Args:
+            df: DataFrame containing metadata
+            filters: Dictionary of filter criteria
+            logic: &#34;AND&#34; or &#34;OR&#34; logic for combining filters
+            
+        Returns:
+            Filtered DataFrame
+            
+        Examples:
+            # Basic usage with IFC data
+            &gt;&gt;&gt; loader = IfcLoader(&#34;model.ifc&#34;)
+            &gt;&gt;&gt; spaces_df = loader.get_entity_metadata_df(&#34;IfcSpace&#34;)
+            &gt;&gt;&gt; 
+            &gt;&gt;&gt; # Filter spaces by area and type
+            &gt;&gt;&gt; filters = {
+            ...     &#34;Qto_SpaceBaseQuantities.NetFloorArea&#34;: [(&#34;&gt;&#34;, 20.0)],
+            ...     &#34;PredefinedType&#34;: &#34;OFFICE&#34;
+            ... }
+            &gt;&gt;&gt; filtered_spaces = MetadataFilter.filter_df(spaces_df, filters)
+            &gt;&gt;&gt; 
+            &gt;&gt;&gt; # Filter spaces by storey
+            &gt;&gt;&gt; filters = {
+            ...     &#34;Pset_SpatialData.ElevationOfStory&#34;: [(&#34;&gt;=&#34;, 0.0)]
+            ... }
+            &gt;&gt;&gt; ground_floor_spaces = MetadataFilter.filter_df(spaces_df, filters)
+            &gt;&gt;&gt; 
+            &gt;&gt;&gt; # Filter walls by type and length
+            &gt;&gt;&gt; walls_df = loader.get_entity_metadata_df(&#34;IfcWall&#34;)
+            &gt;&gt;&gt; filters = {
+            ...     &#34;PredefinedType&#34;: &#34;SOLIDWALL&#34;,
+            ...     &#34;Qto_WallBaseQuantities.NetLength&#34;: [(&#34;&gt;&#34;, 5.0)]
+            ... }
+            &gt;&gt;&gt; filtered_walls = MetadataFilter.filter_df(walls_df, filters)
+        &#34;&#34;&#34;
+        if not filters:
+            return df
+            
+        masks = []
+        for key, value in filters.items():
+            if isinstance(value, list):
+                if isinstance(value[0], tuple):  # Comparison operators
+                    op, val = value[0]
+                    mask = df[key].apply(lambda x: MetadataFilter._compare_values(x, op, val))
+                else:  # List of values
+                    mask = df[key].isin(value)
+            else:  # Single value
+                mask = df[key] == value
+            masks.append(mask)
+            
+        if logic == &#34;AND&#34;:
+            final_mask = pd.concat(masks, axis=1).all(axis=1)
+        else:  # OR
+            final_mask = pd.concat(masks, axis=1).any(axis=1)
+            
+        return df[final_mask]
+
+    @staticmethod
+    def filter_df_from_str(df: pd.DataFrame, filter_str: str) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;
+        Filter a DataFrame using a string expression.
+        
+        Args:
+            df: DataFrame containing metadata
+            filter_str: String expression containing filter criteria
+            
+        Returns:
+            Filtered DataFrame
+            
+        Examples:
+            &gt;&gt;&gt; df = pd.DataFrame({
+            ...     &#39;Name&#39;: [&#39;Room 101&#39;, &#39;Room 102&#39;, &#39;Room 103&#39;],
+            ...     &#39;Area&#39;: [20.0, 25.0, 30.0],
+            ...     &#39;Type&#39;: [&#39;Office&#39;, &#39;Meeting&#39;, &#39;Office&#39;]
+            ... })
+            &gt;&gt;&gt; 
+            &gt;&gt;&gt; # Simple filter
+            &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office&#34;)
+            &gt;&gt;&gt; 
+            &gt;&gt;&gt; # Complex filter
+            &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office AND Area&gt;20.0&#34;)
+            &gt;&gt;&gt; 
+            &gt;&gt;&gt; # Filter with OR condition
+            &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office AND (Area&gt;25.0 OR Area&lt;15.0)&#34;)
+        &#34;&#34;&#34;
+        filters = MetadataFilter._parse_filter_expression(filter_str)
+        return MetadataFilter.filter_df(df, filters)
+
+    @staticmethod
+    def _parse_filter_expression(filter_str: str) -&gt; dict:
+        &#34;&#34;&#34;Parse a filter expression string into a filter dictionary.
+        
+        Examples:
+            &gt;&gt;&gt; MetadataFilter._parse_filter_expression(&#34;type=IfcSpace AND (PredefinedType=EXTERNAL OR PredefinedType=INTERNAL)&#34;)
+            {&#39;IfcEntity&#39;: &#39;IfcSpace&#39;, &#39;PredefinedType&#39;: [&#39;EXTERNAL&#39;, &#39;INTERNAL&#39;]}
+            
+            &gt;&gt;&gt; MetadataFilter._parse_filter_expression(&#34;Area&gt;25.0 AND Type=Office&#34;)
+            {&#39;Area&#39;: [(&#39;&gt;&#39;, 25.0)], &#39;Type&#39;: &#39;Office&#39;}
+        &#34;&#34;&#34;
+        # Split by AND operators
+        parts = filter_str.split(&#39; AND &#39;)
+        filters = {}
+        
+        for part in parts:
+            part = part.strip()
+            
+            # Handle OR conditions in parentheses
+            if part.startswith(&#39;(&#39;) and part.endswith(&#39;)&#39;):
+                inner_parts = part[1:-1].split(&#39; OR &#39;)
+                key = None
+                values = []
+                
+                for inner_part in inner_parts:
+                    if &#39;=&#39; in inner_part:
+                        k, v = inner_part.split(&#39;=&#39;, 1)
+                        k = k.strip()
+                        v = v.strip()
+                        if key is None:
+                            key = k
+                        values.append(v)
+                
+                if key and values:
+                    # Map &#39;type&#39; to &#39;IfcEntity&#39;
+                    if key == &#39;type&#39;:
+                        key = &#39;IfcEntity&#39;
+                    filters[key] = values
+                    
+            # Handle comparison operators
+            elif any(op in part for op in [&#39;&gt;&#39;, &#39;&lt;&#39;, &#39;&gt;=&#39;, &#39;&lt;=&#39;, &#39;=&#39;]):
+                for op in [&#39;&gt;=&#39;, &#39;&lt;=&#39;, &#39;&gt;&#39;, &#39;&lt;&#39;, &#39;=&#39;]:
+                    if op in part:
+                        key, value = part.split(op, 1)
+                        key = key.strip()
+                        value = value.strip()
+                        try:
+                            value = float(value)
+                            # Map &#39;type&#39; to &#39;IfcEntity&#39;
+                            if key == &#39;type&#39;:
+                                key = &#39;IfcEntity&#39;
+                            filters[key] = [(op, value)]
+                        except ValueError:
+                            # Map &#39;type&#39; to &#39;IfcEntity&#39;
+                            if key == &#39;type&#39;:
+                                key = &#39;IfcEntity&#39;
+                            filters[key] = value
+                        break
+                        
+            # Handle simple equality
+            elif &#39;=&#39; in part:
+                key, value = part.split(&#39;=&#39;, 1)
+                key = key.strip()
+                value = value.strip()
+                # Map &#39;type&#39; to &#39;IfcEntity&#39;
+                if key == &#39;type&#39;:
+                    key = &#39;IfcEntity&#39;
+                filters[key] = value
+        
+        return filters
+
+    @staticmethod
+    def _compare_values(x: Any, op: str, val: Any) -&gt; bool:
+        &#34;&#34;&#34;Compare values based on operator.&#34;&#34;&#34;
+        if op == &#34;&gt;&#34;: return x &gt; val
+        elif op == &#34;&gt;=&#34;: return x &gt;= val
+        elif op == &#34;&lt;&#34;: return x &lt; val
+        elif op == &#34;&lt;=&#34;: return x &lt;= val
+        elif op == &#34;=&#34;: return x == val
+        return False</code></pre>
+</details>
+<div class="desc"><p>Filter structured metadata based on criteria.</p>
+<h2 id="examples">Examples</h2>
+<p>Basic filtering:</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; df = pd.DataFrame({
+...     'Name': ['Room 101', 'Room 102', 'Room 103'],
+...     'Area': [20.0, 25.0, 30.0],
+...     'Type': ['Office', 'Meeting', 'Office']
+... })
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Simple equality filter
+&gt;&gt;&gt; filters = {'Type': 'Office'}
+&gt;&gt;&gt; filtered_df = MetadataFilter.filter_df(df, filters)
+&gt;&gt;&gt; print(filtered_df)
+&gt;&gt;&gt; # Output:
+&gt;&gt;&gt; #      Name  Area    Type
+&gt;&gt;&gt; # 0  Room 101  20.0  Office
+&gt;&gt;&gt; # 2  Room 103  30.0  Office
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Multiple values filter (OR)
+&gt;&gt;&gt; filters = {'Type': ['Office', 'Meeting']}
+&gt;&gt;&gt; filtered_df = MetadataFilter.filter_df(df, filters)
+&gt;&gt;&gt; print(filtered_df)
+&gt;&gt;&gt; # Output:
+&gt;&gt;&gt; #      Name  Area      Type
+&gt;&gt;&gt; # 0  Room 101  20.0    Office
+&gt;&gt;&gt; # 1  Room 102  25.0  Meeting
+&gt;&gt;&gt; # 2  Room 103  30.0    Office
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Comparison filter
+&gt;&gt;&gt; filters = {'Area': [('&gt;', 25.0)]}
+&gt;&gt;&gt; filtered_df = MetadataFilter.filter_df(df, filters)
+&gt;&gt;&gt; print(filtered_df)
+&gt;&gt;&gt; # Output:
+&gt;&gt;&gt; #      Name  Area    Type
+&gt;&gt;&gt; # 2  Room 103  30.0  Office
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Complex filter with AND logic
+&gt;&gt;&gt; filters = {
+...     'Type': 'Office',
+...     'Area': [('&gt;', 20.0)]
+... }
+&gt;&gt;&gt; filtered_df = MetadataFilter.filter_df(df, filters, logic='AND')
+&gt;&gt;&gt; print(filtered_df)
+&gt;&gt;&gt; # Output:
+&gt;&gt;&gt; #      Name  Area    Type
+&gt;&gt;&gt; # 2  Room 103  30.0  Office
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Complex filter with OR logic
+&gt;&gt;&gt; filters = {
+...     'Type': 'Office',
+...     'Area': [('&gt;', 25.0)]
+... }
+&gt;&gt;&gt; filtered_df = MetadataFilter.filter_df(df, filters, logic='OR')
+&gt;&gt;&gt; print(filtered_df)
+&gt;&gt;&gt; # Output:
+&gt;&gt;&gt; #      Name  Area    Type
+&gt;&gt;&gt; # 0  Room 101  20.0  Office
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Filter using string expression
+&gt;&gt;&gt; filter_str = &quot;Type=Office AND Area&gt;20.0&quot;
+&gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, filter_str)
+&gt;&gt;&gt; print(filtered_df)
+&gt;&gt;&gt; # Output:
+&gt;&gt;&gt; #      Name  Area    Type
+&gt;&gt;&gt; # 2  Room 103  30.0  Office
+</code></pre></div>
+<h3>Static methods</h3>
+<dl>
+<dt id="qto_buccaneer.utils.metadata_filter.MetadataFilter.filter_df"><code class="name flex">
+<span>def <span class="ident">filter_df</span></span>(<span>df: pandas.core.frame.DataFrame,<br>filters: Dict[str, Any],<br>logic: Literal['AND', 'OR'] = 'AND') ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def filter_df(df: pd.DataFrame, 
+             filters: Dict[str, Any], 
+             logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;AND&#34;) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Filter a DataFrame of metadata based on criteria.
+    
+    Args:
+        df: DataFrame containing metadata
+        filters: Dictionary of filter criteria
+        logic: &#34;AND&#34; or &#34;OR&#34; logic for combining filters
+        
+    Returns:
+        Filtered DataFrame
+        
+    Examples:
+        # Basic usage with IFC data
+        &gt;&gt;&gt; loader = IfcLoader(&#34;model.ifc&#34;)
+        &gt;&gt;&gt; spaces_df = loader.get_entity_metadata_df(&#34;IfcSpace&#34;)
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Filter spaces by area and type
+        &gt;&gt;&gt; filters = {
+        ...     &#34;Qto_SpaceBaseQuantities.NetFloorArea&#34;: [(&#34;&gt;&#34;, 20.0)],
+        ...     &#34;PredefinedType&#34;: &#34;OFFICE&#34;
+        ... }
+        &gt;&gt;&gt; filtered_spaces = MetadataFilter.filter_df(spaces_df, filters)
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Filter spaces by storey
+        &gt;&gt;&gt; filters = {
+        ...     &#34;Pset_SpatialData.ElevationOfStory&#34;: [(&#34;&gt;=&#34;, 0.0)]
+        ... }
+        &gt;&gt;&gt; ground_floor_spaces = MetadataFilter.filter_df(spaces_df, filters)
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Filter walls by type and length
+        &gt;&gt;&gt; walls_df = loader.get_entity_metadata_df(&#34;IfcWall&#34;)
+        &gt;&gt;&gt; filters = {
+        ...     &#34;PredefinedType&#34;: &#34;SOLIDWALL&#34;,
+        ...     &#34;Qto_WallBaseQuantities.NetLength&#34;: [(&#34;&gt;&#34;, 5.0)]
+        ... }
+        &gt;&gt;&gt; filtered_walls = MetadataFilter.filter_df(walls_df, filters)
+    &#34;&#34;&#34;
+    if not filters:
+        return df
+        
+    masks = []
+    for key, value in filters.items():
+        if isinstance(value, list):
+            if isinstance(value[0], tuple):  # Comparison operators
+                op, val = value[0]
+                mask = df[key].apply(lambda x: MetadataFilter._compare_values(x, op, val))
+            else:  # List of values
+                mask = df[key].isin(value)
+        else:  # Single value
+            mask = df[key] == value
+        masks.append(mask)
+        
+    if logic == &#34;AND&#34;:
+        final_mask = pd.concat(masks, axis=1).all(axis=1)
+    else:  # OR
+        final_mask = pd.concat(masks, axis=1).any(axis=1)
+        
+    return df[final_mask]</code></pre>
+</details>
+<div class="desc"><p>Filter a DataFrame of metadata based on criteria.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>df</code></strong></dt>
+<dd>DataFrame containing metadata</dd>
+<dt><strong><code>filters</code></strong></dt>
+<dd>Dictionary of filter criteria</dd>
+<dt><strong><code>logic</code></strong></dt>
+<dd>"AND" or "OR" logic for combining filters</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Filtered DataFrame</p>
+<h2 id="examples">Examples</h2>
+<h1 id="basic-usage-with-ifc-data">Basic usage with IFC data</h1>
+<pre><code class="language-python-repl">&gt;&gt;&gt; loader = IfcLoader(&quot;model.ifc&quot;)
+&gt;&gt;&gt; spaces_df = loader.get_entity_metadata_df(&quot;IfcSpace&quot;)
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Filter spaces by area and type
+&gt;&gt;&gt; filters = {
+...     &quot;Qto_SpaceBaseQuantities.NetFloorArea&quot;: [(&quot;&gt;&quot;, 20.0)],
+...     &quot;PredefinedType&quot;: &quot;OFFICE&quot;
+... }
+&gt;&gt;&gt; filtered_spaces = MetadataFilter.filter_df(spaces_df, filters)
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Filter spaces by storey
+&gt;&gt;&gt; filters = {
+...     &quot;Pset_SpatialData.ElevationOfStory&quot;: [(&quot;&gt;=&quot;, 0.0)]
+... }
+&gt;&gt;&gt; ground_floor_spaces = MetadataFilter.filter_df(spaces_df, filters)
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Filter walls by type and length
+&gt;&gt;&gt; walls_df = loader.get_entity_metadata_df(&quot;IfcWall&quot;)
+&gt;&gt;&gt; filters = {
+...     &quot;PredefinedType&quot;: &quot;SOLIDWALL&quot;,
+...     &quot;Qto_WallBaseQuantities.NetLength&quot;: [(&quot;&gt;&quot;, 5.0)]
+... }
+&gt;&gt;&gt; filtered_walls = MetadataFilter.filter_df(walls_df, filters)
+</code></pre></div>
+</dd>
+<dt id="qto_buccaneer.utils.metadata_filter.MetadataFilter.filter_df_from_str"><code class="name flex">
+<span>def <span class="ident">filter_df_from_str</span></span>(<span>df: pandas.core.frame.DataFrame, filter_str: str) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def filter_df_from_str(df: pd.DataFrame, filter_str: str) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Filter a DataFrame using a string expression.
+    
+    Args:
+        df: DataFrame containing metadata
+        filter_str: String expression containing filter criteria
+        
+    Returns:
+        Filtered DataFrame
+        
+    Examples:
+        &gt;&gt;&gt; df = pd.DataFrame({
+        ...     &#39;Name&#39;: [&#39;Room 101&#39;, &#39;Room 102&#39;, &#39;Room 103&#39;],
+        ...     &#39;Area&#39;: [20.0, 25.0, 30.0],
+        ...     &#39;Type&#39;: [&#39;Office&#39;, &#39;Meeting&#39;, &#39;Office&#39;]
+        ... })
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Simple filter
+        &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office&#34;)
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Complex filter
+        &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office AND Area&gt;20.0&#34;)
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Filter with OR condition
+        &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office AND (Area&gt;25.0 OR Area&lt;15.0)&#34;)
+    &#34;&#34;&#34;
+    filters = MetadataFilter._parse_filter_expression(filter_str)
+    return MetadataFilter.filter_df(df, filters)</code></pre>
+</details>
+<div class="desc"><p>Filter a DataFrame using a string expression.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>df</code></strong></dt>
+<dd>DataFrame containing metadata</dd>
+<dt><strong><code>filter_str</code></strong></dt>
+<dd>String expression containing filter criteria</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Filtered DataFrame</p>
+<h2 id="examples">Examples</h2>
+<pre><code class="language-python-repl">&gt;&gt;&gt; df = pd.DataFrame({
+...     'Name': ['Room 101', 'Room 102', 'Room 103'],
+...     'Area': [20.0, 25.0, 30.0],
+...     'Type': ['Office', 'Meeting', 'Office']
+... })
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Simple filter
+&gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &quot;Type=Office&quot;)
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Complex filter
+&gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &quot;Type=Office AND Area&gt;20.0&quot;)
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Filter with OR condition
+&gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &quot;Type=Office AND (Area&gt;25.0 OR Area&lt;15.0)&quot;)
+</code></pre></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="qto_buccaneer.utils" href="index.html">qto_buccaneer.utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="qto_buccaneer.utils.metadata_filter.MetadataFilter" href="#qto_buccaneer.utils.metadata_filter.MetadataFilter">MetadataFilter</a></code></h4>
+<ul class="">
+<li><code><a title="qto_buccaneer.utils.metadata_filter.MetadataFilter.filter_df" href="#qto_buccaneer.utils.metadata_filter.MetadataFilter.filter_df">filter_df</a></code></li>
+<li><code><a title="qto_buccaneer.utils.metadata_filter.MetadataFilter.filter_df_from_str" href="#qto_buccaneer.utils.metadata_filter.MetadataFilter.filter_df_from_str">filter_df_from_str</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>
