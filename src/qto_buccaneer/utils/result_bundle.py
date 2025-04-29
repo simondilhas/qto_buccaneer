@@ -23,6 +23,17 @@ class ResultBundle:
     folderpath: Optional[Path] = None
     summary: Optional[str] = None
 
+    @property
+    def output_filepath(self) -> Optional[str]:
+        """Get the output filepath from the JSON data.
+        
+        Returns:
+            Optional[str]: The output filepath if available, None otherwise
+        """
+        if self.json and "output_filepath" in self.json:
+            return self.json["output_filepath"]
+        return None
+
     @classmethod
     def from_json(cls, path: Union[str, Path]) -> 'ResultBundle':
         """Create a ResultBundle from a JSON file.

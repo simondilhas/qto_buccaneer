@@ -6,7 +6,7 @@ from typing import Dict, Any, List, Optional
 from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urljoin
-from qto_buccaneer.tools.geometry.calculate_geometry_json_via_api import _upload_ifc_file
+from qto_buccaneer.tools.geometry.calculate_geometry_json_via_api import _upload_ifc_file, _validate_api_key
 
 # Configure logging
 logging.basicConfig(
