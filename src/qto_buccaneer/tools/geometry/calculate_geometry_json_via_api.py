@@ -61,14 +61,18 @@ def _create_geometry_result_bundle(
     Returns:
         ResultBundle containing the geometry data and metadata
     """
-    # Create summary data
-    summary = {
-        "status": "success",
-        "timestamp": datetime.now().isoformat(),
-        "base_filename": base_filename,
-        "files": response_data.get('files', []),
-        **(metadata or {})
-    }
+    # Create summary data as a list with title and helper_data
+    summary = [{
+        "title": "Geometry and Metadata JSON",
+        "helper_data": {
+            "status": "success",
+            "timestamp": datetime.now().isoformat(),
+            "base_filename": base_filename,
+            "files": response_data.get('files', []),
+            "extracted_ifc_metadata": metadata or {},
+            **(metadata or {})
+        }
+    }]
     
     # Create the ResultBundle
     return ResultBundle(

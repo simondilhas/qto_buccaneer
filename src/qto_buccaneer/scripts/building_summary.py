@@ -66,7 +66,7 @@ class BuildingSummary:
             "metrics": [],
             "reports": [],
             "data": {},
-            "groups": {}
+            "helper_data": []
         }
 
     def _load_template(self) -> dict:
@@ -171,34 +171,21 @@ class BuildingSummary:
             self.data[group].update(converted_data)
 
     def _add_list(self, data: dict, group: str) -> None:
-        """Add data to a list-type group."""
+        """Add data to a list group.
+        
+        Args:
+            data: Dictionary containing the data to add
+            group: Group name to add the data under
+        """
         if group not in self.data:
             self.data[group] = []
-        # If the group data is a string, convert it to a list
-        if isinstance(self.data[group], str):
-            self.data[group] = []
-        # If the group data is a dictionary, convert it to a list
-        if isinstance(self.data[group], dict):
-            self.data[group] = []
-        if isinstance(data, dict):
-            # Convert any paths in the data to relative paths
-            converted_data = {}
-            for key, value in data.items():
-                if isinstance(value, (str, Path)) and any(ext in str(value).lower() for ext in ['.ifc', '.json', '.xlsx', '.yaml', '.yml']):
-                    converted_data[key] = self._convert_to_relative_path(value)
-                else:
-                    converted_data[key] = value
-            # Check if the data already exists in the list
-            for entry in self.data[group]:
-                if entry == converted_data:
-                    return
-            # Add the data as a new entry in the list
-            self.data[group].append(converted_data)
+        
+        if isinstance(data, list):
+            # If data is a list, extend the group's list
+            self.data[group].extend(data)
         else:
-            # Check if the data already exists in the list
-            if data not in self.data[group]:
-                # Add the data as a new entry in the list
-                self.data[group].append(data)
+            # If data is a dictionary, append it to the group's list
+            self.data[group].append(data)
 
     def add(self, *, data: dict, group: Optional[str] = None) -> None:
         """
