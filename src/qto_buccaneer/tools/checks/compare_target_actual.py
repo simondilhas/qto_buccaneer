@@ -268,7 +268,7 @@ def handle_duplicate_global_ids(df: pd.DataFrame) -> pd.DataFrame:
 def compare_target_actual(
     actual_df: pd.DataFrame,
     target_df: pd.DataFrame,
-    config_path: Path,
+    config_path: Union[str, Path],
     output_dir: str,
     rule_name: str,
     building_name: str,
@@ -279,7 +279,7 @@ def compare_target_actual(
     Args:
         actual_df: DataFrame containing actual IFC data
         target_df: DataFrame containing target room program
-        config_path: Path to the config file
+        config_path: Path to the config file (string or Path object)
         output_dir: Directory to save output files
         rule_name: Name of the rule to use from the config file
         building_name: Name of the building for output files
@@ -287,6 +287,9 @@ def compare_target_actual(
     Returns:
         ResultBundle containing comparison results
     """
+    # Convert config_path to Path object if it's a string
+    config_path = Path(config_path) if isinstance(config_path, str) else config_path
+    
     # Create output directory
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)

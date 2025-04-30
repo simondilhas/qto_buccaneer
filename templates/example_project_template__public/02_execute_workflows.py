@@ -2,7 +2,7 @@ from pathlib import Path
 from qto_buccaneer.utils.config_loader import load_config
 from qto_buccaneer.preprocess_ifc import add_spatial_data_to_ifc
 from qto_buccaneer.enrich import enrich_ifc_with_df
-from qto_buccaneer.metrics import calculate_all_metrics
+from qto_buccaneer.metrics_old import calculate_all_metrics_old
 from qto_buccaneer.reports import export_to_excel
 from qto_buccaneer.geometry import calculate_geometry_json_via_api
 from qto_buccaneer.plots import create_all_plots
@@ -79,7 +79,7 @@ def process_building(building: dict) -> None:
     metrics_config = load_config(metrics_config_path)
 
     # Calculate all metrics
-    metrics_df = calculate_all_metrics(
+    metrics_df = calculate_all_metrics_old(
         config=metrics_config, 
         ifc_path=enriched_ifc_path)
     

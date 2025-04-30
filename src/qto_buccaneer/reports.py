@@ -13,8 +13,9 @@ import pdfkit
 import yaml
 from qto_buccaneer.tools.reports.excel_styling import ExcelLayoutConfig
 from qto_buccaneer.tools.reports.pdf_styling import ReportStyleConfig
-from qto_buccaneer.tools.checks.room_program_comparison_old import export_room_program_comparison
+
 from qto_buccaneer.tools.reports.pdf_styling import ReportStyleConfig
+
 
 
 def room_program_comparison(
@@ -335,7 +336,7 @@ def generate_project_comparison(
     layout_config: Optional[ExcelLayoutConfig] = None
 ) -> pd.DataFrame:
     """
-    Create and optionally export a project comparison DataFrame.
+    Create and export a project comparison DataFrame.
     
     Args:
         df (pd.DataFrame): Input DataFrame containing metrics data
