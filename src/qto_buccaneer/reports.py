@@ -13,8 +13,7 @@ import pdfkit
 import yaml
 from qto_buccaneer.tools.reports.excel_styling import ExcelLayoutConfig
 from qto_buccaneer.tools.reports.pdf_styling import ReportStyleConfig
-
-from qto_buccaneer.tools.reports.pdf_styling import ReportStyleConfig
+from qto_buccaneer.tools.reports.project_comparision_table import _export_project_comparison_excel, _create_project_comparison_df
 
 
 

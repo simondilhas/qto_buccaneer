@@ -21,7 +21,7 @@ def _create_project_comparison_df(df: pd.DataFrame, metrics: Optional[list[str]]
         This is an internal helper function and should not be called directly.
         Use project_comparison() instead.
     """
-    required_columns = {'file_name', 'metric_name', 'unit', 'value'}
+    required_columns = {'metric_name', 'unit', 'value'}
     missing_columns = required_columns - set(df.columns)
     
     if missing_columns:
