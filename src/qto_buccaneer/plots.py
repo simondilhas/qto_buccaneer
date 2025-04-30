@@ -2,17 +2,18 @@
 
 from pathlib import Path
 import yaml
+from typing import Dict, List, Optional, Union
 
 from qto_buccaneer.tools.plots.floorplan import create_floorplan_per_storey
 from qto_buccaneer.tools.plots.three_d import create_3d_visualization
 
 def create_all_plots(
-    geometry_dir: str,
-    properties_path: str,
-    config_path: str,
-    output_dir: str,
-    plot_names: list[str] = None
-) -> dict[str, str]:
+    geometry_dir: Union[str, Path],
+    properties_path: Union[str, Path],
+    config_path: Union[str, Path],
+    output_dir: Union[str, Path],
+    plot_names: Optional[List[str]] = None
+) -> Dict[str, str]:
     """Create all specified plots from the configuration.
     
     Args:
@@ -25,6 +26,12 @@ def create_all_plots(
     Returns:
         Dictionary mapping plot names to their output file paths
     """
+    # Convert all paths to Path objects
+    geometry_dir = Path(geometry_dir)
+    properties_path = Path(properties_path)
+    config_path = Path(config_path)
+    output_dir = Path(output_dir)
+    
     # Load plot configuration
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
@@ -34,7 +41,6 @@ def create_all_plots(
         plot_names = list(config.get('plots', {}).keys())
     
     # Create output directory if it doesn't exist
-    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Dictionary to store output paths
@@ -54,9 +60,9 @@ def create_all_plots(
         mode = plot_config.get('mode', 'floor_plan')
         if mode.startswith('3d'):
             output_path = create_3d_visualization(
-                geometry_dir=geometry_dir,
-                properties_path=properties_path,
-                config_path=config_path,
+                geometry_dir=str(geometry_dir),
+                properties_path=str(properties_path),
+                config_path=str(config_path),
                 output_dir=str(output_dir),
                 plot_name=plot_name
             )
@@ -65,9 +71,9 @@ def create_all_plots(
             # Floor plan returns a dict of storey names to paths
             try:
                 storey_paths = create_floorplan_per_storey(
-                    geometry_dir=geometry_dir,
-                    properties_path=properties_path,
-                    config_path=config_path,
+                    geometry_dir=str(geometry_dir),
+                    properties_path=str(properties_path),
+                    config_path=str(config_path),
                     output_dir=str(output_dir),
                     plot_name=plot_name
                 )

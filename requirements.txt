@@ -37,5 +37,9 @@ python-dateutil>=2.9.0
 pytz>=2025.2
 tzdata>=2025.2
 
+# Required for heatmap generation
+seaborn>=0.13.0
+matplotlib>=3.8.0
+
 # Development dependencies (for local development)
 # These are in requirements_dev.txt

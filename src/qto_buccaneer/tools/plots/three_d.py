@@ -1,18 +1,19 @@
 import plotly.graph_objects as go
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, Tuple, Union
 import yaml
 from pathlib import Path
 from datetime import datetime
 import json
+import os
 
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
 from qto_buccaneer.utils.plots_utils import apply_layout_settings
 
 def create_3d_visualization(
-    geometry_dir: str,
-    properties_path: str,
-    config_path: str,
-    output_dir: str,
+    geometry_dir: Union[str, Path],
+    properties_path: Union[str, Path],
+    config_path: Union[str, Path],
+    output_dir: Union[str, Path],
     plot_name: str = "exterior_elements"
 ) -> str:
     """Create a 3D visualization of the building model.
@@ -30,12 +31,17 @@ def create_3d_visualization(
     Raises:
         FileNotFoundError: If required geometry files are missing
     """
+    # Convert all paths to Path objects
+    geometry_dir = Path(geometry_dir)
+    properties_path = Path(properties_path)
+    config_path = Path(config_path)
+    output_dir = Path(output_dir)
+    
     # Load data
     print(f"Loading geometry data from {geometry_dir}...")
     geometry_data = []
     
     # Check for required geometry files
-    geometry_dir = Path(geometry_dir)
     required_files = {
         'IfcWindow.json': 'window',
         'IfcCovering.json': 'covering',
@@ -73,7 +79,7 @@ def create_3d_visualization(
 
     # Create file info
     file_info = {
-        "file_name": Path(properties_path).stem,
+        "file_name": properties_path.stem,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
@@ -88,7 +94,6 @@ def create_3d_visualization(
     )
     
     # Save the plot
-    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Use the plot name directly as the output file name
@@ -100,7 +105,7 @@ def create_3d_visualization(
     
     return str(output_path)
 
-def load_plot_config(config_path: str) -> Dict:
+def load_plot_config(config_path: Union[str, Path]) -> Dict:
     """Load plot configuration from YAML file."""
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
@@ -116,7 +121,7 @@ def create_single_plot(
     if plot_name not in config.get('plots', {}):
         raise ValueError(f"Plot '{plot_name}' not found in configuration")
     
-    loader = IfcJsonLoader(geometry_json, properties_json)
+    loader = IfcJsonLoader.from_preloaded_data(geometry_json, properties_json)
     plot_config = config['plots'][plot_name]
     
     try:

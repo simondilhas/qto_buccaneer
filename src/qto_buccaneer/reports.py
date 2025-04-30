@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 from jinja2 import Environment, FileSystemLoader
 import subprocess
 from dataclasses import dataclass
@@ -14,7 +14,7 @@ import yaml
 from qto_buccaneer.tools.reports.excel_styling import ExcelLayoutConfig
 from qto_buccaneer.tools.reports.pdf_styling import ReportStyleConfig
 from qto_buccaneer.tools.reports.project_comparision_table import _export_project_comparison_excel, _create_project_comparison_df
-
+from qto_buccaneer.tools.reports.generate_metrics_report import _convert_html_to_pdf, _build_metrics_table
 
 
 def room_program_comparison(
@@ -217,13 +217,13 @@ def room_program_comparison(
 def generate_metrics_report(
     metrics_df: pd.DataFrame,
     building_name: str,
-    plots_dir: str,
+    plots_dir: Union[str, Path],
     building_adresse: Optional[str] = None,
     building_description: Optional[str] = None,
-    output_dir: str = 'reports',
-    template_path: str = 'configs/abstractBIM_report_template.html',
+    output_dir: Union[str, Path] = 'reports',
+    template_path: Union[str, Path] = 'configs/abstractBIM_report_template.html',
     style_config: Optional[ReportStyleConfig] = None,
-    report_config_path: str = "abstractBIM_report_config.yaml"
+    report_config_path: Union[str, Path] = "abstractBIM_report_config.yaml"
 ) -> str:
     """
     Generate a metrics report from the provided metrics DataFrame.
@@ -231,24 +231,22 @@ def generate_metrics_report(
     Args:
         metrics_df (pd.DataFrame): DataFrame containing the metrics data
         building_name (str): Name of the project, used for the report title
-        plots_dir (str): Directory containing report plots
+        plots_dir (Union[str, Path]): Directory containing report plots
         building_adresse (Optional[str]): Address of the building
         building_description (Optional[str]): Description of the building
-        output_dir (str): Directory where the final PDF report will be saved
-        template_path (str): Path to the report template HTML file
+        output_dir (Union[str, Path]): Directory where the final PDF report will be saved
+        template_path (Union[str, Path]): Path to the report template HTML file
         style_config (Optional[ReportStyleConfig]): Configuration for report styling
-        report_config_path (str): Path to the report configuration YAML file
+        report_config_path (Union[str, Path]): Path to the report configuration YAML file
         
     Returns:
         str: Path to the generated PDF report
     """
-    # Get the workspace root directory (two levels up from the current file)
-    workspace_root = Path(__file__).parent.parent.parent
-    
-    # Convert relative paths to absolute paths
-    template_file = str(workspace_root / 'src' / 'qto_buccaneer' / template_path)
-    plots_dir = str(workspace_root / plots_dir)
-    output_dir = str(workspace_root / output_dir)
+    # Convert all paths to Path objects
+    plots_dir = Path(plots_dir)
+    output_dir = Path(output_dir)
+    template_path = Path(template_path)
+    report_config_path = Path(report_config_path)
     
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
@@ -257,7 +255,7 @@ def generate_metrics_report(
     output_file = f"{building_name}_report.pdf"
     output_path = os.path.join(output_dir, output_file)
     
-    print(f"Looking for template at: {template_file}")  # Debug print
+    print(f"Looking for template at: {template_path}")  # Debug print
     
     # Set default image placeholders and formats
     image_placeholders = ['pic_gfa', 'pic_gv', 'pic_project', 'pic_room_floorplan_scale']
@@ -277,8 +275,8 @@ def generate_metrics_report(
             images[key] = None
     
     # Verify template file exists
-    if not os.path.isfile(template_file):
-        raise FileNotFoundError(f"Template file not found: {template_file}")
+    if not os.path.isfile(template_path):
+        raise FileNotFoundError(f"Template file not found: {template_path}")
     
     # Load report configuration if provided
     include_metrics = None
@@ -292,11 +290,11 @@ def generate_metrics_report(
             print(f"Warning: Could not load report config: {e}")
     
     # Create metrics table using the build_metrics_table function
-    metrics_table = _build_metrics_table(metrics_df, include_metrics=include_metrics)
+    metrics_table = _build_metrics_table(metrics_df, config_path=report_config_path)
     
     # Render HTML
-    template_dir = os.path.dirname(template_file)
-    template_name = os.path.basename(template_file)
+    template_dir = os.path.dirname(template_path)
+    template_name = os.path.basename(template_path)
     env = Environment(loader=FileSystemLoader(template_dir))
     template = env.get_template(template_name)
     

@@ -18,14 +18,19 @@ class IfcJsonLoader:
     
     def __init__(self, 
                  json_paths: Optional[Union[str, Path, List[Union[str, Path]]]] = None,
-                 properties_json: Optional[dict] = None):
+                 properties_json: Optional[dict] = None,
+                 _from_preloaded_data: bool = False):
         """
         Initialize the loader.
         
         Args:
             json_paths: Optional path or list of paths to IFC JSON files
             properties_json: Optional pre-loaded properties JSON data
+            _from_preloaded_data: Internal flag to indicate initialization from pre-loaded data
         """
+        if not _from_preloaded_data and json_paths is None and properties_json is None:
+            raise ValueError("Either json_paths or properties_json must be provided")
+            
         if json_paths is not None:
             # Convert single path to list
             if isinstance(json_paths, (str, Path)):
@@ -37,7 +42,9 @@ class IfcJsonLoader:
             self.json_paths = None
             self.data = properties_json
         else:
-            raise ValueError("Either json_paths or properties_json must be provided")
+            # This case is only valid when called from from_preloaded_data
+            self.json_paths = None
+            self.data = None
             
         self.elements = self._process_elements()
         self._geometry_loaded = False
@@ -91,6 +98,8 @@ class IfcJsonLoader:
         data_list = self.data if isinstance(self.data, list) else [self.data]
         
         for element in data_list:
+            if element is None:
+                continue
             element_id = element.get('ifc_global_id')
             if not element_id:
                 continue
@@ -453,3 +462,67 @@ class IfcJsonLoader:
     def get_storey_for_element(self, element_id: str) -> Optional[str]:
         """Get the storey name for an element by its ID."""
         return self._storey_cache.get(str(element_id))
+
+    @classmethod
+    def from_preloaded_data(cls, geometry_data: Union[List[Dict], Dict], properties_data: Dict) -> 'IfcJsonLoader':
+        """Create an IfcJsonLoader instance from pre-loaded data.
+        
+        Args:
+            geometry_data: Pre-loaded geometry data (list of dictionaries or single dictionary)
+            properties_data: Pre-loaded properties data
+            
+        Returns:
+            IfcJsonLoader instance initialized with the provided data
+        """
+        instance = cls(None, None, _from_preloaded_data=True)
+        instance.json_paths = None
+        instance.data = geometry_data
+        instance.properties = properties_data
+        
+        # Initialize indices
+        instance.by_type_index = {}
+        instance.properties_index = {}
+        instance.geometry_index = {}
+        instance._storey_cache = {}
+        
+        # Process the data
+        instance.elements = instance._process_elements()
+        instance._geometry_loaded = False
+        
+        # Build indices
+        instance._build_indices()
+        
+        return instance
+        
+    def _build_indices(self) -> None:
+        """Build indices for fast lookups."""
+        # Handle both list and dict input
+        data_list = self.data if isinstance(self.data, list) else [self.data]
+        
+        for element in data_list:
+            if element is None:
+                continue
+                
+            # Get element type and ID
+            element_type = element.get('ifc_type')
+            element_id = element.get('ifc_global_id')
+            if not element_type or not element_id:
+                continue
+                
+            # Add to by_type index
+            if element_type not in self.by_type_index:
+                self.by_type_index[element_type] = []
+            self.by_type_index[element_type].append(element_id)
+            
+            # Add to properties index
+            self.properties_index[str(element_id)] = element
+            
+            # Add to geometry index if geometry data is present
+            if 'vertices' in element and 'faces' in element:
+                self.geometry_index[str(element_id)] = {
+                    'vertices': element['vertices'],
+                    'faces': element['faces']
+                }
+                
+        # Build storey cache
+        self._build_storey_cache()

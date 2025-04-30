@@ -1,5 +1,5 @@
 import plotly.graph_objects as go
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, Tuple, Union
 import yaml
 from pathlib import Path
 from datetime import datetime
@@ -15,98 +15,93 @@ from qto_buccaneer.utils.plots_utils import (
 from qto_buccaneer.tools.plots.filter_parser import FilterParser
 
 def create_floorplan_per_storey(
-    geometry_dir: str,
-    properties_path: str,
-    config_path: str,
-    output_dir: str,
-    plot_name: str,
-) -> Dict[str, str]:
-    """Create floor plan visualizations for each storey.
+    geometry_dir: Union[str, Path],
+    properties_path: Union[str, Path],
+    config_path: Union[str, Path],
+    output_dir: Union[str, Path],
+    plot_name: str
+) -> str:
+    """Create a floorplan visualization for each storey of the building.
     
     Args:
-        geometry_dir: Directory containing geometry JSON files (e.g., IfcSpace.json, IfcDoor.json)
+        geometry_dir: Directory containing geometry JSON files (expected one Json per IfcEntity)
         properties_path: Path to properties JSON file
         config_path: Path to plot configuration YAML file
-        output_dir: Output directory for the visualizations
-        plot_name: Name of the plot to create
-
+        output_dir: Output directory for the visualization
+        plot_name: Name of the plot configuration to use
+        
     Returns:
-        Dictionary mapping storey names to their output HTML, png, and json file paths
-
-    Raises:
-        FileNotFoundError: If required geometry files are missing
+        Path to the created visualization file
     """
-    # Load data
-    print(f"Loading geometry data from {geometry_dir}...")
-    geometry_data = []
-    
-    # Check for required geometry files
+    # Convert all paths to Path objects
     geometry_dir = Path(geometry_dir)
-    required_files = {
-        'IfcSpace.json': 'space',
-        'IfcDoor.json': 'door',
-        'IfcWindow.json': 'window'
-    }
+    properties_path = Path(properties_path)
+    config_path = Path(config_path)
+    output_dir = Path(output_dir)
     
-    missing_files = []
-    for file_name, element_type in required_files.items():
-        if not (geometry_dir / file_name).exists():
-            missing_files.append(f"{file_name} (required for {element_type} visualization)")
+    # Load plot configuration
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
     
-    if missing_files:
-        raise FileNotFoundError(
-            f"Missing required geometry files in {geometry_dir}:\n" +
-            "\n".join(f"- {file}" for file in missing_files)
-        )
-    
-    # Load all geometry files in the directory
-    for geometry_file in geometry_dir.glob("*.json"):
-        if geometry_file.name != 'metadata.json' and geometry_file.name != 'error.json':
-            print(f"Loading geometry from {geometry_file}")
-            with open(geometry_file, 'r') as f:
-                geometry = json.load(f)
-                geometry_data.extend(geometry)
+    plot_config = config['plots'][plot_name]
     
     # Load properties
     with open(properties_path, 'r') as f:
-        properties_data = json.load(f)
-
-    # Load plot configuration
-    print(f"Loading plot configuration from {config_path}...")
-    config = load_plot_config(config_path)
-
-    # Create file info
-    file_info = {
-        "file_name": Path(properties_path).stem,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
-
-    # Create the floor plan plots
-    print("\nCreating floor plan visualizations...")
-    plots = create_single_plot(
-        geometry_json=geometry_data,
-        properties_json=properties_data,
-        config=config,
-        plot_name=plot_name,
-        file_info=file_info
-    )
+        properties = json.load(f)
     
-    # Save the plots
-    output_dir = Path(output_dir)
+    # Group entities by storey
+    storey_entities: Dict[str, List[Dict]] = {}
+    for entity_id, entity_props in properties.items():
+        storey = entity_props.get('Storey', 'Unknown')
+        if storey not in storey_entities:
+            storey_entities[storey] = []
+        storey_entities[storey].append({
+            'id': entity_id,
+            'props': entity_props
+        })
+    
+    # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    storey_to_output_path = {}
-    for storey_name, plot in plots.items():
-        output_path = output_dir / f"{plot_name}_{storey_name}.html"
-        plot.write_html(str(output_path))
-        plot.write_json(str(output_path.with_suffix('.json')))
-        plot.write_image(str(output_path.with_suffix('.png')))
-        print(f"Saved {storey_name} plot to {output_path}")
-        storey_to_output_path[storey_name] = str(output_path)
-
-    print("\nVisualization complete!")
-
-    return storey_to_output_path
+    
+    # Create a figure for each storey
+    for storey, entities in storey_entities.items():
+        fig = go.Figure()
+        
+        for entity in entities:
+            # Load geometry file if it exists
+            geometry_file = geometry_dir / f"{entity['id']}.json"
+            if not geometry_file.exists():
+                continue
+                
+            with open(geometry_file, 'r') as f:
+                geometry = json.load(f)
+            
+            # Create trace based on geometry type
+            if geometry['type'] == 'Polygon':
+                vertices = geometry['vertices']
+                
+                # Create polygon trace
+                fig.add_trace(go.Scatter(
+                    x=[v[0] for v in vertices] + [vertices[0][0]],  # Close the polygon
+                    y=[v[1] for v in vertices] + [vertices[0][1]],  # Close the polygon
+                    mode='lines',
+                    name=entity['props'].get('Name', entity['id']),
+                    showlegend=True
+                ))
+        
+        # Update layout
+        fig.update_layout(
+            title=f"{plot_config.get('title', 'Floorplan')} - {storey}",
+            xaxis_title='X',
+            yaxis_title='Y',
+            showlegend=True
+        )
+        
+        # Save figure
+        output_path = output_dir / f"{plot_name}_{storey}.html"
+        fig.write_html(str(output_path))
+    
+    return str(output_dir)
 
 def load_plot_config(config_path: str) -> Dict:
     """Load plot configuration from YAML file."""
