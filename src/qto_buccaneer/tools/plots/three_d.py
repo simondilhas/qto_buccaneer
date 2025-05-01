@@ -86,8 +86,8 @@ def create_3d_visualization(
     # Create the 3D visualization
     print("\nCreating 3D visualization...")
     plots = create_single_plot(
-        geometry_json=geometry_data,
-        properties_json=properties_data,
+        geometry_dir=geometry_dir,
+        properties_path=properties_path,
         config=config,
         plot_name=plot_name,
         file_info=file_info
@@ -111,8 +111,8 @@ def load_plot_config(config_path: Union[str, Path]) -> Dict:
         return yaml.safe_load(f)
 
 def create_single_plot(
-    geometry_json: List[Dict[str, Any]],
-    properties_json: Dict[str, Any],
+    geometry_dir: Union[str, Path],
+    properties_path: Union[str, Path],
     config: Dict,
     plot_name: str,
     file_info: Optional[Dict] = None
@@ -121,14 +121,14 @@ def create_single_plot(
     if plot_name not in config.get('plots', {}):
         raise ValueError(f"Plot '{plot_name}' not found in configuration")
     
-    loader = IfcJsonLoader.from_preloaded_data(geometry_json, properties_json)
-    plot_config = config['plots'][plot_name]
+    # Initialize loader with the geometry directory and properties file
+    loader = IfcJsonLoader(json_paths=geometry_dir, properties_json=properties_path)
     
     try:
         # Create single figure for 3D view
         fig = go.Figure()
         _process_plot_creation(
-            fig, loader, plot_name, plot_config,
+            fig, loader, plot_name, config['plots'][plot_name],
             config['plot_settings'], file_info
         )
         
@@ -252,56 +252,74 @@ def _process_element(
     if not element_type:
         return
         
+    print(f"\nProcessing elements of type: {element_type}")
+    
     # Get all elements of the specified type
     element_ids = loader.by_type_index.get(element_type, [])
+    print(f"Found {len(element_ids)} elements of type {element_type}")
+    print(f"First few element IDs: {element_ids[:5]}")
     
+    elements_with_geometry = 0
     for element_id in element_ids:
         # Get the element using the numeric ID
         element = loader.properties['elements'].get(str(element_id))
         if not element:
+            print(f"Warning: Element {element_id} not found in properties")
             continue
             
         # Check if element matches filter conditions
         if not _element_matches_conditions(element, conditions):
+            print(f"Element {element_id} does not match filter conditions")
             continue
             
         # Get geometry using the numeric ID
         geometry = loader.get_geometry(str(element_id))
         if not geometry or 'vertices' not in geometry:
-            continue
+            # Try getting geometry from element cache
+            cache_entry = loader._element_cache.get(str(element_id))
+            if cache_entry and cache_entry.get("geometry"):
+                geometry = cache_entry["geometry"]
+                print(f"Found geometry for element {element_id} in cache")
+            else:
+                print(f"Warning: No geometry found for element {element_id}")
+                continue
+        
+        if geometry and 'vertices' in geometry:
+            elements_with_geometry += 1
+            # Get vertices and faces
+            vertices = geometry['vertices']
+            faces = geometry['faces']
             
-        # Get vertices and faces
-        vertices = geometry['vertices']
-        faces = geometry['faces']
-        
-        x = [v[0] for v in vertices]
-        y = [v[1] for v in vertices]
-        z = [v[2] for v in vertices]
-        
-        i = [f[0] for f in faces]
-        j = [f[1] for f in faces]
-        k = [f[2] for f in faces]
-        
-        # Get color from config or use default
-        color = element_config.get('color', 'lightgray')
-        
-        # Add mesh to plot with improved visibility settings
-        fig.add_trace(go.Mesh3d(
-            x=x, y=y, z=z,
-            i=i, j=j, k=k,
-            name=element_config.get('name', element_type),
-            color=color,
-            opacity=1.0,  # Full opacity
-            showlegend=False,  # Disable legend for each element
-            lighting=dict(
-                ambient=0.6,  # Increase ambient light
-                diffuse=0.8,  # Increase diffuse light
-                specular=0.2,  # Reduce specular highlights
-                roughness=0.5  # Medium roughness
-            ),
-            flatshading=True,  # Enable flat shading for better visibility
-            hoverinfo='name'
-        ))
+            x = [v[0] for v in vertices]
+            y = [v[1] for v in vertices]
+            z = [v[2] for v in vertices]
+            
+            i = [f[0] for f in faces]
+            j = [f[1] for f in faces]
+            k = [f[2] for f in faces]
+            
+            # Get color from config or use default
+            color = element_config.get('color', 'lightgray')
+            
+            # Add mesh to plot with improved visibility settings
+            fig.add_trace(go.Mesh3d(
+                x=x, y=y, z=z,
+                i=i, j=j, k=k,
+                name=element_config.get('name', element_type),
+                color=color,
+                opacity=1.0,  # Full opacity
+                showlegend=False,  # Disable legend for each element
+                lighting=dict(
+                    ambient=0.6,  # Increase ambient light
+                    diffuse=0.8,  # Increase diffuse light
+                    specular=0.2,  # Reduce specular highlights
+                    roughness=0.5  # Medium roughness
+                ),
+                flatshading=True,  # Enable flat shading for better visibility
+                hoverinfo='name'
+            ))
+    
+    print(f"Added {elements_with_geometry} elements with geometry to the plot")
 
 def _element_matches_conditions(element: Dict, conditions: List[List[str]]) -> bool:
     """Check if an element matches all filter conditions."""
