@@ -69,6 +69,48 @@ class ResultBundle:
         Returns:
             pd.DataFrame: The DataFrame representation of the data
         """
+        if self.dataframe is None and self.json is not None:
+            if isinstance(self.json, list):
+                # If JSON is a list of objects, convert directly to DataFrame
+                self.dataframe = pd.DataFrame(self.json)
+            elif "elements" in self.json and isinstance(self.json["elements"], dict):
+                # If JSON has an elements dictionary, convert it to DataFrame
+                elements_data = self.json["elements"]
+                # Convert the nested dictionary to a list of records
+                records = []
+                for key, value in elements_data.items():
+                    record = value.copy()
+                    record['element_key'] = key  # Add the key as a column
+                    records.append(record)
+                self.dataframe = pd.DataFrame(records)
+            elif "metadata" in self.json and isinstance(self.json["metadata"], dict):
+                # Get the actual element data (level 3)
+                elements_data = self.json["metadata"]
+                # Convert elements data directly to DataFrame
+                self.dataframe = pd.DataFrame.from_dict(elements_data, orient='index')
+            elif isinstance(self.json, dict) and "files" in self.json:
+                # This is a processing summary, load the actual data from files
+                records = []
+                for file in self.json["files"]:
+                    file_path = self.folderpath / f"{file}.json"
+                    if file_path.exists():
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                            if isinstance(data, list):
+                                records.extend(data)
+                            elif isinstance(data, dict) and "elements" in data:
+                                for key, value in data["elements"].items():
+                                    record = value.copy()
+                                    record['element_key'] = key
+                                    records.append(record)
+                if records:
+                    self.dataframe = pd.DataFrame(records)
+                else:
+                    # If no records were found, fall back to the summary
+                    self.dataframe = pd.DataFrame([self.json])
+            else:
+                # If no metadata, try to convert the entire JSON to DataFrame
+                self.dataframe = pd.DataFrame([self.json])
         return self.dataframe
 
     def to_dict(self) -> Dict[str, Any]:
@@ -131,15 +173,19 @@ class ResultBundle:
             
         Note:
             Creates parent directories if they don't exist
-            Requires the DataFrame to be non-None
+            If DataFrame is None, attempts to create one from JSON data
         """
         if self.dataframe is None:
-            raise ValueError("Cannot save to Excel: DataFrame is None")
+            self.to_df()  # Use the to_df method to ensure consistent DataFrame creation
+
+        if self.dataframe is None:
+            raise ValueError("Cannot save to Excel: No DataFrame available and could not create one from JSON data")
+
         path = Path(path)
         if not path.is_absolute() and self.folderpath is not None:
             path = self.folderpath / path
         path.parent.mkdir(parents=True, exist_ok=True)
-        self.dataframe.to_excel(path, index=False)
+        self.dataframe.to_excel(path, index=True, index_label='id')
         return path
 
     def save_summary(self, path: Union[str, Path]) -> Path:

@@ -2,6 +2,9 @@ from pathlib import Path
 import pandas as pd
 import yaml
 from typing import Union
+import os
+from weasyprint import HTML
+from qto_buccaneer.reports import ReportStyleConfig
 
 
 def _build_metrics_table(
@@ -183,8 +186,6 @@ def _load_metrics_config(config_path: Union[str, Path]) -> dict:
         return config
 
 from typing import Optional
-from weasyprint import HTML
-from qto_buccaneer.reports import ReportStyleConfig
 
 def _convert_html_to_pdf(
     html_content: str, 
@@ -223,7 +224,9 @@ def _convert_html_to_pdf(
             {html_content}
         """
         
-        HTML(string=html_with_css).write_pdf(output_path)
+        # Set base URL to the output directory for resolving relative paths
+        base_url = os.path.dirname(output_path)
+        HTML(string=html_with_css, base_url=base_url).write_pdf(output_path)
         return output_path
     except Exception as e:
         raise Exception(f"Failed to convert HTML to PDF: {str(e)}")

@@ -10,6 +10,7 @@ from qto_buccaneer.utils.result_bundle import ResultBundle
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 from logging import getLogger
 from datetime import datetime
+import pandas as pd
 
 # Configure logging
 logging.basicConfig(
@@ -73,9 +74,28 @@ def _create_geometry_result_bundle(
         }
     }
     
+    # Load data into DataFrame if files are available
+    dataframe = None
+    if "files" in response_data:
+        records = []
+        for file in response_data["files"]:
+            file_path = output_dir / f"{file}.json"
+            if file_path.exists():
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        records.extend(data)
+                    elif isinstance(data, dict) and "elements" in data:
+                        for key, value in data["elements"].items():
+                            record = value.copy()
+                            record['element_key'] = key
+                            records.append(record)
+        if records:
+            dataframe = pd.DataFrame(records)
+    
     # Create the ResultBundle
     return ResultBundle(
-        dataframe=None,  # Could be populated with geometry data if needed
+        dataframe=dataframe,
         json=response_data,
         folderpath=output_dir,
         summary=summary

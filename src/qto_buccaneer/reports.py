@@ -258,7 +258,9 @@ def generate_metrics_report(
     print(f"Looking for template at: {template_path}")  # Debug print
     
     # Set default image placeholders and formats
-    image_placeholders = ['pic_gfa', 'pic_gv', 'pic_project', 'pic_room_floorplan_scale']
+    image_placeholders = [
+        'titel_picture'
+        ]
     image_formats = ['.png', '.jpg', '.jpeg']
     
     # Collect available images
@@ -267,11 +269,19 @@ def generate_metrics_report(
         found = False
         for ext in image_formats:
             img_path = os.path.join(plots_dir, f"{key}{ext}")
+            print(f"Looking for image at: {img_path}")  # Debug print
             if os.path.isfile(img_path):
-                images[key] = img_path
+                print(f"Found image: {img_path}")  # Debug print
+                # Convert absolute path to relative path
+                # Calculate relative path from the HTML file's directory to the image
+                rel_path = os.path.relpath(img_path, os.path.dirname(output_path))
+                # Convert Windows backslashes to forward slashes for web compatibility
+                rel_path = rel_path.replace('\\', '/')
+                images[key] = rel_path
                 found = True
                 break
         if not found:
+            print(f"Image not found for key: {key}")  # Debug print
             images[key] = None
     
     # Verify template file exists
