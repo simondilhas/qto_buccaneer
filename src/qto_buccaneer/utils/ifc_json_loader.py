@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Any, Union
 from pathlib import Path
 import json
-
+import pandas as pd
 class IfcJsonLoader:
     """A class to load and manage IFC data from JSON files.
 
@@ -9,16 +9,16 @@ class IfcJsonLoader:
     that have been converted to JSON format.
     """
 
-    def __init__(self, json_paths: Union[str, Path], properties_json: Union[str, Path]):
+    def __init__(self, properties_json: Union[str, Path], json_paths: Optional[Union[str, Path]] = None):
         """Initialize the loader with paths to geometry and properties data.
         
         Args:
-            json_paths: Path to directory containing geometry JSON files
             properties_json: Path to properties JSON file
+            json_paths: Optional path to directory containing geometry JSON files
         """
         # Convert paths to Path objects
-        self.json_paths = Path(json_paths)
         self.properties_json = Path(properties_json)
+        self.json_paths = Path(json_paths) if json_paths else None
 
         # Load properties data
         print(f"\nLoading properties data from {self.properties_json}...")
@@ -44,10 +44,11 @@ class IfcJsonLoader:
         # Cache for loaded geometry files
         self._geometry_cache = {}
         
-        # Build element cache only for elements with geometry
-        self._element_cache: Dict[str, Dict[str, Any]] = {}
-        self._build_element_cache()
-        print(f"\nCreated element cache with {len(self._element_cache)} entries")
+        # Only build element cache if we have geometry paths
+        if self.json_paths:
+            self._element_cache: Dict[str, Dict[str, Any]] = {}
+            self._build_element_cache()
+            print(f"\nCreated element cache with {len(self._element_cache)} entries")
 
     def _build_element_cache(self):
         """Build a cache of elements with their properties and geometry."""
@@ -115,10 +116,23 @@ class IfcJsonLoader:
             ifc_type: The IFC type to filter by (e.g., "IfcSpace", "IfcBuildingStorey")
             
         Returns:
-            List of element dictionaries with their properties and geometry
+            List of element dictionaries with their properties and geometry (if available)
         """
-        return [entry for entry in self._element_cache.values() 
-                if entry["type"] == ifc_type]
+        # Get all elements of the specified type from properties
+        elements = [
+            {"id": elem_id, "type": ifc_type, **elem}
+            for elem_id, elem in self.properties.get('elements', {}).items()
+            if isinstance(elem, dict) and elem.get("IfcEntity") == ifc_type
+        ]
+        
+        # If we have geometry data, add it to the elements
+        if hasattr(self, '_element_cache'):
+            for elem in elements:
+                cache_entry = self._element_cache.get(elem["id"])
+                if cache_entry and "geometry" in cache_entry:
+                    elem["geometry"] = cache_entry["geometry"]
+        
+        return elements
 
     def get_spaces_in_storey(self, storey_name: str) -> List[str]:
         """Return a list of space IDs in a given storey.
@@ -236,4 +250,16 @@ class IfcJsonLoader:
             Properties data for the element, or None if not found
         """
         return self.properties_index.get(guid)
+    
+    def get_metadata_by_type_as_df(self, ifc_type: str) -> pd.DataFrame:
+        """Get all elements of a specific IFC type as a pandas DataFrame.
+        
+        Args:
+            ifc_type: The IFC type to filter by (e.g., "IfcSpace", "IfcBuildingStorey")
+            
+        Returns:
+            A pandas DataFrame containing the elements of the specified IFC type
+        """
+        elements = self.get_elements_by_type(ifc_type)
+        return pd.DataFrame(elements)
 

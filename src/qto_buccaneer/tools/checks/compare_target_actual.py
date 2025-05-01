@@ -70,6 +70,31 @@ class ComparisonResult:
     
     def _create_area_comparison_bundle(self) -> ResultBundle:
         """Create a ResultBundle for area comparison."""
+        # Check if required columns exist
+        missing_columns = []
+        if self.area_target_column and self.area_target_column not in self.merged_df.columns:
+            missing_columns.append(self.area_target_column)
+        if self.area_actual_column and self.area_actual_column not in self.merged_df.columns:
+            missing_columns.append(self.area_actual_column)
+        
+        if missing_columns:
+            logger.error(f"Missing required columns: {missing_columns}")
+            logger.info(f"Available columns: {self.merged_df.columns.tolist()}")
+            raise ValueError(f"Missing required columns: {missing_columns}")
+        
+        # Derive BuildingStorey_actual from parent_id relationship
+        if 'BuildingStorey_actual' in self.return_values and 'parent_id' in self.merged_df.columns:
+            # Get all building storeys from the properties
+            storeys = {
+                str(elem_id): elem.get('Name', 'Unknown')
+                for elem_id, elem in self.actual_room_program_df.get('elements', {}).items()
+                if isinstance(elem, dict) and elem.get('IfcEntity') == 'IfcBuildingStorey'
+            }
+            
+            # Map parent_id to storey name
+            self.merged_df['BuildingStorey_actual'] = self.merged_df['parent_id'].map(storeys)
+            logger.info(f"Derived BuildingStorey_actual from parent_id relationship")
+        
         stats = self._calculate_area_statistics()
         
         summary_data = {
@@ -91,7 +116,12 @@ class ComparisonResult:
             }
         }
         
-        return ResultBundle(dataframe=self.merged_df[self.return_values], json=summary_data)
+        # Filter return values to only include columns that exist
+        valid_return_values = [col for col in self.return_values if col in self.merged_df.columns]
+        if valid_return_values != self.return_values:
+            logger.warning(f"Some return values not found in DataFrame: {set(self.return_values) - set(valid_return_values)}")
+        
+        return ResultBundle(dataframe=self.merged_df[valid_return_values], json=summary_data)
     
     def _find_name_column(self, suffix: str) -> str:
         """Find the name column with the given suffix."""
