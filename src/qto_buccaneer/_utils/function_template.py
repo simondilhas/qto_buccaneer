@@ -11,7 +11,8 @@ from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_
 logger = logging.getLogger(__name__)
 
 def tool_template(
-    df: Union[pd.DataFrame, ResultBundle],
+    df_1: Union[pd.DataFrame, ResultBundle],
+    df_2: Union[pd.DataFrame, ResultBundle], #different inputs like ifc, df, ...
     config: Dict[str, Any],
     output_path: Path
 ) -> ResultBundle:

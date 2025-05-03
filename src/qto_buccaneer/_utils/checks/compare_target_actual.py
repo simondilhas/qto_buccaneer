@@ -8,6 +8,7 @@ import pandas as pd
 import yaml
 import logging
 from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 from qto_buccaneer.utils.metadata_filter import MetadataFilter
 
 # Configure logging
@@ -81,19 +82,6 @@ class ComparisonResult:
             logger.error(f"Missing required columns: {missing_columns}")
             logger.info(f"Available columns: {self.merged_df.columns.tolist()}")
             raise ValueError(f"Missing required columns: {missing_columns}")
-        
-        # Derive BuildingStorey_actual from parent_id relationship
-        if 'BuildingStorey_actual' in self.return_values and 'parent_id' in self.merged_df.columns:
-            # Get all building storeys from the properties
-            storeys = {
-                str(elem_id): elem.get('Name', 'Unknown')
-                for elem_id, elem in self.actual_room_program_df.get('elements', {}).items()
-                if isinstance(elem, dict) and elem.get('IfcEntity') == 'IfcBuildingStorey'
-            }
-            
-            # Map parent_id to storey name
-            self.merged_df['BuildingStorey_actual'] = self.merged_df['parent_id'].map(storeys)
-            logger.info(f"Derived BuildingStorey_actual from parent_id relationship")
         
         stats = self._calculate_area_statistics()
         
@@ -295,225 +283,182 @@ def handle_duplicate_global_ids(df: pd.DataFrame) -> pd.DataFrame:
     logger.info(f"Aggregated data for {len(duplicate_global_ids['GlobalId'].unique())} duplicate GlobalIds")
     return df
 
-def compare_target_actual(
-    actual_df: pd.DataFrame,
+def _process_tool_logic(
     target_df: pd.DataFrame,
-    config_path: Union[str, Path],
-    output_dir: str,
-    rule_name: str,
-    building_name: str,
+    actual_df: pd.DataFrame,
+    config: Dict[str, Any]
+) -> tuple[pd.DataFrame, Dict[str, Any]]:
+    """Core data processing logic for the tool"""
+    try:
+        # Extract configuration values
+        target_key = config['key_target_column']
+        target_area_column = config.get('area_target_column')
+        actual_key = config['key_actual_column']
+        actual_area_column = config.get('area_actual_column')
+        tolerance = config.get('tolerance', 0.1)
+        
+        # Determine comparison type
+        comparison_type = "name" if not (target_area_column and actual_area_column) else "area"
+        
+        # Combine return values from both target and actual
+        return_values = []
+        if 'return_values_target' in config:
+            return_values.extend([f"{col}_target" for col in config['return_values_target']])
+        if 'return_values_actual' in config:
+            return_values.extend([f"{col}_actual" for col in config['return_values_actual']])
+        
+        # Add calculated columns to return values
+        calculated_columns = ['status']  # Always include status
+        if comparison_type == "area":
+            calculated_columns.extend(['area_diff', 'area_diff_pct'])
+        return_values.extend(calculated_columns)
+        
+        # Apply filter if specified
+        filter_str = config.get('filter', '')
+        if filter_str:
+            actual_df = apply_filter(actual_df, filter_str)
+
+        # Rename columns to avoid conflicts
+        actual_df = actual_df.copy()
+        actual_df.columns = [f"{col}_actual" for col in actual_df.columns]
+        target_df = target_df.copy()
+        target_df.columns = [f"{col}_target" for col in target_df.columns]
+        
+        # Log the merge keys for debugging
+        logger.info(f"Merge keys - Target: {target_key}_target, Actual: {actual_key}_actual")
+        
+        # Check for duplicates in the merge keys before merging
+        if target_df[f"{target_key}_target"].duplicated().any():
+            logger.warning(f"Found {target_df[f'{target_key}_target'].duplicated().sum()} duplicate values in target key")
+            # Keep only the first occurrence of each target key
+            target_df = target_df.drop_duplicates(subset=[f"{target_key}_target"], keep='first')
+        
+        if actual_df[f"{actual_key}_actual"].duplicated().any():
+            logger.warning(f"Found {actual_df[f'{actual_key}_actual'].duplicated().sum()} duplicate values in actual key")
+            # Keep only the first occurrence of each actual key
+            actual_df = actual_df.drop_duplicates(subset=[f"{actual_key}_actual"], keep='first')
+        
+        # Merge dataframes
+        try:
+            # First try a left join to match target with actual
+            merged_df = pd.merge(
+                target_df,
+                actual_df,
+                how='left',
+                left_on=[f"{target_key}_target"],
+                right_on=[f"{actual_key}_actual"],
+            )
+            
+            # Then find any actual items that weren't matched (extra items)
+            extra_items = actual_df[~actual_df[f"{actual_key}_actual"].isin(merged_df[f"{actual_key}_actual"])]
+            if not extra_items.empty:
+                # Create a new DataFrame for extra items with NaN for target columns
+                extra_df = pd.DataFrame(columns=merged_df.columns)
+                for col in actual_df.columns:
+                    extra_df[col] = extra_items[col]
+                # Append extra items to the merged DataFrame
+                merged_df = pd.concat([merged_df, extra_df], ignore_index=True)
+                
+        except KeyError as e:
+            raise ValueError(f"Error during merge: {e}. Available columns in target_df: {target_df.columns.tolist()}, actual_df: {actual_df.columns.tolist()}")
+        
+        # Calculate differences if it's an area comparison
+        if comparison_type == "area":
+            merged_df = calculate_differences(
+                merged_df=merged_df, 
+                tolerance=tolerance, 
+                target_area_column=f"{target_area_column}_target",
+                actual_area_column=f"{actual_area_column}_actual",
+                key_target_column=f"{target_key}_target",
+                key_actual_column=f"{actual_key}_actual"
+            )
+        else:
+            # For name comparison, set status based on presence in target and actual
+            merged_df['status'] = merged_df.apply(
+                lambda row: 'missing' if pd.isna(row[f'{actual_key}_actual']) else 
+                           'extra' if pd.isna(row[f'{target_key}_target']) else 
+                           'match',
+                axis=1
+            )
+        
+        # Create ComparisonResult object
+        comparison = ComparisonResult(
+            merged_df=merged_df,
+            return_values=return_values,
+            area_target_column=f"{target_area_column}_target" if target_area_column else None,
+            area_actual_column=f"{actual_area_column}_actual" if actual_area_column else None,
+            comparison_type=comparison_type
+        )
+        
+        # Get ResultBundle
+        result_bundle = comparison.to_result_bundle()
+        
+        return merged_df, result_bundle.summary
+        
+    except Exception as e:
+        logger.exception(f"Processing failed in compare_target_actual")
+        raise RuntimeError(f"Processing failed in compare_target_actual: {str(e)}")
+
+def compare_target_actual(
+    target_df: Union[pd.DataFrame, ResultBundle],
+    actual_df: Union[pd.DataFrame, ResultBundle],
+    config: Dict[str, Any],
+    output_path: Path
 ) -> ResultBundle:
     """
     Compare target and actual building data.
     
     Args:
-        actual_df: DataFrame containing actual IFC data
-        target_df: DataFrame containing target room program
-        config_path: Path to the config file (string or Path object)
-        output_dir: Directory to save output files
-        rule_name: Name of the rule to use from the config file
-        building_name: Name of the building for output files
+        target_df: Target data as DataFrame or ResultBundle
+        actual_df: Actual data as DataFrame or ResultBundle
+        config: Configuration dictionary
+        output_path: Path for output files
         
     Returns:
         ResultBundle containing comparison results
     """
-    # Convert config_path to Path object if it's a string
-    config_path = Path(config_path) if isinstance(config_path, str) else config_path
-    
-    # Create output directory
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-    
-    # Load and process configuration
-    if not config_path.exists():
-        raise FileNotFoundError(f"Config file not found at {config_path}")
-        
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
-    
-    # Find the matching rule
-    check_config = None
-    for check in config.get('checks', []):
-        if isinstance(check, dict):
-            # Check if this is the room name comparison rule
-            if rule_name == 'room_name_comparison' and not check.get('area_target_column') and not check.get('area_actual_column'):
-                check_config = check
-                break
-            # Check if this is the room name and area comparison rule
-            elif rule_name == 'room_name_and_area_comparison' and check.get('area_target_column') and check.get('area_actual_column'):
-                check_config = check
-                break
-            
-    if not check_config:
-        available_rules = []
-        for check in config.get('checks', []):
-            if isinstance(check, dict):
-                if check.get('area_target_column') and check.get('area_actual_column'):
-                    available_rules.append('room_name_and_area_comparison')
-                else:
-                    available_rules.append('room_name_comparison')
-        raise ValueError(f"Rule '{rule_name}' not found in config file. Available rules: {list(set(available_rules))}")
-    
-    # Extract configuration values
-    target_key = check_config['key_target_column']
-    target_area_column = check_config.get('area_target_column')
-    actual_key = check_config['key_actual_column']
-    actual_area_column = check_config.get('area_actual_column')
-    tolerance = check_config.get('tolerance', 0.1)
-    
-    # Determine comparison type
-    comparison_type = "name" if not (target_area_column and actual_area_column) else "area"
-    
-    # Combine return values from both target and actual
-    return_values = []
-    if 'return_values_target' in check_config:
-        return_values.extend([f"{col}_target" for col in check_config['return_values_target']])
-    if 'return_values_actual' in check_config:
-        return_values.extend([f"{col}_actual" for col in check_config['return_values_actual']])
-    
-    # Add calculated columns to return values
-    calculated_columns = ['status']  # Always include status
-    if comparison_type == "area":
-        calculated_columns.extend(['area_diff', 'area_diff_pct'])
-    return_values.extend(calculated_columns)
-    
-    # Apply filter if specified
-    filter_str = check_config.get('filter', '')
-    if filter_str:
-        actual_df = apply_filter(actual_df, filter_str)
+    validate_config(config)
 
-    # Rename columns to avoid conflicts
-    actual_df = actual_df.copy()
-    actual_df.columns = [f"{col}_actual" for col in actual_df.columns]
-    target_df = target_df.copy()
-    target_df.columns = [f"{col}_target" for col in target_df.columns]
-    
-    # Log the merge keys for debugging
-    logger.info(f"Merge keys - Target: {target_key}_target, Actual: {actual_key}_actual")
-    
-    # Check for duplicates in the merge keys before merging
-    if target_df[f"{target_key}_target"].duplicated().any():
-        logger.warning(f"Found {target_df[f'{target_key}_target'].duplicated().sum()} duplicate values in target key")
-        # Keep only the first occurrence of each target key
-        target_df = target_df.drop_duplicates(subset=[f"{target_key}_target"], keep='first')
-    
-    if actual_df[f"{actual_key}_actual"].duplicated().any():
-        logger.warning(f"Found {actual_df[f'{actual_key}_actual'].duplicated().sum()} duplicate values in actual key")
-        # Keep only the first occurrence of each actual key
-        actual_df = actual_df.drop_duplicates(subset=[f"{actual_key}_actual"], keep='first')
-    
-    # Merge dataframes
-    try:
-        # First try a left join to match target with actual
-        merged_df = pd.merge(
-            target_df,
-            actual_df,
-            how='left',
-            left_on=[f"{target_key}_target"],
-            right_on=[f"{actual_key}_actual"],
-        )
-        
-        # Then find any actual items that weren't matched (extra items)
-        extra_items = actual_df[~actual_df[f"{actual_key}_actual"].isin(merged_df[f"{actual_key}_actual"])]
-        if not extra_items.empty:
-            # Create a new DataFrame for extra items with NaN for target columns
-            extra_df = pd.DataFrame(columns=merged_df.columns)
-            for col in actual_df.columns:
-                extra_df[col] = extra_items[col]
-            # Append extra items to the merged DataFrame
-            merged_df = pd.concat([merged_df, extra_df], ignore_index=True)
-            
-    except KeyError as e:
-        raise ValueError(f"Error during merge: {e}. Available columns in target_df: {target_df.columns.tolist()}, actual_df: {actual_df.columns.tolist()}")
-    
-    # Calculate differences if it's an area comparison
-    if comparison_type == "area":
-        merged_df = calculate_differences(
-            merged_df=merged_df, 
-            tolerance=tolerance, 
-            target_area_column=f"{target_area_column}_target",
-            actual_area_column=f"{actual_area_column}_actual",
-            key_target_column=f"{target_key}_target",
-            key_actual_column=f"{actual_key}_actual"
-        )
-    else:
-        # For name comparison, set status based on presence in target and actual
-        merged_df['status'] = merged_df.apply(
-            lambda row: 'missing' if pd.isna(row[f'{actual_key}_actual']) else 
-                       'extra' if pd.isna(row[f'{target_key}_target']) else 
-                       'match',
-            axis=1
-        )
-    
-    # Calculate summary statistics directly
-    total_items = len(merged_df)
-    items_within_tolerance = len(merged_df[merged_df['status'] == 'within_tolerance'])
-    missing_items = len(merged_df[merged_df['status'] == 'missing'])
-    extra_items = len(merged_df[merged_df['status'] == 'extra'])
-    out_of_tolerance_items = total_items - items_within_tolerance - missing_items - extra_items
-    
-    if comparison_type == "area":
-        total_target_area = float(merged_df[f"{target_area_column}_target"].sum())
-        total_actual_area = float(merged_df[f"{actual_area_column}_actual"].sum())
-        total_area_diff = float(total_actual_area - total_target_area)
-        total_area_diff_pct = float((total_area_diff / total_target_area * 100) if total_target_area > 0 else 0)
-        compliance_rate = float((items_within_tolerance / total_items * 100) if total_items > 0 else 0)
-        status = "failed" if missing_items > 0 else "warning" if extra_items > 0 else "passed" if items_within_tolerance == total_items else "warning"
-    else:
-        # For name comparison
-        total_target_area = 0.0
-        total_actual_area = 0.0
-        total_area_diff = 0.0
-        total_area_diff_pct = 0.0
-        compliance_rate = float((items_within_tolerance / total_items * 100) if total_items > 0 else 0)
-        status = "success" if missing_items == 0 else "additional roomtypes used" if extra_items > 0 else "error"
-    
-    # Create summary dictionary with calculated values
-    summary = {
-        "checks": [
-            {
-                "name": "Target Program vs Actual Program",
-                "status": status,
-                "overview": {
-                    "total_items": total_items,
-                    "compliance_rate": compliance_rate,
-                    "total_area": {
-                        "target": total_target_area,
-                        "actual": total_actual_area,
-                        "difference_pct": total_area_diff_pct
-                    }
-                },
-                "issues": {
-                    "missing": missing_items,
-                    "extra": extra_items,
-                    "out_of_tolerance": out_of_tolerance_items
-                }
-            }
-        ]
-    }
-    
-    # Create ComparisonResult object
-    comparison = ComparisonResult(
-        merged_df=merged_df,
-        return_values=return_values,
-        area_target_column=f"{target_area_column}_target" if target_area_column else None,
-        area_actual_column=f"{actual_area_column}_actual" if actual_area_column else None,
-        comparison_type=comparison_type
+    TOOL_NAME = "compare_target_actual"
+
+    logger.info(f"Starting {TOOL_NAME}")
+
+    # 1. Unpack DataFrames
+    target_df = unpack_dataframe(target_df)
+    actual_df = unpack_dataframe(actual_df)
+
+    # 2. Extract required columns
+    required_columns_target = config.get('target_columns', [])
+    required_columns_actual = config.get('actual_columns', [])
+
+    # 3. Validate DataFrames
+    validation_target = validate_df(target_df, required_columns=required_columns_target, df_name="Target DataFrame")
+    if not validation_target['is_valid']:
+        raise ValueError(f"Target DataFrame validation failed: {validation_target['errors']}")
+
+    validation_actual = validate_df(actual_df, required_columns=required_columns_actual, df_name="Actual DataFrame")
+    if not validation_actual['is_valid']:
+        raise ValueError(f"Actual DataFrame validation failed: {validation_actual['errors']}")
+
+    # 4. Process DataFrames
+    df, summary_data = _process_tool_logic(target_df, actual_df, config)
+
+    # 5. Package results
+    result_bundle = ResultBundle(
+        dataframe=df,
+        json=summary_data,
+        folderpath=output_path.parent,
+        summary=summary_data
     )
+
+    # 6. Save results
+    logger.info(f"Saving results to {output_path}")
     
-    # Get ResultBundle
-    result_bundle = comparison.to_result_bundle()
-    
-    # Save results
-    building_prefix = f"{building_name}_" if building_name else ""
-    
-    # Save Excel file
-    result_bundle.save_excel(output_path / f"{building_prefix}comparison.xlsx")
-    
-    # Update the result bundle with the new summary and folderpath
-    result_bundle.summary = summary
-    result_bundle.folderpath = output_path
-    
+    result_bundle.save_excel(output_path)
+    result_bundle.save_summary(output_path.with_suffix(".yml"))
+
+    # 7. Return results
+    logger.info(f"Finished {TOOL_NAME}")
     return result_bundle
 
 

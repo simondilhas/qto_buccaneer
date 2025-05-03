@@ -76,10 +76,11 @@ def ifc_metadata_extractor(ifc_file_path, output_dir=None):
         # Define output filenames
         json_path = output_dir / "metadata.json"
         excel_path = output_dir / "metadata.xlsx"
-        
+    
         logger.info(f"Saving results to {output_dir}")
         result_bundle.save_json(json_path)
         result_bundle.save_excel(excel_path)
+
 
     # 7. Return results
     logger.info(f"Finished {TOOL_NAME}")
