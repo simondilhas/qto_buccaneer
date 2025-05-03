@@ -7,7 +7,7 @@ import json
 import os
 
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
-from qto_buccaneer.tools.plots.plots_utils import apply_layout_settings
+from qto_buccaneer._utils.plots.plots_utils import apply_layout_settings
 
 def create_3d_visualization(
     geometry_dir: Union[str, Path],

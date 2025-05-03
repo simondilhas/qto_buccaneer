@@ -4,10 +4,10 @@ import os
 import shutil
 import ifcopenshell
 from .utils.ifc_loader import IfcLoader
-from .utils._result_bundle import ResultBundle
+from ._utils._result_bundle import ResultBundle
 from typing import Union, List, Optional, Dict, Any, Tuple
 import yaml
-from .tools.enrich.enrich_ifc_with_df import _create_globalid_mapping, _create_output_path, _initialize_enrichment_stats, _process_element, _create_result_bundle
+from qto_buccaneer._utils.enrich.enrich_ifc_with_df import _create_globalid_mapping, _create_output_path, _initialize_enrichment_stats, _process_element, _create_result_bundle
 
 
 

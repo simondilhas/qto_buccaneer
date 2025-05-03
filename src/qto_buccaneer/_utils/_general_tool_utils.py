@@ -1,6 +1,6 @@
 from typing import Union
 import pandas as pd
-from qto_buccaneer.utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import ResultBundle
 from typing import List, Dict, Any
 
 def unpack_dataframe(data: Union[pd.DataFrame, ResultBundle]) -> pd.DataFrame:
@@ -79,9 +79,31 @@ def validate_df(
     
     return validation_results
 
-def validate_config(config):
-    required_fields = ['tool_name', 'tool_description']
-    missing = [f for f in required_fields if f not in config]
-    if missing:
-        raise ValueError(f"Missing required config fields: {', '.join(missing)}")
-    return config
+def validate_config(config_list):
+    """
+    Validate a list of tool config dictionaries, each expected to have
+    'tool_name', 'tool_description', and 'tool_config' keys.
+
+    Args:
+        config_list: List of dictionaries representing tool configs.
+
+    Raises:
+        ValueError: If any config dict is missing required fields.
+
+    Returns:
+        The validated config_list.
+    """
+    required_fields = ['tool_name', 'tool_description', 'tool_config']
+    if not isinstance(config_list, list):
+        raise ValueError("Config should be a list of dictionaries.")
+
+    errors = []
+    for idx, config in enumerate(config_list):
+        missing = [f for f in required_fields if f not in config]
+        if missing:
+            errors.append(
+                f"Config at index {idx} is missing required fields: {', '.join(missing)}"
+            )
+    if errors:
+        raise ValueError(" | ".join(errors))
+    return config_list

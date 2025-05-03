@@ -4,8 +4,8 @@ from typing import Union, Dict, Any
 import pandas as pd
 from pathlib import Path
 import logging
-from qto_buccaneer.utils._result_bundle import ResultBundle
-from qto_buccaneer.tools._general_tool_utils import unpack_dataframe, validate_df, validate_config
+from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 
 
 logger = logging.getLogger(__name__)

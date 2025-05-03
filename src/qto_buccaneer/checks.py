@@ -9,66 +9,102 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 from qto_buccaneer.reports import ExcelLayoutConfig
 
-from qto_buccaneer.tools.checks.compare_target_actual import compare_target_actual
+from qto_buccaneer._utils.checks.compare_target_actual import compare_target_actual
 import json
-from qto_buccaneer.utils._result_bundle import ResultBundle
-from qto_buccaneer.tools.checks.compare_room_names import _create_comparison_df, _create_summary_data, _export_to_excel, _extract_ifc_rooms, _extract_excel_rooms, _create_error_result_bundle
+from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils.checks.compare_room_names import _create_comparison_df, _create_summary_data, _export_to_excel, _extract_ifc_rooms, _extract_excel_rooms, _create_error_result_bundle
+import logging
+from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 
+logger = logging.getLogger(__name__)
 
 def compare_room_names(
-    actual_df: pd.DataFrame,
-    target_df: pd.DataFrame,
-    config_path: Path,
-    rule_name: str,
-    target_room_name_column: str = "Raumtypenname",
-    actual_room_name_column: str = "Name",
-    output_dir: Optional[str] = None,
-    building_name: Optional[str] = None,
+    df_target: Union[pd.DataFrame, ResultBundle],
+    df_actual: Union[pd.DataFrame, ResultBundle],
+    config: Dict,
+    output_path: Path,
     layout_config: Optional[ExcelLayoutConfig] = None
 ) -> ResultBundle:
     """
-    Compare room names between IFC spaces and a room program.
-    
-    Args:
-        metadata_actual_df: DataFrame containing IFC metadata including spaces (actual state)
-        target_program_df: DataFrame containing room program information (target state)
-        target_room_name_column: Column name in Excel containing target room names
-        actual_room_name_column: Column name in IFC containing actual room names
-        output_dir: Directory where Excel files should be saved
-        building_name: Name of the building (used in output filenames)
-        layout_config: Optional ExcelLayoutConfig for custom formatting
-        
-    Returns:
-        ResultBundle: A ResultBundle containing the comparison results
+    Compare room names between IFC spaces and a room program, following the tool_template pattern.
+    """
+    validate_config(config)
+
+    TOOL_NAME = config.get('tool_name', 'compare_room_names')
+    logger.info(f"Starting {TOOL_NAME}")
+
+    # 1. Unpack DataFrame
+    target_df = unpack_dataframe(df_target)
+    actual_df = unpack_dataframe(df_actual)
+
+
+    # 2. Extract required columns from config
+    required_actual_columns = config.get('actual_columns', ['Name'])
+    required_target_columns = config.get('target_columns', ['Raumtypenname'])
+
+    # 3. Validate DataFrame
+    validation = validate_df(target_df, required_columns=required_actual_columns, df_name="Actual DataFrame")
+    if not validation['is_valid']:
+        raise ValueError(f"Validation failed: {validation['errors']}")
+
+    validation = validate_df(actual_df, required_columns=required_target_columns, df_name="Target DataFrame")
+    if not validation['is_valid']:
+        raise ValueError(f"Validation failed: {validation['errors']}")
+
+
+    # 4. Process DataFrame
+    result_bundle = _process_room_name_comparison(
+        target_df,
+        actual_df,
+        config,
+        output_path,
+        layout_config
+    )
+
+    # 5. Save results
+    logger.info(f"Saving results to {output_path}")
+    result_bundle.save_excel(output_path)
+    result_bundle.save_summary(output_path.with_suffix(".yml"))
+
+    logger.info(f"Finished {TOOL_NAME}")
+    return result_bundle
+
+def _process_room_name_comparison(
+    target_df: pd.DataFrame,
+    actual_df: pd.DataFrame,
+    config: Dict,
+    output_path: Path,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -> ResultBundle:
+    """
+    Core logic for room name comparison.
     """
     try:
         # Extract and normalize room names from both sources
-        ifc_rooms, ifc_spaces_df = _extract_ifc_rooms(metadata_actual_df, actual_room_name_column)
-        excel_rooms = _extract_excel_rooms(target_program_df, target_room_name_column)
-        
-        # Create detailed comparison DataFrame
+        target_df = config['target_df']
+        actual_room_name_column = config.get('actual_room_name_column', 'Name')
+        target_room_name_column = config.get('target_room_name_column', 'Raumtypenname')
+        building_name = config.get('building_name', None)
+
+        ifc_rooms, ifc_spaces_df = _extract_ifc_rooms(df, actual_room_name_column)
+        excel_rooms = _extract_excel_rooms(target_df, target_room_name_column)
+
         detailed_df = _create_comparison_df(ifc_rooms, excel_rooms, ifc_spaces_df, actual_room_name_column)
-        
-        # Create summary data
         result_data = _create_summary_data(ifc_rooms, excel_rooms)
-        
-        # Create ResultBundle
+
         result_bundle = ResultBundle(
             dataframe=detailed_df,
             json=result_data,
-            folderpath=Path(output_dir) if output_dir else None,
+            folderpath=output_path.parent,
             summary=result_data,
         )
-        
-        # Export to Excel if output directory provided
-        if output_dir:
-            _export_to_excel(result_bundle, output_dir, building_name)
-        
+
+        if output_path:
+            _export_to_excel(result_bundle, output_path, building_name)
+
         return result_bundle
-        
+
     except Exception as e:
-        print(f"Error comparing room names: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        logger.exception("Error comparing room names")
         return _create_error_result_bundle(str(e))
 

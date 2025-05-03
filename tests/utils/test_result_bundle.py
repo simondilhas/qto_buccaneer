@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import json
 import yaml
-from qto_buccaneer.utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import ResultBundle
 
 def test_result_bundle_initialization():
     # Test initialization with all parameters

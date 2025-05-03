@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 import ifcopenshell
 from pathlib import Path
-from qto_buccaneer.utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import ResultBundle
 import yaml
 
 

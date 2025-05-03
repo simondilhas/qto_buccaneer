@@ -6,7 +6,7 @@ from typing import Dict, Any, List, Optional
 from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urljoin
-from qto_buccaneer.utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import ResultBundle
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 from logging import getLogger
 from datetime import datetime

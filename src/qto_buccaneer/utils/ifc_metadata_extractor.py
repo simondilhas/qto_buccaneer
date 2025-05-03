@@ -8,14 +8,14 @@ import json
 import numpy as np
 import concurrent.futures
 from dataclasses import dataclass
-from qto_buccaneer.utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import ResultBundle
 import yaml
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-def extract_ifc_metadata(ifc_file_path, output_path=None):
-    """Extract metadata from an IFC file and optionally save to JSON.
+def ifc_metadata_extractor(ifc_file_path, output_dir=None):
+    """Extract metadata from an IFC file and optionally save to JSON and Excel.
     
     This function processes an IFC file to extract comprehensive metadata including:
     - Element properties and attributes
@@ -26,29 +26,70 @@ def extract_ifc_metadata(ifc_file_path, output_path=None):
     - Property sets and quantities
     
     The extracted data is organized into a structured format and can be optionally
-    saved to a JSON file. The function returns a ResultBundle containing the data
+    saved to JSON and Excel files. The function returns a ResultBundle containing the data
     in multiple formats (DataFrame, JSON, YAML).
 
     Args:
         ifc_file_path (str): Path to the IFC file to process
-        output_path (str, optional): Path where to save the JSON output. If None,
-            no JSON file will be created. Defaults to None.
+        output_dir (str, optional): Directory where to save the output files. If None,
+            no files will be created. Defaults to None.
 
     Returns:
         ResultBundle: A bundle containing:
             - dataframe: pandas DataFrame with all extracted metadata
             - json: Dictionary containing the complete metadata structure
-            - folderpath: Path to the output directory (if output_path was provided)
-            - yaml_summary: YAML representation of the metadata
+            - folderpath: Path to the output directory (if output_dir was provided)
+            - summary: Summary statistics
 
     Example:
-        >>> result = extract_ifc_metadata("path/to/model.ifc", "output.json")
+        >>> result = ifc_metadata_extractor("path/to/model.ifc", "output_dir")
         >>> df = result.to_df()  # Get the DataFrame
         >>> json_data = result.to_dict()  # Get the JSON data
     """
+    TOOL_NAME = "extract_ifc_metadata"
+    logger.info(f"Starting {TOOL_NAME}")
+
+    # 1. Unpack input (no config, just file path)
     ifc_file = ifcopenshell.open(ifc_file_path)
     logger.info(f"Opening IFC file for metadata extraction: {ifc_file_path}")
 
+    # 2. No config extraction needed
+
+    # 3. No DataFrame validation needed (we build it)
+
+    # 4. Process logic
+    df, json_data, summary = _process_ifc_metadata_logic(ifc_file)
+
+    # 5. Package results
+    result_bundle = ResultBundle(
+        dataframe=df,
+        json=json_data,
+        folderpath=Path(output_dir) if output_dir else None,
+        summary=summary
+    )
+
+    # 6. Save results
+    if output_dir:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Define output filenames
+        json_path = output_dir / "metadata.json"
+        excel_path = output_dir / "metadata.xlsx"
+        
+        logger.info(f"Saving results to {output_dir}")
+        result_bundle.save_json(json_path)
+        result_bundle.save_excel(excel_path)
+
+    # 7. Return results
+    logger.info(f"Finished {TOOL_NAME}")
+    return result_bundle
+
+
+def _process_ifc_metadata_logic(ifc_file):
+    """
+    Core logic for extracting IFC metadata, returns DataFrame, JSON, and summary.
+    """
     # Build basic mappings
     globalid_to_id, all_elements = _build_element_id_mapping(ifc_file)
     project = all_elements[0]  # First element is the project
@@ -64,12 +105,12 @@ def extract_ifc_metadata(ifc_file_path, output_path=None):
     attribute_counts = {}  # Track attribute counts
     for idx, el in enumerate(all_elements, start=1):
         record = _create_element_record(el, idx, globalid_to_id, {})
-        
+
         # Count attributes
         for key in record.keys():
             if key not in ["id", "GlobalId", "IfcEntity", "Classifications", "Systems"]:
                 attribute_counts[key] = attribute_counts.get(key, 0) + 1
-        
+
         # Add classification and system references
         if hasattr(el, "HasAssociations"):
             for association in el.HasAssociations:
@@ -107,7 +148,7 @@ def extract_ifc_metadata(ifc_file_path, output_path=None):
 
     # Create elements dictionary for JSON
     elements_dict = {str(elem["id"]): elem for elem in elements_data}
-    
+
     # Create summary statistics
     summary = {
         "extracted_ifc_metadata": {
@@ -115,10 +156,10 @@ def extract_ifc_metadata(ifc_file_path, output_path=None):
             "total_classifications": len(classification_data),
             "total_systems": len(system_data),
             "total_attributes": sum(attribute_counts.values()),
-            "total_unique_attributes": len(attribute_counts),  
+            "total_unique_attributes": len(attribute_counts),
         }
     }
-    
+
     json_data = {
         "elements": elements_dict,
         "summary": summary
@@ -127,19 +168,7 @@ def extract_ifc_metadata(ifc_file_path, output_path=None):
     # Create DataFrame
     df = pd.DataFrame(elements_data)
 
-    # Save to JSON if requested
-    if output_path:
-        with open(output_path, 'w') as f:
-            json.dump(json_data, f, indent=2, ensure_ascii=False)
-        logger.info(f"Metadata saved to {output_path}")
-
-    # Create and return ResultBundle
-    return ResultBundle(
-        dataframe=df,
-        json=json_data,
-        folderpath=Path(output_path).parent if output_path else None,
-        summary=summary
-    )
+    return df, json_data, summary
 
 
 # Example usage:

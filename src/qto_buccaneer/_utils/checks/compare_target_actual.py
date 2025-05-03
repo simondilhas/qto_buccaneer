@@ -7,7 +7,7 @@ from typing import Optional, Union, Dict, Any, List
 import pandas as pd
 import yaml
 import logging
-from qto_buccaneer.utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import ResultBundle
 from qto_buccaneer.utils.metadata_filter import MetadataFilter
 
 # Configure logging

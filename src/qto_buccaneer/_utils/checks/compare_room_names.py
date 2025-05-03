@@ -1,4 +1,4 @@
-from qto_buccaneer.utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import ResultBundle
 import pandas as pd
 from typing import Optional
 
