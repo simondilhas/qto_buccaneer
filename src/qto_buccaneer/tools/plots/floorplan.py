@@ -7,7 +7,7 @@ import json
 import math
 
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
-from qto_buccaneer.utils.plots_utils import (
+from qto_buccaneer.tools.plots.plots_utils import (
     parse_filter,
     element_matches_conditions,
     apply_layout_settings

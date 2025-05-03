@@ -1,5 +1,5 @@
 from pathlib import Path
-from qto_buccaneer.utils.config_loader import load_config
+from qto_buccaneer.utils._config_loader import load_config
 from qto_buccaneer.preprocess_ifc import add_spatial_data_to_ifc
 from qto_buccaneer.enrich import enrich_ifc_with_df
 from qto_buccaneer.metrics_old import calculate_all_metrics_old

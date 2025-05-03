@@ -8,7 +8,7 @@ import json
 import numpy as np
 import concurrent.futures
 from dataclasses import dataclass
-from qto_buccaneer.utils.result_bundle import ResultBundle
+from qto_buccaneer.utils._result_bundle import ResultBundle
 import yaml
 
 # Configure logging

@@ -5,7 +5,7 @@
 import sys
 from pathlib import Path
 from qto_buccaneer.scripts.add_new_building_to_project import add_new_building_to_project_from_list
-from qto_buccaneer.utils.config_loader import load_config
+from qto_buccaneer.utils._config_loader import load_config
 
 
 SCRIPT_DIR = Path(__file__).parent

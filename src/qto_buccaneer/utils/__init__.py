@@ -47,14 +47,14 @@ quantities = calculator.calculate_quantities()
 
 # Public API
 from .ifc_loader import IfcLoader
-from .qto_calculator import QtoCalculator
-from .config_loader import load_config
+from .ifc_qto_calculator import QtoCalculator
+from ._config_loader import load_config
 from .ifc_json_loader import IfcJsonLoader
 
 # Internal functions (not exposed)
-from .plots_utils import parse_filter as _parse_filter
-from .plots_utils import element_matches_conditions as _element_matches_conditions
-from .plots_utils import apply_layout_settings as _apply_layout_settings
+from ..tools.plots.plots_utils import parse_filter as _parse_filter
+from ..tools.plots.plots_utils import element_matches_conditions as _element_matches_conditions
+from ..tools.plots.plots_utils import apply_layout_settings as _apply_layout_settings
 
 __all__ = [
     'IfcLoader',

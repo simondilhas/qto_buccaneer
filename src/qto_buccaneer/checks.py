@@ -11,7 +11,7 @@ from qto_buccaneer.reports import ExcelLayoutConfig
 
 from qto_buccaneer.tools.checks.compare_target_actual import compare_target_actual
 import json
-from qto_buccaneer.utils.result_bundle import ResultBundle
+from qto_buccaneer.utils._result_bundle import ResultBundle
 from qto_buccaneer.tools.checks.compare_room_names import _create_comparison_df, _create_summary_data, _export_to_excel, _extract_ifc_rooms, _extract_excel_rooms, _create_error_result_bundle
 
 

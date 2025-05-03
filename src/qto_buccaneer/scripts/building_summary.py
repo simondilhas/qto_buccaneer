@@ -214,9 +214,10 @@ class BuildingSummary:
     def get(self, key: str, group: Optional[str] = None) -> Optional[Any]:
         """
         Get a value by key, optionally from a group.
+        For helper_data, you can access nested keys using dot notation (e.g. "extracted_ifc_metadata.total_elements")
 
         Args:
-            key (str): The data key
+            key (str): The data key or dot-notation path
             group (Optional[str]): The group to get the data from
 
         Returns:
@@ -227,16 +228,40 @@ class BuildingSummary:
                 if key in entry:
                     return entry[key]
             return None
-        elif group:
-            for entry in self.data["groups"].get(group, []):
-                if key in entry:
-                    return entry[key]
+        
+        if group == "helper_data":
+            # Split the key by dots to handle nested access
+            keys = key.split('.')
+            current_data = self.data["helper_data"]
+            
+            # If it's a list, take the first item
+            if isinstance(current_data, list) and current_data:
+                current_data = current_data[0]
+            
+            # Traverse the nested structure
+            for k in keys:
+                if isinstance(current_data, dict) and k in current_data:
+                    current_data = current_data[k]
+                else:
+                    return None
+            return current_data
+            
+        if group:
+            # For other groups, try direct access
+            if group in self.data:
+                if isinstance(self.data[group], dict):
+                    return self.data[group].get(key)
+                elif isinstance(self.data[group], list):
+                    for entry in self.data[group]:
+                        if key in entry:
+                            return entry[key]
             return None
+            
         return self.data["data"].get(key)
 
     def get_group(self, group: str) -> List[Dict[str, Any]]:
         """
-        Get all data in a group.
+        Get data from a specific group.
 
         Args:
             group (str): The group to get data from
@@ -246,7 +271,10 @@ class BuildingSummary:
         """
         if group == "files":
             return self.data["files"]
-        return self.data["groups"].get(group, [])
+        # Try both the old format (groups) and new format (direct in root)
+        if "groups" in self.data:
+            return self.data["groups"].get(group, [])
+        return self.data.get(group, [])
 
     def get_all(self) -> Dict[str, Any]:
         """

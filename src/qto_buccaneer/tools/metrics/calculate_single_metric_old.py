@@ -1,8 +1,8 @@
 
 from qto_buccaneer.utils.ifc_loader import IfcLoader
-from qto_buccaneer.utils.qto_calculator import QtoCalculator
-from qto_buccaneer.utils.config_loader import create_result_dict
-from qto_buccaneer.utils.config_loader import load_config
+from qto_buccaneer.utils.ifc_qto_calculator import QtoCalculator
+from qto_buccaneer.utils._config_loader import create_result_dict
+from qto_buccaneer.utils._config_loader import load_config
 from typing import Optional
 import pandas as pd
 from datetime import datetime

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 import pandas as pd
-from qto_buccaneer.utils.result_bundle import ResultBundle
+from qto_buccaneer.utils._result_bundle import ResultBundle
 
 @dataclass
 class ComparisonResult:

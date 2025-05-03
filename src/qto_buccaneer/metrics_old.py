@@ -10,8 +10,8 @@ sys.path.append(src_dir)
 
 
 from qto_buccaneer.utils.ifc_loader import IfcLoader
-from qto_buccaneer.utils.qto_calculator import QtoCalculator
-from qto_buccaneer.utils.config_loader import create_result_dict
+from qto_buccaneer.utils.ifc_qto_calculator import QtoCalculator
+from qto_buccaneer.utils._config_loader import create_result_dict
 from qto_buccaneer.tools.metrics.calculate_single_metric_old import _process_quantity_calculation
 
 

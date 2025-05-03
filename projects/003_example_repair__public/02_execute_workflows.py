@@ -1,5 +1,5 @@
 from pathlib import Path
-from qto_buccaneer.utils.config_loader import load_config
+from qto_buccaneer.utils._config_loader import load_config
 
 # Get the directory where this script is located
 SCRIPT_DIR = Path(__file__).parent

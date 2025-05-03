@@ -9,7 +9,7 @@ src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
 sys.path.insert(0, src_path)
 
 from qto_buccaneer.utils.ifc_loader import IfcLoader
-from qto_buccaneer.utils.qto_calculator import QtoCalculator
+from qto_buccaneer.utils.ifc_qto_calculator import QtoCalculator
 
 # Constants - Use absolute paths
 TEST_DIR = Path(__file__).parent.absolute()

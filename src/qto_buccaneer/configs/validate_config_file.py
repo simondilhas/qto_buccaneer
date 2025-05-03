@@ -5,7 +5,7 @@ import os
 from typing import Tuple, List
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from qto_buccaneer.utils.config_loader import load_config, validate_top_level_structure
+from qto_buccaneer.utils._config_loader import load_config, validate_top_level_structure
 
 def validate_config(config: dict) -> Tuple[bool, List[str]]:
     """

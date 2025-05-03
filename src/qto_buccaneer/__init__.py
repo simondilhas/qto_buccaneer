@@ -75,4 +75,4 @@ __author__ = "Simon Dilhas"
 
 # Expose utils modules
 from .utils.ifc_loader import IfcLoader
-from .utils.qto_calculator import QtoCalculator
+from .utils.ifc_qto_calculator import QtoCalculator
