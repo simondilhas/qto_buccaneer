@@ -1,0 +1,204 @@
+# define the project structure and workflow steps, based on this the folder structure will be created
+
+project_name: "Seefeld__private"
+project_description: "Die Asuswertungen für den Wettbewerb Seefeld"
+
+buildings:
+  - "001_test_building"
+  - "002_test_building"
+
+building_folder:
+  - "00_original_input_data__private"
+  - "01_first_qs"
+  - "02_abstractbim_model"
+
+use_external_apis:
+  run_abstractbim: false
+  run_geometry_json: true
+
+checks:
+  room_name_comparison:
+    description: "Compare target vs. actual room names to identify new ones."
+    config:
+      filter: "IfcEntity=IfcSpace"
+      keys:
+        target: "Kürzel (LongName)"
+        actual: "LongName"
+      return_values:
+        target:
+          - "Kürzel (LongName)"
+        actual:
+          - "LongName"
+          - "GlobalId"
+  room_name_and_area_comparison:
+    description: "Compare the target room program against the actual room program"
+    config:
+       # percent
+      filter: "IfcEntity=IfcSpace AND (PredefinedType=EXTERNAL OR PredefinedType=INTERNAL)"
+      keys:
+        target: "Kürzel (LongName)"
+        actual: "LongName"
+      areas:
+        target: "m2"
+        actual: "Qto_SpaceBaseQuantities.NetFloorArea"
+        tolerance: 5 
+      return_values:
+        target:
+          - "Kürzel-Name"
+          - "Raumbezeichnung"
+          - "m2"
+          - "Aussenraum"
+          - "Bereich"
+        actual:
+          - "LongName"
+          - "Qto_SpaceBaseQuantities.NetFloorArea"
+          - "Pset_SpatialData.BuildingStory"
+          - "Pset_SpatialData.ElevationOfStory"
+          - "Pset_Enrichment.SiA-2016"
+          - "Pset_Enrichment.Bereich"
+          - "PredefinedType"
+          - "GlobalId"
+          - "id"
+
+enrich:
+  enrich_ifc_with_basic_room_data:
+    description: "Enrich the IFC model with basic room data"
+    config:
+      filter: "IfcEntity=IfcSpace"
+      pset_name: "Pset_Enrichment"
+      keys:
+        df: "Kürzel (LongName)"
+        ifc: "LongName"
+
+  enrich_ifc_with_spatial_data:
+    description: "Enrich the IFC model with spatial data"
+    config:
+      filter: "IfcEntity=IfcProduct"
+      pset_name: "Pset_SpatialData"
+      file_postfix: "sp"
+
+
+metrics:
+  hnf_total:
+    name: "HNF Total"
+    description: "Die Fläche aller Räume die nach SIA416 als HNF klassifiziert sind"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "HNF"
+      components:
+        HNF:
+          filter: "IfcEntity=IfcSpace AND PredefinedType=INTERNAL AND Pset_Enrichment.SiA-2016=HNF"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  nnf_total:
+      name: "NNF Total"
+      description: "Die Fläche aller Räume die nach SIA416 als NNF klassifiziert sind"
+      config:
+        quantity_type: "area"
+        unit: "m2"
+        formula: "NNF"
+        components:
+          NNF:
+            filter: "IfcEntity=IfcSpace AND PredefinedType=INTERNAL AND Pset_Enrichment.SiA-2016=NNF"
+            base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  vf_neu:
+      name: "VF Verkehrsfläche Neubau"
+      description: "Die Fläche aller Räume die nach SIA416 als VF klassifiziert sind"
+      config:
+        quantity_type: "area"
+        unit: "m2"
+        formula: "VF"
+        components:
+          VF:
+            filter: "IfcEntity=IfcSpace AND PredefinedType=INTERNAL AND Pset_Enrichment.SiA-2016=VF"
+            base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  ff_neu:
+      name: "FF Funktionsfläche Neubau: m2"
+      description: "Die Fläche aller Räume die nach SIA416 als FF klassifiziert sind"
+      config:
+        quantity_type: "area"
+        unit: "m2"
+        formula: "FF"
+        components:
+          FF:
+            filter: "IfcEntity=IfcSpace AND PredefinedType=INTERNAL AND Pset_Enrichment.SiA-2016=FF"
+            base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  gf_gesamt:
+    name: "GF Gesamt"
+    description: "Die Gesamte Geschossfläche, durch die abstraction sind die Aussenwände mit einer Dicke von 35cm berechnet."
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "GF - LUF"
+      components:
+        GF:
+          filter: "IfcEntity=IfcSpace AND Name=GrossArea"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+        LUF:
+          filter: "IfcEntity=IfcSpace AND LongName=LUF"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+ 
+  kf_pro_gf:
+    name: "% Anteil KF an GF"
+    description: "Der Anteil der KF an der GF"
+    config:
+      quantity_type: "percentage"
+      unit: "%"
+      formula: "(GF-net_floor_area) / GF * 100"
+      components:
+        GF:
+          filter: "IfcEntity=IfcSpace AND Name=GrossArea"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+        net_floor_area:
+          filter: "IfcEntity=IfcSpace AND PredefinedType=INTERNAL"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  kf_total:
+    name: "KF Konstruktionsfläche Total"
+    description: "Die Fläche aller Räume die nach SIA416 als KF klassifiziert sind"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "GF-net_floor_area"
+      components:
+        GF:
+          filter: "IfcEntity=IfcSpace AND Name=GrossArea"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+        net_floor_area:
+          filter: "IfcEntity=IfcSpace AND PredefinedType=INTERNAL"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  GFoi:
+    name: "GF oi Neubau"
+    description: "Die Geschossfläche oberirdisch"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "GFoi-LUFoi"
+      components:
+        GFoi:
+          filter: "IfcEntity=IfcSpace AND Name=GrossArea AND Pset_SpatialData.ElevationOfStory<=0.5"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+        LUFoi:
+          filter: "IfcEntity=IfcSpace AND LongName=LUF AND Pset_SpatialData.ElevationOfStory<=0.5"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  GFui:
+    name: "GF ui Neubau"
+    description: "Die Geschossfläche unterirdisch"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "GFui-LUFui"
+      components:
+        GFui:
+          filter: "IfcEntity=IfcSpace AND Name=GrossArea AND Pset_SpatialData.ElevationOfStory>0.5"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+        LUFui:
+          filter: "IfcEntity=IfcSpace AND LongName=LUF AND Pset_SpatialData.ElevationOfStory>0.5"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
