@@ -124,54 +124,39 @@ def validate_df(
     
     return validation_results
 
-def validate_config(config_list):
+def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Validate a list of tool config dictionaries, each expected to have
-    'tool_name', 'tool_description', and 'tool_config' keys.
+    Validate a config dictionary, checking for required 'description' and 'config' fields.
 
     Args:
-        config_list: List of dictionaries representing tool configs.
+        config: Dictionary containing the configuration.
 
     Raises:
-        ValueError: If any config dict is missing required fields.
+        ValueError: If required fields are missing.
 
     Returns:
-        The validated config_list.
+        The validated config dictionary.
     """
-    required_fields = ['tool_name', 'tool_description', 'tool_config']
+    required_fields = ['description', 'config']
     
     # Validate input type
-    if not isinstance(config_list, list):
+    if not isinstance(config, dict):
         raise ValueError(
-            f"Config should be a list of dictionaries. Got type: {type(config_list)}"
+            f"Config should be a dictionary. Got type: {type(config)}"
         )
     
-    # Validate each config in the list
-    errors = []
-    for idx, config in enumerate(config_list):
-        if not isinstance(config, dict):
-            errors.append(
-                f"Config at index {idx} must be a dictionary. Got type: {type(config)}"
-            )
-            continue
-            
-        missing = [f for f in required_fields if f not in config]
-        if missing:
-            errors.append(
-                f"Config at index {idx} is missing required fields: {', '.join(missing)}\n"
-                f"Available fields: {', '.join(config.keys())}"
-            )
-            
-        # Validate tool_config structure
-        if 'tool_config' in config:
-            tool_config = config['tool_config']
-            if not isinstance(tool_config, dict):
-                errors.append(
-                    f"tool_config at index {idx} must be a dictionary. Got type: {type(tool_config)}"
-                )
+    # Check for required fields
+    missing = [f for f in required_fields if f not in config]
+    if missing:
+        raise ValueError(
+            f"Config is missing required fields: {', '.join(missing)}\n"
+            f"Available fields: {', '.join(config.keys())}"
+        )
     
-    if errors:
-        error_msg = "\n".join(errors)
-        raise ValueError(f"Configuration validation failed:\n{error_msg}")
+    # Validate config structure
+    if not isinstance(config['config'], dict):
+        raise ValueError(
+            f"config field must be a dictionary. Got type: {type(config['config'])}"
+        )
         
-    return config_list
+    return config

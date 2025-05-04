@@ -80,13 +80,6 @@ def enrich_ifc_with_metadata(
     logger.info(f"Finished {TOOL_NAME}")
     return result_bundle
 
-def enrich_metadata_json(
-    enrichment_df: pd.DataFrame,
-    ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
-    config: Dict[str, Any],
-    ) -> ResultBundle:
-    pass
-
 
 def _process_enrich_ifc_with_df_logic(
                        ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
@@ -246,18 +239,3 @@ def _process_enrich_ifc_with_df_logic(
             summary_data["errors"].append(f"Error processing element {element_data['GlobalId']}: {str(e)}")
     
     return new_ifc, summary_data
-
-#enrichment_df = pd.read_excel(
-#    "src/qto_buccaneer/_utils/enrich/testdata/Raumprogramm Seefeld AKTUELL.xlsx",
-#    sheet_name="Raumprogramm Rohdaten",
-#    header=0,
-#    index_col=0,
-#)
-#
-#print(enrichment_df)
-#
-#enrich_ifc_with_metadata(
-#    enrichment_df=enrichment_df,
-#    ifc_file="src/qto_buccaneer/_utils/enrich/testdata/001_test_building_abstractBIM.ifc",
-#    config=config,
-#)
