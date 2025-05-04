@@ -1,6 +1,8 @@
 import pandas as pd
 import re
 from typing import Dict, Any, Literal
+import time
+import json
 
 class MetadataFilter:
     """Filter structured metadata based on criteria.
@@ -116,14 +118,12 @@ class MetadataFilter:
     @staticmethod
     def _parse_filter_expression(filter_str: str) -> dict:
         """Parse a filter expression string into a filter dictionary."""
-        print(f"Parsing filter string: {filter_str}")  # Debug log
         # Split by AND operators (case insensitive)
         parts = re.split(r'\s+AND\s+', filter_str, flags=re.IGNORECASE)
         filters = {}
         
         for part in parts:
             part = part.strip()
-            print(f"Processing part: {part}")  # Debug log
             
             # Handle OR conditions in parentheses
             if part.startswith('(') and part.endswith(')'):
@@ -137,7 +137,6 @@ class MetadataFilter:
                         raise ValueError(f"Cannot parse filter term: {inner_part}")
                     k, op, v = m.group('key'), m.group('op'), m.group('val')
                     k, v = k.strip(' "\''), v.strip(' "\'')
-                    print(f"Parsed OR term - key: {k}, op: {op}, val: {v}")  # Debug log
                     
                     if key is None:
                         key = k
@@ -157,24 +156,28 @@ class MetadataFilter:
                 
             key, op, val = m.group('key'), m.group('op'), m.group('val')
             key, val = key.strip(' "\''), val.strip(' "\'')
-            print(f"Parsed term - key: {key}, op: {op}, val: {val}")  # Debug log
             
-            # Try to convert to numeric if possible
-            try:
-                num = float(val)
-                if num.is_integer():
-                    val = int(num)
-                else:
-                    val = num
-            except ValueError:
-                pass
+            # Handle boolean values
+            if val.lower() == 'true':
+                val = True
+            elif val.lower() == 'false':
+                val = False
+            else:
+                # Try to convert to numeric if possible
+                try:
+                    num = float(val)
+                    if num.is_integer():
+                        val = int(num)
+                    else:
+                        val = num
+                except ValueError:
+                    pass
                 
             if op == '=':
                 filters[key] = val
             else:
                 filters[key] = [(op, val)]
         
-        print(f"Final filters: {filters}")  # Debug log
         return filters
 
     @staticmethod
@@ -228,40 +231,57 @@ class MetadataFilter:
 
     @staticmethod
     def calculate_metric(df: pd.DataFrame, metric_config: dict, building_name: str) -> pd.DataFrame:
-        """Calculate a metric based on the provided configuration.
+        """Calculate a metric based on the provided configuration."""
+        start_time = time.time()
         
-        Args:
-            df: DataFrame containing the IFC data
-            metric_config: Dictionary containing the metric configuration
-            building_name: Name of the building being analyzed
-            
-        Returns:
-            DataFrame containing the metric results
-        """
-        # Handle both old and new style configurations
         if 'config' in metric_config:
             config = metric_config['config']
-            # Parse the filter string into a filter dictionary
-            filter_str = config['components'][config['formula']]['filter']
-            filters = MetadataFilter._parse_filter_expression(filter_str)
             
-            # Apply the filter
-            filtered_df = MetadataFilter.filter_df(df, filters)
-            
-            # Get the base quantity
-            base_quantity = config['components'][config['formula']]['base_quantity']
-            pset_name, prop_name = base_quantity.split('.')
-            
-            # Calculate the metric
-            value = filtered_df[prop_name].sum()
+            # If formula contains components, calculate each component
+            if 'components' in config:
+                component_values = {}
+                for component_name, component_config in config['components'].items():
+                    # Parse the filter string into a filter dictionary
+                    filter_str = component_config['filter']
+                    filters = MetadataFilter._parse_filter_expression(filter_str)
+                    
+                    # Apply the filter
+                    filtered_df = MetadataFilter.filter_df(df, filters)
+                    
+                    # Get the base quantity
+                    base_quantity = component_config['base_quantity']
+                    pset_name, prop_name = base_quantity.split('.')
+                    
+                    # Calculate the component value
+                    component_values[component_name] = filtered_df[prop_name].sum()
+                
+                # Evaluate the formula using component values
+                try:
+                    formula = config['formula']
+                    # Replace component names with their values
+                    for name, value in component_values.items():
+                        formula = formula.replace(name, str(value))
+                    value = eval(formula)
+                except Exception as e:
+                    raise ValueError(f"Error evaluating formula '{formula}': {str(e)}")
+            else:
+                # Original simple calculation
+                filter_str = config['filter']
+                filters = MetadataFilter._parse_filter_expression(filter_str)
+                filtered_df = MetadataFilter.filter_df(df, filters)
+                value = filtered_df[config['base_quantity']].sum()
             
             # Create result DataFrame
             result = pd.DataFrame({
-                'Building': [building_name],
-                'Metric': [metric_config['name']],
-                'Value': [value],
-                'Unit': [config['unit']],
-                'Description': [metric_config['description']]
+                'metric_name': [metric_config['name']],
+                'value': [value],
+                'unit': [config['unit']],
+                'success': [True],
+                'calculation_time': [time.time() - start_time],
+                'building': [building_name],
+                'description': [metric_config['description']],
+                'formula': [config['formula']],
+                'components': [json.dumps(config.get('components', {}), indent=2)]  # Convert components to JSON string
             })
             
         else:
@@ -287,13 +307,17 @@ class MetadataFilter:
             
             # Create result DataFrame
             result = pd.DataFrame({
-                'Building': [building_name],
-                'Metric': [metric_config.get('name', metric_config['description'])],
-                'Value': [value],
-                'Unit': ['m2' if metric_config['quantity_type'] == 'area' else 
+                'metric_name': [metric_config.get('name', metric_config['description'])],
+                'value': [value],
+                'unit': ['m2' if metric_config['quantity_type'] == 'area' else 
                         'm3' if metric_config['quantity_type'] == 'volume' else 
                         'count'],
-                'Description': [metric_config['description']]
+                'success': [True],
+                'calculation_time': [time.time() - start_time],
+                'building': [building_name],
+                'description': [metric_config['description']],
+                'formula': [metric_config.get('formula', '')],
+                'components': [json.dumps({}, indent=2)]  # Empty JSON for old style config
             })
             
         return result

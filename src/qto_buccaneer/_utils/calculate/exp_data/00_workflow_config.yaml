@@ -181,10 +181,10 @@ metrics:
       formula: "GFoi-LUFoi"
       components:
         GFoi:
-          filter: "IfcEntity=IfcSpace AND Name=GrossArea AND Pset_SpatialData.ElevationOfStory<=0.5"
+          filter: "IfcEntity=IfcSpace AND Name=GrossArea AND Pset_SpatialData.ElevationOfStory>=-0.5"
           base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
         LUFoi:
-          filter: "IfcEntity=IfcSpace AND LongName=LUF AND Pset_SpatialData.ElevationOfStory<=0.5"
+          filter: "IfcEntity=IfcSpace AND LongName=LUF AND Pset_SpatialData.ElevationOfStory>-0.5"
           base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
 
   GFui:
@@ -196,9 +196,168 @@ metrics:
       formula: "GFui-LUFui"
       components:
         GFui:
-          filter: "IfcEntity=IfcSpace AND Name=GrossArea AND Pset_SpatialData.ElevationOfStory>0.5"
+          filter: "IfcEntity=IfcSpace AND Name=GrossArea AND Pset_SpatialData.ElevationOfStory<=-0.5"
           base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
         LUFui:
-          filter: "IfcEntity=IfcSpace AND LongName=LUF AND Pset_SpatialData.ElevationOfStory>0.5"
+          filter: "IfcEntity=IfcSpace AND LongName=LUF AND Pset_SpatialData.ElevationOfStory<-0.5"
           base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
 
+  GVoi:
+      name: "GV Neubau oi"
+      description: "Das Geschossvolumen oberirdisch"
+      config:
+        quantity_type: "volume"
+        unit: "m3"
+        formula: "GVoi"
+        components:
+          GVoi:
+            filter: "IfcEntity=IfcSpace AND Name=GrossVolume AND Pset_SpatialData.ElevationOfStory>=-0.5"
+            base_quantity: "Qto_SpaceBaseQuantities.NetVolume"
+
+  GVui:
+      name: "GV ui Neubau"
+      description: "Das  Geschossvolumen unterirdisch"
+      config:
+        quantity_type: "volume"
+        unit: "m3"
+        formula: "GVui"
+        components:
+          GVui:
+            filter: "IfcEntity=IfcSpace AND Name=GrossVolume AND Pset_SpatialData.ElevationOfStory<-0.5"
+            base_quantity: "Qto_SpaceBaseQuantities.NetVolume"
+
+  help_EBF:
+    name: "Hilfe EBF"
+    description: "Die Fläche aller Räume (inkl. Wände) die als Energiebezugsfläche klassifiziert sind (Kleiner Fehler mit Aussenwänden bei diesen NNf > 10m2)"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "NNF_UG_gr_als_10"  
+      components:
+        NNF_UG_gr_als_10:
+          filter: "IfcEntity=IfcSpace AND PredefinedType=INTERNAL AND Qto_SpaceBaseQuantities.NetFloorArea>10 AND Pset_SpatialData.ElevationOfStory<=-0.5"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  EBF:
+    name: "EBF"
+    description: "Die Fläche aller Räume (inkl. Wände) die als Energiebezugsfläche klassifiziert sind (Kleiner Fehler mit Aussenwänden bei diesen NNf > 10m2)"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "GF-NNF_UG_gr_als_10-LUF"
+      components:
+        NNF_UG_gr_als_10:
+          filter: "IfcEntity=IfcSpace AND PredefinedType=INTERNAL AND Qto_SpaceBaseQuantities.NetFloorArea>10 AND Pset_SpatialData.ElevationOfStory<=-0.5"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+        GF:
+          filter: "IfcEntity=IfcSpace AND Name=GrossArea"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+        LUF:
+          filter: "IfcEntity=IfcSpace AND LongName=LUF"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  E1:
+    name: "E1 Fläche Aussenwand unter Terrain"
+    description: "Die Fläche der Aussenwand unter Terrain. Deckenstirnflächen sind inkludiert"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "E1"  
+      components:
+        E1:
+          filter: "IfcEntity=IfcCovering AND PredefinedType=CLADDING AND Pset_CoveringCommon.IsExternal=true AND Pset_SpatialData.ElevationOfStory<-0.2"
+          base_quantity: "Qto_CoveringBaseQuantities.NetArea"
+
+  E2:
+    name: "E2 Fläche Aussenwand über Terrain"
+    description: "Die Fläche aller Aussenwände über Terrain"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "E2"
+      components:
+        E2:
+          filter: "IfcEntity=IfcCovering AND PredefinedType=CLADDING AND Pset_CoveringCommon.IsExternal=true AND Pset_SpatialData.ElevationOfStory>=-0.2"
+          base_quantity: "Qto_CoveringBaseQuantities.NetArea"
+
+  E3:
+    name: "E3 Fläche Einbauten zu Aussenwand"
+    description: "Die Fläche aller Fenster und Türen"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "Fenster + Türen"
+      components:
+        Fenster:
+          filter: "IfcEntity=IfcWindow AND Pset_WindowCommon.IsExternal=true"
+          base_quantity: "Qto_WindowBaseQuantities.Area"
+        Türen:
+          filter: "IfcEntity=IfcDoor AND Pset_DoorCommon.IsExternal=true"
+          base_quantity: "Qto_DoorBaseQuantities.Area"
+#
+  E2.5:
+    name: "E2.5 Bekleidung Untersicht"
+    description: "Die Fläche aller Untersichten sind. Coverings unter 0.5m werden ausgenommen"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "E2.5"
+      components:
+        E2.5:
+          filter: "IfcEntity=IfcCovering AND PredefinedType=INSULATION AND Pset_CoveringCommon.IsExternal=true AND Pset_SpatialData.ElevationOfStory>0.5"
+          base_quantity: "Qto_CoveringBaseQuantities.NetArea"
+
+  DF:
+    name: "Dachflächen"
+    description: "Die Fläche aller Dächer. Vorsicht bei Auskragungen über Aussenräumen diese sind nicht inkludiert!"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "DF"
+      components:
+        DF:
+          filter: "IfcEntity=IfcCovering AND PredefinedType=ROOFING"
+          base_quantity: "Qto_CoveringBaseQuantities.NetArea"
+
+  AGF:
+    name: "AGF"
+    description: "Ausengeschossfläche"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "AGF"
+      components:
+        AGF:
+          filter: "IfcEntity=IfcSpace AND PredefinedType=EXTERNAL AND (Pset_Enrichment.SiA-2016=ANF OR Pset_Enrichment.SiA-2016=AVF OR Pset_Enrichment.SiA-2016=AFF)"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  Gebäudehüllfläche:
+    name: "Gebäudehüllfläche"
+    description: "Die Fläche aller Aussenwände, Dächer und Bodenplatten exkl. Untersichten"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "external_coverings - Balkonuntersichten"
+      components:
+        external_coverings:
+          filter: "IfcEntity=IfcCovering AND Pset_CoveringCommon.IsExternal=true"
+          base_quantity: "Qto_CoveringBaseQuantities.NetArea"
+        Balkonuntersichten:
+          filter: "IfcEntity=IfcCovering AND PredefinedType=INSULATION AND Pset_SpatialData.ElevationOfStory>0.5"
+          base_quantity: "Qto_CoveringBaseQuantities.NetArea"
+
+  Gebäudehüllzahl:
+    name: "Gebäudehüllzahl"
+    description: "Die Gebäudehüllzahl ist die Summe der Flächen aller Aussenwände und Dächer geteilt durch die Gesamtfläche des Gebäudes"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: ""
+      components:
+        external_coverings:
+          filter: "IfcEntity=IfcCovering AND Pset_CoveringCommon.IsExternal=true"
+          base_quantity: "Qto_CoveringBaseQuantities.NetArea"
+        Balkonuntersichten:
+          filter: "IfcEntity=IfcCovering AND PredefinedType=INSULATION AND Pset_SpatialData.ElevationOfStory>0.5"
+          base_quantity: "Qto_CoveringBaseQuantities.NetArea"
+  
