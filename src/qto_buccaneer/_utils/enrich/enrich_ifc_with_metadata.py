@@ -16,7 +16,7 @@ from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_
 
 logger = logging.getLogger(__name__)
 
-def enrich_ifc_with_metadata(
+def enrich_ifc_with_metadata_internal(
     enrichment_df: pd.DataFrame,
     ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
     config: Dict[str, Any],
