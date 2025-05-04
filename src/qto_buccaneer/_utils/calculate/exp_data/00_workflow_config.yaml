@@ -411,6 +411,7 @@ metrics:
         AWF:
           filter: "IfcEntity=IfcCovering AND PredefinedType=CLADDING AND Pset_CoveringCommon.IsExternal=true"
           base_quantity: "Qto_CoveringBaseQuantities.NetArea"
+
   #gebauede_hoehe:
   #  name: "Gebäudenhöhe"
   #  description: "Die Höhe des Gebäudes (nur aproximativ, muss Projektweise im Detail überprüft werden)"
@@ -422,3 +423,41 @@ metrics:
   #      elevation_of_story:
   #        filter: "IfcEntity=IfcSlab AND max(Pset_SpatialData.ElevationOfStory)"
   #        base_quantity: "Pset_SpatialData.ElevationOfStory"
+
+  BUF:
+    name: "Bearbeitete Umgebungsfläche"
+    description: "Die Fläche aller Räume die als BUF klassifiziert sind"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "BUF"
+      components:
+        BUF:
+          filter: "IfcEntity=IfcSpace AND PredefinedType=EXTERNAL AND Pset_Enrichment.SiA-2016=BUF"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  GGF:
+    name: "Gebäudegrundfläche"
+    description: "Die Grundfläche des Gebäudes"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "GGF"
+      components:
+        GGF:
+          filter: "IfcEntity=IfcSpace AND Name=GrossArea AND Pset_SpatialData.ElevationOfStory>=-0.5 AND Pset_SpatialData.ElevationOfStory<=2"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  ist_fläche:
+    name: "Ist Fläche"
+    description: "Die Nutzbare Fläche des Gebäudes nur HHF und NNF. "
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "Ist_A"
+      components:
+        Ist_A:
+          filter: "IfcEntity=IfcSpace AND PredefinedType=INTERNAL AND LongName != LUF AND (Pset_Enrichment.SiA-2016=HHF OR Pset_Enrichment.SiA-2016=NNF)"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  

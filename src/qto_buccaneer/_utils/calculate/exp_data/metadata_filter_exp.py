@@ -179,9 +179,21 @@ class MetadataFilter:
                     pass
                 
             if op == '=':
-                filters[key] = val
+                if key in filters:
+                    if isinstance(filters[key], list):
+                        filters[key].append(val)
+                    else:
+                        filters[key] = [filters[key], val]
+                else:
+                    filters[key] = val
             else:
-                filters[key] = [(op, val)]
+                if key in filters:
+                    if isinstance(filters[key], list):
+                        filters[key].append((op, val))
+                    else:
+                        filters[key] = [filters[key], (op, val)]
+                else:
+                    filters[key] = [(op, val)]
         
         return filters
 
@@ -219,12 +231,14 @@ class MetadataFilter:
                 
             if isinstance(value, list):
                 if value and isinstance(value[0], tuple):
-                    op, val = value[0]
-                    if op == 'max':
-                        # For max() filter, we don't filter the DataFrame
-                        # We'll handle this in calculate_metric
-                        continue
-                    mask = df[key].apply(lambda x: MetadataFilter._compare_values(x, op, val))
+                    # Handle multiple comparison conditions
+                    mask = pd.Series(True, index=df.index)
+                    for op, val in value:
+                        if op == 'max':
+                            # For max() filter, we don't filter the DataFrame
+                            # We'll handle this in calculate_metric
+                            continue
+                        mask = mask & df[key].apply(lambda x: MetadataFilter._compare_values(x, op, val))
                 else:  # List of values
                     mask = df[key].isin(value)
             else:  # Single value
@@ -260,14 +274,27 @@ class MetadataFilter:
                     base_quantity = component_config['base_quantity']
                     pset_name, prop_name = base_quantity.split('.')
                     
-                    # Check if we need to calculate max
-                    if any(v == [('max', None)] for v in filters.values()):
-                        # Convert values to float before calculating max
+                    # First convert all values to float
+                    try:
                         values = pd.to_numeric(filtered_df[prop_name], errors='coerce')
-                        value = values.max() if len(values) > 0 else 0
+                    except Exception as e:
+                        raise ValueError(f"Error converting values to numeric: {str(e)}")
+                    
+                    # Check if we need to calculate max or min
+                    if any(v == [('max', None)] for v in filters.values()) or any(v == [('min', None)] for v in filters.values()):
+                        # Create a dictionary of all values
+                        value_dict = {}
+                        for idx, val in values.items():
+                            if pd.notna(val):  # Only include non-NaN values
+                                value_dict[idx] = val
+                        
+                        # Find max or min
+                        if any(v == [('max', None)] for v in filters.values()):
+                            value = max(value_dict.values()) if value_dict else 0
+                        else:  # min case
+                            value = min(value_dict.values()) if value_dict else 0
                     else:
-                        # Convert values to float before calculating sum
-                        values = pd.to_numeric(filtered_df[prop_name], errors='coerce')
+                        # Sum the numeric values
                         value = values.sum() if len(values) > 0 else 0
                     
                     component_values[component_name] = value
@@ -278,18 +305,23 @@ class MetadataFilter:
                     if formula in component_values:
                         value = component_values[formula]
                     else:
-                        # Try to convert formula to float if it's a number
-                        try:
-                            value = float(formula)
-                        except ValueError:
-                            # If not a number, evaluate as a formula
-                            formula_to_eval = formula
-                            for name, val in component_values.items():
+                        # If not a component name, try to evaluate as a formula
+                        formula_to_eval = formula
+                        for name, val in component_values.items():
+                            formula_to_eval = formula_to_eval.replace(name, str(val))
+                        
+                        if previous_results:
+                            for name, val in previous_results.items():
                                 formula_to_eval = formula_to_eval.replace(name, str(val))
-                            if previous_results:
-                                for name, val in previous_results.items():
-                                    formula_to_eval = formula_to_eval.replace(name, str(val))
+                        
+                        # Clean the formula string
+                        formula_to_eval = formula_to_eval.replace('..', '.')
+                        
+                        # Try to evaluate the formula
+                        try:
                             value = eval(formula_to_eval)
+                        except Exception as e:
+                            raise ValueError(f"Error evaluating formula '{formula_to_eval}': {str(e)}")
                 except Exception as e:
                     raise ValueError(f"Error evaluating formula '{formula}': {str(e)}")
             
