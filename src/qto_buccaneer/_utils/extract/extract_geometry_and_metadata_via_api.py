@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 import pandas as pd
 from dotenv import load_dotenv
-from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import ResultBundle, GeometryResultBundle
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 import ifcopenshell
 
@@ -44,9 +44,9 @@ class IFCAPIClient:
     def upload_ifc(self, 
                   ifc_file: Union[str, Path, ifcopenshell.file, ResultBundle],
                   include_geometry: bool = True, 
-                  include_metadata: bool = True) -> ResultBundle:
+                  include_metadata: bool = True) -> GeometryResultBundle:
         """
-        Upload an IFC file and get the processed data as a ResultBundle.
+        Upload an IFC file and get the processed data as a GeometryResultBundle.
         
         Args:
             ifc_file: Path to the IFC file, ifcopenshell.file, or ResultBundle
@@ -54,7 +54,7 @@ class IFCAPIClient:
             include_metadata: Whether to include metadata
             
         Returns:
-            ResultBundle containing the processed data
+            GeometryResultBundle containing the processed data
         """
         try:
             # Create loader if needed
@@ -121,9 +121,9 @@ class IFCAPIClient:
         zip_response: requests.Response,
         response_data: Dict[str, Any],
         base_filename: str
-    ) -> ResultBundle:
+    ) -> GeometryResultBundle:
         """
-        Process the zip file response and create a ResultBundle.
+        Process the zip file response and create a GeometryResultBundle.
         
         Args:
             zip_response: The API response containing the zip file
@@ -131,7 +131,7 @@ class IFCAPIClient:
             base_filename: Base filename for output files
             
         Returns:
-            ResultBundle containing the processed data
+            GeometryResultBundle containing the processed data
         """
         # Create summary
         summary = {
@@ -142,10 +142,33 @@ class IFCAPIClient:
             }
         }
         
-        # Create and return ResultBundle with zip content
-        return ResultBundle(
-            dataframe=None,
-            json={"zip_content": zip_response.content},
+        # Create a BytesIO object from the zip content
+        zip_buffer = io.BytesIO(zip_response.content)
+        
+        # Extract metadata from the zip file
+        metadata_df = None
+        with zipfile.ZipFile(zip_buffer, 'r') as zip_file:
+            # Find the metadata file
+            metadata_files = [f for f in zip_file.namelist() if 'metadata' in f.lower()]
+            if metadata_files:
+                with zip_file.open(metadata_files[0]) as metadata_file:
+                    metadata_data = json.load(metadata_file)
+                    if "elements" in metadata_data:
+                        # Convert elements to DataFrame
+                        records = []
+                        for key, value in metadata_data["elements"].items():
+                            record = value.copy()
+                            record['element_key'] = key
+                            records.append(record)
+                        metadata_df = pd.DataFrame(records)
+        
+        # Create and return GeometryResultBundle with both zip content and metadata
+        return GeometryResultBundle(
+            dataframe=metadata_df,
+            json={
+                "zip_content": zip_response.content,
+                "metadata": metadata_data if metadata_files else None
+            },
             folderpath=None,
             summary=summary
         )
@@ -154,16 +177,16 @@ class IFCAPIClient:
         self,
         error: str,
         base_filename: str
-    ) -> ResultBundle:
+    ) -> GeometryResultBundle:
         """
-        Create an error ResultBundle.
+        Create an error GeometryResultBundle.
         
         Args:
             error: Error message
             base_filename: Base filename
             
         Returns:
-            ResultBundle containing error information
+            GeometryResultBundle containing error information
         """
         error_data = {
             "error": error,
@@ -172,7 +195,7 @@ class IFCAPIClient:
             "base_filename": base_filename
         }
         
-        return ResultBundle(
+        return GeometryResultBundle(
             dataframe=None,
             json=error_data,
             folderpath=None,  # No output directory needed
@@ -186,7 +209,7 @@ class IFCAPIClient:
 
 def calculate_geometry_json_via_api_internal(
     ifc_file: Union[str, Path, ifcopenshell.file, ResultBundle]
-) -> ResultBundle:
+) -> GeometryResultBundle:
     """
     This module sends IFC geometry to an external FastAPI service 
     to convert it into JSON format for visualization.
@@ -202,7 +225,7 @@ def calculate_geometry_json_via_api_internal(
         ifc_file: Path to the IFC file, ifcopenshell.file, or ResultBundle
         
     Returns:
-        ResultBundle: A ResultBundle containing:
+        GeometryResultBundle: A GeometryResultBundle containing:
             - json: The raw API response data
             - summary: Metadata about the operation including:
                 - status: success/error

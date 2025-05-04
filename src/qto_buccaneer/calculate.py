@@ -1,585 +1,148 @@
+from typing import Union, Dict, Any, List
 import pandas as pd
-from datetime import datetime
-from typing import Dict, Optional
+from qto_buccaneer._utils._result_bundle import ResultBundle, MetricsResultBundle
+from qto_buccaneer._utils.calculate.calculate_metrics import calculate_metrics_internal
+import logging
 
-import sys
-from pathlib import Path
+logger = logging.getLogger(__name__)
 
-src_dir = str(Path(__file__).parent.parent / "src")
-sys.path.append(src_dir)
-
-
-from qto_buccaneer.utils.ifc_loader import IfcLoader
-from qto_buccaneer.utils.ifc_qto_calculator import QtoCalculator
-from qto_buccaneer._utils.metrics.calculate_single_metric_old import _process_quantity_calculation
-
-
-def calculate_all_metrics_from_ifc_old(config: Dict, ifc_path: str, file_info: Optional[dict] = None, output_dir: Optional[str] = None) -> pd.DataFrame:
+def calculate_metrics(
+    input_data: Union[pd.DataFrame, ResultBundle, Dict[str, Any]],
+    config: Dict[str, Any],
+) -> MetricsResultBundle:
     """
-    Calculate all metrics (base, relationship-based, derived, space-based, and grouped) defined in the configuration.
+    Calculate metrics from IFC model metadata based on provided configuration.
 
-    This function processes an IFC file and calculates all metrics defined in the configuration file. It handles:
-    - Standard metrics (single values for the entire project)
-    - Room-based metrics (calculations grouped by room)
-    - Grouped-by-attribute metrics (calculations grouped by specific attributes)
-    - Derived metrics (calculated from other metrics using formulas)
+    This function processes IFC model metadata to calculate various building metrics
+    such as floor areas, volumes, and other architectural quantities based on the
+    provided configuration. It supports different input formats and returns a
+    standardized MetricsResultBundle containing the calculated metrics.
 
     Args:
-        config (Dict): Configuration dictionary containing metric definitions.
-                      Usually loaded from metrics_config_abstractBIM.yaml
-        ifc_path (str): Path to the IFC file to analyze
-        file_info (Optional[dict]): Additional file metadata. Defaults to None.
+        input_data: Input data in one of the following formats:
+                   - pandas DataFrame containing IFC model metadata
+                   - ResultBundle containing IFC model metadata
+                   - JSON-compatible dictionary with IFC model metadata
+        config: Configuration dictionary containing:
+               - metrics: Dictionary of metric configurations
+               - building_name: Name of the building (optional)
 
     Returns:
-        pd.DataFrame: DataFrame containing calculated metrics with columns:
-            - metric_name: Name of the metric
-            - value: Calculated numeric value
-            - unit: Unit of measurement (m², m³, ratio, etc.)
-            - category: Type of measurement (area, volume, ratio, count)
-            - description: Description of what is being measured
-            - calculation_time: When the metric was calculated
-            - status: Calculation status (success/error)
-
-    Example:
-        ```python
-        from qto_buccaneer.utils.config import load_config
-        from qto_buccaneer.metrics import calculate_all_metrics
-
-        # Load configuration
-        config = load_config("src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml")
-
-        # Calculate metrics
-        ifc_path = "path/to/your/model.ifc"
-        results = calculate_all_metrics(config, ifc_path)
-
-        # View results
-        print(results[["metric_name", "value", "unit"]])
-
-        # Example output:
-        #      metric_name      value  unit
-        # 0    gross_floor_area  1500.0   m²
-        # 1    gross_volume     4500.0   m³
-        # 2    windows_count       25.0    -
-        ```
-
-    Note:
-        The configuration file must follow the structure defined in metrics_config_abstractBIM.yaml.
-        See the configs package documentation for details on metric configuration.
+        MetricsResultBundle containing:
+        - dataframe: DataFrame with calculated metrics
+        - json: Summary data in JSON format
     """
-    results = []
+    logger.info("Starting metrics calculation")
     
-    # Calculate base metrics
-    for metric_name in config.get('metrics', {}).keys():
-        metric_df = calculate_single_metric_old(
-            ifc_path=ifc_path,
-            config=config,
-            metric_name=metric_name,
-            file_info=file_info
-        )
-        results.append(metric_df)
-
-    # Calculate space-based metrics
-    for metric_name in config.get('room_based_metrics', {}).keys():
-        metric_df = calculate_single_metric_by_space_old(
-            ifc_path=ifc_path,
-            config=config,
-            metric_name=metric_name,
-            file_info=file_info
-        )
-        results.append(metric_df)
-
-    # Calculate grouped metrics
-    for metric_name in config.get('grouped_by_attribute_metrics', {}).keys():
-        metric_df = calculate_single_grouped_metric_old(
-            ifc_path=ifc_path,
-            config=config,
-            metric_name=metric_name,
-            file_info=file_info
-        )
-        results.append(metric_df)
-
-    # Combine all metrics
-    metrics_df = pd.concat(results, ignore_index=True) if results else pd.DataFrame(
-        columns=["metric_name", "value", "unit", "category", "description", 
-                "calculation_time", "status"] + (list(file_info.keys()) if file_info else [])
-    )
+    # Calculate metrics using internal function
+    result = calculate_metrics_internal(input_data, config)
     
-    # Calculate derived metrics in order, updating the DataFrame after each calculation
-    for metric_name, metric_config in config.get('derived_metrics', {}).items():
-        metric_df = calculate_single_derived_metric_old(
-            metric_name=metric_name,
-            unit=metric_config.get('unit', 'unknown'),
-            formula=metric_config['formula'],
-            df_metrics=metrics_df,
-            file_info=file_info
-        )
-        # Update the metrics DataFrame with the new derived metric
-        metrics_df = pd.concat([metrics_df, metric_df], ignore_index=True)
+    # Validate the result
+    if result.dataframe is None or result.dataframe.empty:
+        logger.warning("No metrics were calculated - empty DataFrame returned")
+        # Create an empty DataFrame with the expected columns
+        result.dataframe = pd.DataFrame(columns=[
+            'metric_name', 'value', 'unit', 'success', 
+            'calculation_time', 'building', 'description', 
+            'formula', 'components'
+        ])
     
-    return metrics_df
-
-def calculate_single_derived_metric_old(
-    metric_name: str, 
-    unit: str, 
-    formula: str, 
-    df_metrics: pd.DataFrame, 
-    file_info: Optional[dict] = None
-) -> pd.DataFrame:
-    """
-    Calculate a single derived metric based on existing metrics.
-
-    This function evaluates a formula using values from previously calculated metrics
-    to generate a new derived metric. The formula can reference any metric name
-    present in the input DataFrame.
-
-    Args:
-        metric_name (str): Name of the derived metric to calculate
-        unit (str): Unit of measurement for the result (from config)
-        formula (str): Formula to calculate the derived metric using metric names
-                      as variables (e.g., "gross_volume / gross_floor_area")
-        df_metrics (pd.DataFrame): DataFrame containing the metrics to use in the calculation.
-                                 Must include columns: metric_name, value
-        file_info (Optional[dict]): Additional file information to include in results
-
-    Returns:
-        pd.DataFrame: DataFrame containing the calculated derived metric with columns:
-            - metric_name: Name of the derived metric
-            - value: Calculated numeric value
-            - unit: Unit of measurement
-            - category: "derived"
-            - description: Description of the metric
-            - calculation_time: Timestamp of calculation
-            - status: "success" or error message
-
-    Example:
-        ```python
-        # Example metrics DataFrame
-        df_metrics = pd.DataFrame({
-            'metric_name': ['gross_volume', 'gross_floor_area'],
-            'value': [4500.0, 1500.0],
-            'unit': ['m³', 'm²']
-        })
-
-        # Calculate average height
-        result = calculate_single_derived_metric(
-            metric_name="average_height",
-            unit="m",
-            formula="gross_volume / gross_floor_area",
-            df_metrics=df_metrics
-        )
-
-        print(result[["metric_name", "value", "unit"]])
-        # Output:
-        #   metric_name  value unit
-        # 0 average_height  3.0    m
-        ```
-
-    Note:
-        - The formula must use metric names exactly as they appear in df_metrics
-        - All metrics referenced in the formula must exist in df_metrics
-        - Division by zero and other mathematical errors are handled gracefully
-    """
-    try:
-        # Create a dict of variables for formula evaluation
-        metric_values = df_metrics.set_index('metric_name')['value'].to_dict()
-        
-        # Get units of input metrics
-        input_metrics = [m for m in metric_values.keys() if m in formula]
-        input_units = df_metrics[df_metrics['metric_name'].isin(input_metrics)]['unit'].unique()
-        
-        # Evaluate the formula using the metric values
-        value = eval(formula, {"__builtins__": {}}, metric_values)
-        
-        # Determine unit and category based on formula and input units
-        if "/" in formula:
-            unit = "ratio"
-            category = "ratio"
-        elif all(u == "m²" for u in input_units):
-            unit = "m²"
-            category = "area"
-        elif all(u == "m³" for u in input_units):
-            unit = "m³"
-            category = "volume"
-        elif all(u == "count" for u in input_units):
-            unit = "count"
-            category = "count"
-            value = int(value) if value is not None else None
-        else:
-            # Use the unit from config as fallback
-            category = "derived"
-        
-        return pd.DataFrame([create_result_dict(
-            metric_name=metric_name,
-            value=round(value, 2) if value is not None and unit != "count" else value,
-            unit=unit,
-            category=category,
-            description=formula,  # Use formula as description for transparency
-            **file_info or {}
-        )])
-        
-    except NameError as e:
-        # Handle case where a required metric is missing
-        missing_metric = str(e).split("'")[1]
-        error_msg = f"Required metric '{missing_metric}' not found in calculated metrics"
-        return pd.DataFrame([create_result_dict(
-            metric_name=metric_name,
-            error_message=error_msg,
-            **file_info or {}
-        )])
-    except Exception as e:
-        return pd.DataFrame([create_result_dict(
-            metric_name=metric_name,
-            error_message=str(e),
-            **file_info or {}
-        )])
-
-def calculate_single_metric_by_space_old(ifc_path: str, config: dict, metric_name: str, file_info: dict) -> pd.DataFrame:
-    """
-    Calculate a single room-based metric, grouping results by space/room attributes.
-
-    This function calculates quantities for building elements (like windows, doors, etc.)
-    and groups them based on the spaces they're associated with. It's useful for analyzing
-    how elements are distributed across different room types or spaces.
-
-    Args:
-        ifc_path (str): Path to the IFC file to analyze
-        config (dict): Configuration dictionary containing the metric definition.
-                      Must include room_based_metrics section.
-        metric_name (str): Name of the room-based metric to calculate
-        file_info (dict): Dictionary containing file metadata
-
-    Returns:
-        pd.DataFrame: DataFrame containing the calculated metrics grouped by space,
-                     with columns:
-            - metric_name: Name of the metric
-            - space_name: Name or identifier of the space
-            - value: Calculated numeric value
-            - unit: Unit of measurement (m², m³, count)
-            - category: Type of measurement
-            - description: Description of what is being measured
-            - calculation_time: When the metric was calculated
-            - status: Calculation status (success/error)
-    """
-    
-    if metric_name not in config.get('room_based_metrics', {}):
-        return pd.DataFrame([create_result_dict(
-            metric_name=metric_name,
-            error_message="Metric not found in room-based metrics configuration",
-            **file_info
-        )])
-
-    loader = IfcLoader(ifc_path)
-    qto = QtoCalculator(loader)
-    metric_config = config['room_based_metrics'][metric_name]
-
-    try:
-        # Use the relationship calculation method for room-based metrics
-        results = _process_space_relationship_calculation(qto, metric_name, metric_config, file_info)
-        return pd.DataFrame(results)
-    except Exception as e:
-        return pd.DataFrame([create_result_dict(
-            metric_name=metric_name,
-            error_message=str(e),
-            **file_info
-        )])
-
-def calculate_single_room_metric(ifc_path: str, config: dict, metric_name: str, file_info: dict) -> pd.DataFrame:
-    """
-    Calculate a single room-based metric for analyzing room/space properties.
-
-    This function calculates quantities specifically for rooms/spaces in the IFC model.
-    Unlike calculate_single_metric_by_space which groups other elements by space,
-    this function directly measures properties of the spaces themselves.
-
-    Args:
-        ifc_path (str): Path to the IFC file to analyze
-        config (dict): Configuration dictionary containing the metric definition.
-                      Must include room_based_metrics section.
-        metric_name (str): Name of the room metric to calculate
-        file_info (dict): Dictionary containing file metadata
-
-    Returns:
-        pd.DataFrame: DataFrame containing the calculated room metrics with columns:
-            - metric_name: Name of the metric
-            - room_type: Type or category of the room
-            - room_name: Name or number of the room
-            - value: Calculated numeric value
-            - unit: Unit of measurement (m², m³)
-            - category: Type of measurement
-            - description: Description of what is being measured
-            - calculation_time: When the metric was calculated
-            - status: Calculation status (success/error)
-    """
-    
-    if metric_name not in config.get('room_based_metrics', {}):
-        return _create_error_df(metric_name, "Metric not found in room-based metrics configuration", file_info)
-    
-    loader = IfcLoader(ifc_path)
-    qto = QtoCalculator(loader)
-    metric_config = config['room_based_metrics'][metric_name]
-    
-    try:
-        # Get the room values using _get_elements_by_space
-        room_values = qto._get_elements_by_space(
-            ifc_entity=metric_config["ifc_entity"],
-            pset_name=metric_config["pset_name"],
-            prop_name=metric_config["prop_name"],
-            grouping_attribute=metric_config["grouping_attribute"],
-            room_reference_attribute_guid=metric_config["room_reference_attribute_guid"],
-            include_filter=metric_config.get("include_filter"),
-            include_filter_logic=metric_config.get("include_filter_logic", "AND")
-        )
-        
-        # Create results for each room/space
-        results = []
-        for room_name, value in room_values.items():
-            results.append({
-                "metric_name": metric_name,
-                "room_name": room_name,
-                "value": round(value, 2) if value is not None else None,
-                "unit": "m³" if metric_config.get("quantity_type") == "volume" else "m²",
-                "category": metric_config.get("quantity_type", "area"),
-                "description": metric_config.get("description", ""),
-                "calculation_time": datetime.now(),
-                "status": "success",
-                **file_info
-            })
-        
-        if results:
-            return pd.DataFrame(results)
-        else:
-            return _create_error_df(metric_name, "No results calculated", file_info)
-    except Exception as e:
-        return _create_error_df(metric_name, str(e), file_info)
-
-def calculate_single_grouped_metric_old(
-    ifc_path: str,
-    config: dict,
-    metric_name: str,
-    file_info: Optional[dict] = None,
-) -> pd.DataFrame:
-    """Calculate a single grouped metric."""
-    if metric_name not in config.get('grouped_by_attribute_metrics', {}):
-        return pd.DataFrame([create_result_dict(
-            metric_name=metric_name,
-            error_message="Metric not found in grouped metrics configuration",
-            **file_info or {}
-        )])
-    
-    loader = IfcLoader(ifc_path)
-    qto = QtoCalculator(loader)
-    metric_config = config['grouped_by_attribute_metrics'][metric_name]
-    
-    try:
-        ifc_entity = metric_config["ifc_entity"]
-        grouping_attribute = metric_config.get("grouping_attribute")
-        grouping_pset = metric_config.get("grouping_pset")
-        pset_name = metric_config.get("pset_name")
-        prop_name = metric_config.get("prop_name")
-        include_filter = metric_config.get("include_filter")
-        include_filter_logic = metric_config.get("include_filter_logic", "AND")
-        subtract_filter = metric_config.get("subtract_filter")
-        subtract_filter_logic = metric_config.get("subtract_filter_logic", "AND")
-        quantity_type = metric_config.get("quantity_type", "area")
-
-        # Get grouped values
-        grouped_values = qto._get_elements_by_attribute(
-            ifc_entity=ifc_entity,
-            grouping_attribute=grouping_attribute,
-            grouping_pset=grouping_pset,
-            include_filter=include_filter,
-            include_filter_logic=include_filter_logic,
-            subtract_filter=subtract_filter,
-            subtract_filter_logic=subtract_filter_logic,
-            pset_name=pset_name,
-            prop_name=prop_name,
-        )
-
-        # Create results for each group
-        results = []
-        for group_value, value in grouped_values.items():
-            # Clean up the group value for use in metric name
-            clean_group_value = str(group_value).replace(" ", "_").lower()
-            # Create the metric name with the group value appended
-            full_metric_name = f"{metric_name}_{clean_group_value}"
-            
-            results.append({
-                "metric_name": full_metric_name,
-                "value": value,
-                "unit": "m²" if quantity_type == "area" else "m³" if quantity_type == "volume" else "count",
-                "category": quantity_type,
-                "description": metric_config["description"],
-                "calculation_time": datetime.now(),
-                "status": "success",
-                **(file_info or {})
-            })
-
-        if not results:
-            return pd.DataFrame([create_result_dict(
-                metric_name=metric_name,
-                error_message="No results calculated",
-                **file_info or {}
-            )])
-
-        return pd.DataFrame(results)
-
-    except Exception as e:
-        return pd.DataFrame([create_result_dict(
-            metric_name=metric_name,
-            error_message=str(e),
-            **file_info or {}
-        )])
-
-def calculate_single_metric_old(ifc_path: str, config: dict, metric_name: str, file_info: Optional[dict] = None) -> pd.DataFrame:
-    """
-    Calculate a single metric from an IFC file based on the provided configuration.
-
-    Args:
-        ifc_path (str): Path to the IFC file to analyze
-        config (dict): Configuration dictionary containing metric definitions.
-            Expected format:
-            {
-                "metrics": {
-                    "metric_name": {
-                        "description": str,
-                        "quantity_type": str,
-                        "ifc_entity": str,
-                        ...
-                    }
-                }
+    if result.json is None:
+        logger.warning("No summary data was generated - empty JSON returned")
+        result.json = {
+            config.get('tool_name', 'metrics_calculator'): {
+                "status": "Warning",
+                "message": "No metrics were calculated",
+                "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "ResultBundle" if isinstance(input_data, ResultBundle) else "JSON"
             }
-        metric_name (str): Name of the metric to calculate (must exist in config)
-        file_info (Optional[dict], optional): Additional file information to include in results. Defaults to None.
+        }
+    
+    logger.info(f"Finished metrics calculation. Calculated {len(result.dataframe)} metrics")
+    return result
+
+
+def calculate_all_metrics(
+    input_data: Union[pd.DataFrame, ResultBundle, Dict[str, Any]],
+    config: Dict[str, Any],
+) -> MetricsResultBundle:
+    """
+    Calculate all metrics from IFC model metadata based on provided configuration.
+
+    This function processes IFC model metadata to calculate various building metrics
+    such as floor areas, volumes, and other architectural quantities based on the
+    provided configuration. It supports different input formats and returns a
+    standardized MetricsResultBundle containing all calculated metrics.
+
+    Args:
+        input_data: Input data in one of the following formats:
+                   - pandas DataFrame containing IFC model metadata
+                   - ResultBundle containing IFC model metadata
+                   - JSON-compatible dictionary with IFC model metadata
+        config: Configuration dictionary containing:
+               - metrics: Dictionary of metric configurations
+               - building_name: Name of the building (optional)
 
     Returns:
-        pd.DataFrame: DataFrame containing the calculated metric with columns:
-            - metric_name: Name of the metric
-            - value: Calculated value
-            - unit: Unit of measurement
-            - description: Metric description
-            - error: Error message if calculation failed
-
-    Raises:
-        None: Errors are caught and returned in the DataFrame with error information
-
-    Example:
-        >>> config = {
-        ...     "metrics": {
-        ...         "gross_floor_area": {
-        ...             "description": "Total floor area",
-        ...             "quantity_type": "area",
-        ...             "ifc_entity": "IfcSpace"
-        ...         }
-        ...     }
-        ... }
-        >>> df = calculate_single_metric("model.ifc", config, "gross_floor_area")
+        MetricsResultBundle containing:
+        - dataframe: DataFrame with all calculated metrics
+        - json: Summary data in JSON format
     """
+    logger.info("Starting calculation of all metrics")
     
-    if metric_name not in config.get('metrics', {}):
-        return pd.DataFrame([create_result_dict(
-            metric_name=metric_name,
-            error_message="Metric not found in standard metrics configuration",
-            **file_info or {}
-        )])
+    # Initialize lists to store results
+    all_metrics_dfs: List[pd.DataFrame] = []
+    all_summaries: List[Dict[str, Any]] = []
     
-    loader = IfcLoader(ifc_path)
-    qto = QtoCalculator(loader)
-    metric_config = config['metrics'][metric_name]
-    
-    try:
-        result = _process_quantity_calculation(qto, metric_name, metric_config, file_info)
-        return pd.DataFrame([result])
-    except Exception as e:
-        return pd.DataFrame([create_result_dict(
-            metric_name=metric_name,
-            error_message=str(e),
-            **file_info or {}
-        )])
-
-def _process_space_relationship_calculation(qto: QtoCalculator, metric_name: str, metric_config: dict, file_info: Optional[dict] = None) -> list:
-    """Process a single relationship-based calculation and format its result."""
-    try:
-        # Get required parameters from config
-        grouping_attribute_orProperty = metric_config["grouping_attribute"]
+    # Calculate metrics for each configuration
+    for metric_name, metric_config in config.get('metrics', {}).items():
+        logger.info(f"Calculating metric: {metric_name}")
         
-        # Determine if this is a Pset attribute or direct attribute
-        if '.' in grouping_attribute_orProperty:
-            # For Pset attributes (e.g., "Pset_abstractBIM.Normal")
-            pset_name, attr_name = grouping_attribute_orProperty.split('.')
-            grouping_name = attr_name.lower()
-            # For Pset attributes, we need pset_name
-            grouping_pset = pset_name
-        else:
-            # For direct attributes (e.g., "SpacesName")
-            grouping_name = grouping_attribute_orProperty.lower()
-            # For direct attributes, we don't need pset_name
-            grouping_pset = None
-            
-        metric_by_group = f"{metric_name}_by_{grouping_name}"
+        # Create a single metric config
+        single_metric_config = {
+            'tool_name': config.get('tool_name', 'metrics_calculator'),
+            'building_name': config.get('building_name', 'Example Building'),
+            'metrics': {metric_name: metric_config}
+        }
         
-        # Get room values with required parameters
-        room_values = qto._get_elements_by_space(
-            ifc_entity=metric_config["ifc_entity"],
-            grouping_pset=grouping_pset,
-            grouping_attribute_or_property=grouping_attribute_orProperty,
-            room_reference_attribute_guid=metric_config["room_reference_attribute_guid"],
-            include_filter=metric_config.get("include_filter"),
-            include_filter_logic=metric_config.get("include_filter_logic", "AND"),
-            metric_pset_name=metric_config.get("metric_pset_name"),
-            metric_prop_name=metric_config.get("metric_prop_name")
-        )
+        # Calculate metrics for this configuration
+        result = calculate_metrics_internal(input_data, single_metric_config)
         
-        # Create results for each group
-        results = []
-        for group_value, value in room_values.items():
-            # Simply convert the value to string, replacing spaces with underscores
-            clean_group_value = str(group_value).replace(" ", "_").lower()
-            
-            results.append(create_result_dict(
-                metric_name=f"{metric_by_group}_{clean_group_value}",
-                value=value,
-                unit="m³" if metric_config.get("quantity_type") == "volume" else "m²",
-                category=metric_config.get("quantity_type", "area"),
-                description=metric_config.get("description", ""),
-                **file_info or {}
-            ))
-            
-        if results:
-            return results  # Return all results
-        else:
-            return [create_result_dict(
-                metric_name=metric_by_group,
-                error_message="No results calculated",
-                **file_info or {}
-            )]
-    except Exception as e:
-        return [create_result_dict(
-            metric_name=metric_name,
-            error_message=str(e),
-            **file_info or {}
-        )]
-
-def _create_error_df(metric_name: str, error_message: str, file_info: Optional[dict] = None) -> pd.DataFrame:
-    """Create a DataFrame for error cases.
+        # Store the results
+        if result.dataframe is not None and not result.dataframe.empty:
+            all_metrics_dfs.append(result.dataframe)
+        if result.json is not None:
+            all_summaries.append(result.json)
     
-    Args:
-        metric_name: Name of the metric that caused the error
-        error_message: Description of the error
-        file_info: Optional dictionary with file information
-    """
-    result = {
-        "metric_name": metric_name,
-        "value": None,
-        "unit": "unknown",  # Removed dependency on metric_config
-        "category": "unknown",
-        "description": "",
-        "calculation_time": datetime.now(),
-        "status": f"error: {error_message}",
-    }
+    # Merge all DataFrames
+    if all_metrics_dfs:
+        combined_df = pd.concat(all_metrics_dfs, ignore_index=True)
+    else:
+        logger.warning("No metrics were calculated - empty DataFrame returned")
+        combined_df = pd.DataFrame(columns=[
+            'metric_name', 'value', 'unit', 'success', 
+            'calculation_time', 'building', 'description', 
+            'formula', 'components'
+        ])
     
-    # Add file_info if provided
-    if file_info:
-        result.update(file_info)
-        
-    return pd.DataFrame([result])
-
+    # Merge all summaries
+    combined_summary = {}
+    for summary in all_summaries:
+        combined_summary.update(summary)
+    
+    if not combined_summary:
+        logger.warning("No summary data was generated - empty JSON returned")
+        combined_summary = {
+            config.get('tool_name', 'metrics_calculator'): {
+                "status": "Warning",
+                "message": "No metrics were calculated",
+                "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "ResultBundle" if isinstance(input_data, ResultBundle) else "JSON"
+            }
+        }
+    
+    logger.info(f"Finished calculation of all metrics. Calculated {len(combined_df)} metrics")
+    
+    # Create final MetricsResultBundle
+    return MetricsResultBundle(
+        dataframe=combined_df,
+        json=combined_summary
+    )

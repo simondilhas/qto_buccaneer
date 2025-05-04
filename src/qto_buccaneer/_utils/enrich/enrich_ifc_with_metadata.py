@@ -10,7 +10,7 @@ from typing import Union, Dict, Any, Optional
 import pandas as pd
 from pathlib import Path
 import logging
-from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import IFCResultBundle, ResultBundle
 from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 
 
@@ -20,7 +20,7 @@ def enrich_ifc_with_metadata_internal(
     enrichment_df: pd.DataFrame,
     ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
     config: Dict[str, Any],
-    ) -> ResultBundle:
+    ) -> IFCResultBundle:
     """
     Template for a data processing tool.
 
@@ -37,7 +37,7 @@ def enrich_ifc_with_metadata_internal(
         config: Configuration dictionary.
 
     Returns:
-        ResultBundle with processed data and summary.
+        IFCResultBundle with processed data and summary.
     """
     print(config)
 
@@ -70,7 +70,7 @@ def enrich_ifc_with_metadata_internal(
         pset_name=config['config']['pset_name'])
 
     # 5. Package results
-    result_bundle = ResultBundle(
+    result_bundle = IFCResultBundle(
         dataframe=enrichment_df,
         ifc_model=ifc,
         json=summary_data,
