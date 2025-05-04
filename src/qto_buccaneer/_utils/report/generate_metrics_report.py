@@ -4,7 +4,7 @@ import yaml
 from typing import Union
 import os
 from weasyprint import HTML
-from qto_buccaneer.reports import ReportStyleConfig
+from qto_buccaneer.report import ReportStyleConfig
 
 
 def _build_metrics_table(

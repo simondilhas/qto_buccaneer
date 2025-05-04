@@ -1,4 +1,4 @@
-from qto_buccaneer.reports import ExcelLayoutConfig
+from qto_buccaneer.report import ExcelLayoutConfig
 from typing import Optional
 import pandas as pd
 import openpyxl

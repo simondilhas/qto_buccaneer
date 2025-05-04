@@ -4,7 +4,7 @@ import numpy as np
 from pathlib import Path
 import pandas as pd
 import os
-from qto_buccaneer.metrics_old import (
+from qto_buccaneer.calculate import (
     calculate_single_metric,
     calculate_single_metric_by_space,
     calculate_single_grouped_metric,

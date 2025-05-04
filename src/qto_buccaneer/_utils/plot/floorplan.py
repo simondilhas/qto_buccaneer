@@ -7,12 +7,12 @@ import json
 import math
 
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
-from qto_buccaneer._utils.plots.plots_utils import (
+from qto_buccaneer._utils.plot.plots_utils import (
     parse_filter,
     element_matches_conditions,
     apply_layout_settings
 )
-from qto_buccaneer._utils.plots.filter_parser import FilterParser
+from qto_buccaneer._utils.plot.filter_parser import FilterParser
 
 def create_floorplan_per_storey(
     geometry_dir: Union[str, Path],

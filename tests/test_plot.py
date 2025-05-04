@@ -6,7 +6,7 @@ import pytest
 import yaml
 import json
 
-from qto_buccaneer.plots import create_all_plots
+from qto_buccaneer.plot import create_all_plots
 
 @pytest.fixture
 def test_data_dir():

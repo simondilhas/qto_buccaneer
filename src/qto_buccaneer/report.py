@@ -11,10 +11,10 @@ from weasyprint import HTML
 from datetime import datetime
 import pdfkit
 import yaml
-from qto_buccaneer._utils.reports.excel_styling import ExcelLayoutConfig
-from qto_buccaneer._utils.reports.pdf_styling import ReportStyleConfig
-from qto_buccaneer._utils.reports.project_comparision_table import _export_project_comparison_excel, _create_project_comparison_df
-from qto_buccaneer._utils.reports.generate_metrics_report import _convert_html_to_pdf, _build_metrics_table
+from qto_buccaneer._utils.report.excel_styling import ExcelLayoutConfig
+from qto_buccaneer._utils.report.pdf_styling import ReportStyleConfig
+from qto_buccaneer._utils.report.project_comparision_table import _export_project_comparison_excel, _create_project_comparison_df
+from qto_buccaneer._utils.report.generate_metrics_report import _convert_html_to_pdf, _build_metrics_table
 
 
 def room_program_comparison(

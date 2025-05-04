@@ -1,6 +1,4 @@
-
-
-from typing import Union, Dict, Any
+from typing import Union, Dict, Any, Optional
 import pandas as pd
 from pathlib import Path
 import logging
@@ -14,7 +12,6 @@ def tool_template(
     df_1: Union[pd.DataFrame, ResultBundle],
     df_2: Union[pd.DataFrame, ResultBundle], #different inputs like ifc, df, ...
     config: Dict[str, Any],
-    output_path: Path
 ) -> ResultBundle:
     """
     Template for a data processing tool.
@@ -29,7 +26,8 @@ def tool_template(
     Args:
         df: Input data as DataFrame or ResultBundle.
         config: Configuration dictionary.
-        output_path: Path for output files.
+        folder_dir: Directory for output files.
+        file_name: Name for the output summary file.
 
     Returns:
         ResultBundle with processed data and summary.
@@ -64,16 +62,9 @@ def tool_template(
     result_bundle = ResultBundle(
         dataframe=df,
         json=summary_data,
-        folderpath=output_path.parent,
-        summary=summary_data
-    )
+        )
 
-    # 6. Save results
-    logger.info(f"Saving results to {output_path}")
-    
-    result_bundle.save_excel(output_path)
-    result_bundle.save_summary(output_path.with_suffix(".yml"))
-
+    # Save summary
 
     # 7. Return results
     logger.info(f"Finished {TOOL_NAME}")

@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 import requests
 import logging
 
-from qto_buccaneer.geometry import calculate_geometry_json_via_api
+from qto_buccaneer.extract import calculate_geometry_json_via_api
 
 @pytest.fixture
 def mock_env_vars():

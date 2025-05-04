@@ -283,38 +283,57 @@ def handle_duplicate_global_ids(df: pd.DataFrame) -> pd.DataFrame:
     logger.info(f"Aggregated data for {len(duplicate_global_ids['GlobalId'].unique())} duplicate GlobalIds")
     return df
 
-def _process_tool_logic(
+def process_compare_target_actual_logic(
     target_df: pd.DataFrame,
     actual_df: pd.DataFrame,
     config: Dict[str, Any]
 ) -> tuple[pd.DataFrame, Dict[str, Any]]:
     """Core data processing logic for the tool"""
     try:
-        # Extract configuration values
-        target_key = config['key_target_column']
-        target_area_column = config.get('area_target_column')
-        actual_key = config['key_actual_column']
-        actual_area_column = config.get('area_actual_column')
-        tolerance = config.get('tolerance', 0.1)
-        
-        # Determine comparison type
-        comparison_type = "name" if not (target_area_column and actual_area_column) else "area"
-        
-        # Combine return values from both target and actual
-        return_values = []
-        if 'return_values_target' in config:
-            return_values.extend([f"{col}_target" for col in config['return_values_target']])
-        if 'return_values_actual' in config:
-            return_values.extend([f"{col}_actual" for col in config['return_values_actual']])
+        # Try to get configuration from the new format first
+        if 'config' in config:
+            check_config = config['config']
+            target_key = check_config['keys']['target']
+            actual_key = check_config['keys']['actual']
+            filter_str = check_config.get('filter', '')
+            
+            # Log available columns for debugging
+            logger.info(f"Target DataFrame columns: {target_df.columns.tolist()}")
+            logger.info(f"Actual DataFrame columns: {actual_df.columns.tolist()}")
+            logger.info(f"Looking for target key: {target_key}")
+            logger.info(f"Looking for actual key: {actual_key}")
+            
+            # Verify column existence before proceeding
+            if target_key not in target_df.columns:
+                raise ValueError(f"Target key '{target_key}' not found in target DataFrame. Available columns: {target_df.columns.tolist()}")
+            if actual_key not in actual_df.columns:
+                raise ValueError(f"Actual key '{actual_key}' not found in actual DataFrame. Available columns: {actual_df.columns.tolist()}")
+            
+            # Get return values from the new structure
+            return_values = []
+            if 'return_values' in check_config:
+                if 'target' in check_config['return_values']:
+                    return_values.extend([f"{col}_target" for col in check_config['return_values']['target']])
+                if 'actual' in check_config['return_values']:
+                    return_values.extend([f"{col}_actual" for col in check_config['return_values']['actual']])
+        else:
+            # Fall back to the old format
+            target_key = config.get('key_target_column', 'LongName')
+            actual_key = config.get('key_actual_column', 'LongName')
+            filter_str = config.get('filter', '')
+            
+            # Get return values from the old structure
+            return_values = []
+            if 'return_values_target' in config:
+                return_values.extend([f"{col}_target" for col in config['return_values_target']])
+            if 'return_values_actual' in config:
+                return_values.extend([f"{col}_actual" for col in config['return_values_actual']])
         
         # Add calculated columns to return values
         calculated_columns = ['status']  # Always include status
-        if comparison_type == "area":
-            calculated_columns.extend(['area_diff', 'area_diff_pct'])
         return_values.extend(calculated_columns)
         
         # Apply filter if specified
-        filter_str = config.get('filter', '')
         if filter_str:
             actual_df = apply_filter(actual_df, filter_str)
 
@@ -362,32 +381,19 @@ def _process_tool_logic(
         except KeyError as e:
             raise ValueError(f"Error during merge: {e}. Available columns in target_df: {target_df.columns.tolist()}, actual_df: {actual_df.columns.tolist()}")
         
-        # Calculate differences if it's an area comparison
-        if comparison_type == "area":
-            merged_df = calculate_differences(
-                merged_df=merged_df, 
-                tolerance=tolerance, 
-                target_area_column=f"{target_area_column}_target",
-                actual_area_column=f"{actual_area_column}_actual",
-                key_target_column=f"{target_key}_target",
-                key_actual_column=f"{actual_key}_actual"
-            )
-        else:
-            # For name comparison, set status based on presence in target and actual
-            merged_df['status'] = merged_df.apply(
-                lambda row: 'missing' if pd.isna(row[f'{actual_key}_actual']) else 
-                           'extra' if pd.isna(row[f'{target_key}_target']) else 
-                           'match',
-                axis=1
-            )
+        # For name comparison, set status based on presence in target and actual
+        merged_df['status'] = merged_df.apply(
+            lambda row: 'missing' if pd.isna(row[f'{actual_key}_actual']) else 
+                       'extra' if pd.isna(row[f'{target_key}_target']) else 
+                       'match',
+            axis=1
+        )
         
         # Create ComparisonResult object
         comparison = ComparisonResult(
             merged_df=merged_df,
             return_values=return_values,
-            area_target_column=f"{target_area_column}_target" if target_area_column else None,
-            area_actual_column=f"{actual_area_column}_actual" if actual_area_column else None,
-            comparison_type=comparison_type
+            comparison_type="name"
         )
         
         # Get ResultBundle
@@ -399,66 +405,8 @@ def _process_tool_logic(
         logger.exception(f"Processing failed in compare_target_actual")
         raise RuntimeError(f"Processing failed in compare_target_actual: {str(e)}")
 
-def compare_target_actual(
-    target_df: Union[pd.DataFrame, ResultBundle],
-    actual_df: Union[pd.DataFrame, ResultBundle],
-    config: Dict[str, Any],
-    output_path: Path
-) -> ResultBundle:
-    """
-    Compare target and actual building data.
-    
-    Args:
-        target_df: Target data as DataFrame or ResultBundle
-        actual_df: Actual data as DataFrame or ResultBundle
-        config: Configuration dictionary
-        output_path: Path for output files
-        
-    Returns:
-        ResultBundle containing comparison results
-    """
-    validate_config(config)
 
-    TOOL_NAME = "compare_target_actual"
 
-    logger.info(f"Starting {TOOL_NAME}")
 
-    # 1. Unpack DataFrames
-    target_df = unpack_dataframe(target_df)
-    actual_df = unpack_dataframe(actual_df)
-
-    # 2. Extract required columns
-    required_columns_target = config.get('target_columns', [])
-    required_columns_actual = config.get('actual_columns', [])
-
-    # 3. Validate DataFrames
-    validation_target = validate_df(target_df, required_columns=required_columns_target, df_name="Target DataFrame")
-    if not validation_target['is_valid']:
-        raise ValueError(f"Target DataFrame validation failed: {validation_target['errors']}")
-
-    validation_actual = validate_df(actual_df, required_columns=required_columns_actual, df_name="Actual DataFrame")
-    if not validation_actual['is_valid']:
-        raise ValueError(f"Actual DataFrame validation failed: {validation_actual['errors']}")
-
-    # 4. Process DataFrames
-    df, summary_data = _process_tool_logic(target_df, actual_df, config)
-
-    # 5. Package results
-    result_bundle = ResultBundle(
-        dataframe=df,
-        json=summary_data,
-        folderpath=output_path.parent,
-        summary=summary_data
-    )
-
-    # 6. Save results
-    logger.info(f"Saving results to {output_path}")
-    
-    result_bundle.save_excel(output_path)
-    result_bundle.save_summary(output_path.with_suffix(".yml"))
-
-    # 7. Return results
-    logger.info(f"Finished {TOOL_NAME}")
-    return result_bundle
 
 

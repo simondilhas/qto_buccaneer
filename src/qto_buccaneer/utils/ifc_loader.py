@@ -6,6 +6,7 @@ import pandas as pd
 import time
 from functools import lru_cache
 import numpy as np
+from pathlib import Path
 
 IfcElement = Any
 

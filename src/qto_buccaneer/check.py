@@ -1,0 +1,109 @@
+# TODO: add checks from reports here
+import pandas as pd
+import os
+from qto_buccaneer.utils.building_summary import BuildingSummary
+from qto_buccaneer.utils import load_config
+from qto_buccaneer.utils.metadata_filter import MetadataFilter
+import yaml
+from pathlib import Path
+from typing import Dict, List, Optional, Union, Any
+from qto_buccaneer.report import ExcelLayoutConfig
+
+from qto_buccaneer._utils.checks.compare_target_actual import process_compare_target_actual_logic
+import json
+from qto_buccaneer._utils._result_bundle import ResultBundle
+import logging
+from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
+
+logger = logging.getLogger(__name__)
+
+def compare_target_actual(
+    target_df: Union[pd.DataFrame, ResultBundle],
+    actual_df: Union[pd.DataFrame, ResultBundle],
+    config: Dict[str, Any]
+) -> ResultBundle:
+    """
+    Compare target and actual building data.
+    
+    Args:
+        target_df: Target data as DataFrame or ResultBundle
+        actual_df: Actual data as DataFrame or ResultBundle
+        config: Configuration dictionary containing tool_name, tool_description, and tool_config
+        
+    Returns:
+        ResultBundle containing comparison results
+        
+    Example:
+        config = {
+            'tool_name': 'room_name_and_area_comparison',
+            'tool_description': 'Compare the target room program against the actual room program',
+            'tool_config': {
+                'tolerance': 5,  # in percent
+                'filter': 'IfcEntity=IfcSpace AND (PredefinedType=EXTERNAL OR PredefinedType=INTERNAL)',
+                'key_target_column': 'LongName',
+                'key_actual_column': 'LongName',
+                'area_target_column': 'Soll m2',
+                'area_actual_column': 'Qto_SpaceBaseQuantities.NetFloorArea',
+                'return_values_target': [
+                    'LongName',
+                    'Raumbezeichnung',
+                    'Soll m2',
+                    'Aussenraum',
+                    'Bereich'
+                ],
+                'return_values_actual': [
+                    'LongName',
+                    'Qto_SpaceBaseQuantities.NetFloorArea',
+                    'Pset_SpatialData.BuildingStory',
+                    'Pset_SpatialData.ElevationOfStory',
+                    'Pset_Enrichment.SiA-2016',
+                    'Pset_Enrichment.Bereich',
+                    'PredefinedType',
+                    'GlobalId',
+                    'id'
+                ]
+            }
+        }
+        
+        result = compare_target_actual(
+            target_df=target_data,
+            actual_df=actual_data,
+            config=config
+        )
+    """
+    #validate_config(config)
+    # TODO: add a concept for config checker
+
+    logger.info(f"Starting Compare Target Actual")
+
+    # 1. Unpack DataFrames
+    target_df = unpack_dataframe(target_df)
+    actual_df = unpack_dataframe(actual_df)
+
+    # 2. Extract required columns from tool_config
+    required_columns_target = config.get('return_values_target', [])
+    required_columns_actual = config.get('return_values_actual', [])
+
+    # 3. Validate DataFrames
+    validation_target = validate_df(target_df, required_columns=required_columns_target, df_name="Target DataFrame")
+    if not validation_target['is_valid']:
+        raise ValueError(f"Target DataFrame validation failed: {validation_target['errors']}")
+
+    validation_actual = validate_df(actual_df, required_columns=required_columns_actual, df_name="Actual DataFrame")
+    if not validation_actual['is_valid']:
+        raise ValueError(f"Actual DataFrame validation failed: {validation_actual['errors']}")
+
+    # 4. Process DataFrames
+    df, summary_data = process_compare_target_actual_logic(target_df, actual_df, config)
+
+    # 5. Package results
+    result_bundle = ResultBundle(
+        dataframe=df,
+        json=summary_data,
+        summary=summary_data
+    )
+
+    # 6. Return results
+    logger.info(f"Finished Compare Target Actual")
+    return result_bundle
+

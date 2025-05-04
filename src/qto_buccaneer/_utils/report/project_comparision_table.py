@@ -2,7 +2,7 @@ from typing import Optional
 import pandas as pd
 import openpyxl
 from openpyxl.utils import get_column_letter
-from qto_buccaneer.reports import ExcelLayoutConfig
+from qto_buccaneer.report import ExcelLayoutConfig
 import os
 
 def _create_project_comparison_df(df: pd.DataFrame, metrics: Optional[list[str]] = None) -> pd.DataFrame:

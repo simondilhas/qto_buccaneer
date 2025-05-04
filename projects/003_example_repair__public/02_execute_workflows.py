@@ -31,7 +31,7 @@ def process_building(building: dict) -> None:
     # Step 01: Repair the Model - Change Value
     #--------------------------------
     if building.get('repairs'):
-        from qto_buccaneer.repairs import apply_repairs
+        from qto_buccaneer.repair import apply_repairs
         repaired_ifc_path = apply_repairs(
             ifc_path_or_model=str(ifc_path),
             config=config,

@@ -10,7 +10,7 @@ import yaml
 import argparse
 from pathlib import Path
 from typing import Union, Optional
-from qto_buccaneer.scripts.building_summary import BuildingSummary
+from qto_buccaneer.utils.building_summary import BuildingSummary
 
 def get_project_root() -> Path:
     """Get the root directory of the project."""

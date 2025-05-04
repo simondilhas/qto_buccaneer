@@ -10,107 +10,74 @@ import concurrent.futures
 from dataclasses import dataclass
 from qto_buccaneer._utils._result_bundle import ResultBundle
 import yaml
+from qto_buccaneer.utils.ifc_loader import IfcLoader
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
-def ifc_metadata_extractor(ifc_file_path, output_dir=None):
-    """Extract metadata from an IFC file and optionally save to JSON and Excel.
-    
-    This function processes an IFC file to extract comprehensive metadata including:
-    - Element properties and attributes
-    - Classification data
-    - System assignments
-    - Parent-child relationships
-    - Material information
-    - Property sets and quantities
-    
-    The extracted data is organized into a structured format and can be optionally
-    saved to JSON and Excel files. The function returns a ResultBundle containing the data
-    in multiple formats (DataFrame, JSON, YAML).
 
+def _process_ifc_metadata_extractor(loader: IfcLoader) -> Tuple[pd.DataFrame, Dict, Dict]:
+    """Core processing logic for IFC metadata extraction.
+    
     Args:
-        ifc_file_path (str): Path to the IFC file to process
-        output_dir (str, optional): Directory where to save the output files. If None,
-            no files will be created. Defaults to None.
-
-    Returns:
-        ResultBundle: A bundle containing:
-            - dataframe: pandas DataFrame with all extracted metadata
-            - json: Dictionary containing the complete metadata structure
-            - folderpath: Path to the output directory (if output_dir was provided)
-            - summary: Summary statistics
-
-    Example:
-        >>> result = ifc_metadata_extractor("path/to/model.ifc", "output_dir")
-        >>> df = result.to_df()  # Get the DataFrame
-        >>> json_data = result.to_dict()  # Get the JSON data
-    """
-    TOOL_NAME = "extract_ifc_metadata"
-    logger.info(f"Starting {TOOL_NAME}")
-
-    # 1. Unpack input (no config, just file path)
-    ifc_file = ifcopenshell.open(ifc_file_path)
-    logger.info(f"Opening IFC file for metadata extraction: {ifc_file_path}")
-
-    # 2. No config extraction needed
-
-    # 3. No DataFrame validation needed (we build it)
-
-    # 4. Process logic
-    df, json_data, summary = _process_ifc_metadata_logic(ifc_file)
-
-    # 5. Package results
-    result_bundle = ResultBundle(
-        dataframe=df,
-        json=json_data,
-        folderpath=Path(output_dir) if output_dir else None,
-        summary=summary
-    )
-
-    # 6. Save results
-    if output_dir:
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
+        loader (IfcLoader): Loaded IFC model
         
-        # Define output filenames
-        json_path = output_dir / "metadata.json"
-        excel_path = output_dir / "metadata.xlsx"
-    
-        logger.info(f"Saving results to {output_dir}")
-        result_bundle.save_json(json_path)
-        result_bundle.save_excel(excel_path)
-
-
-    # 7. Return results
-    logger.info(f"Finished {TOOL_NAME}")
-    return result_bundle
-
-
-def _process_ifc_metadata_logic(ifc_file):
-    """
-    Core logic for extracting IFC metadata, returns DataFrame, JSON, and summary.
+    Returns:
+        Tuple[pd.DataFrame, Dict, Dict]: DataFrame with metadata, JSON data, and summary statistics
     """
     # Build basic mappings
-    globalid_to_id, all_elements = _build_element_id_mapping(ifc_file)
-    project = all_elements[0]  # First element is the project
+    globalid_to_id = {}
+    all_elements = []
+    project = loader.model.by_type("IfcProject")[0]
+    all_elements.append(project)
+
+    for el in loader.model.by_type("IfcProduct"):
+        if not el.is_a("IfcOpeningElement"):  # Skip openings
+            all_elements.append(el)
+
+    # Assign sequential IDs
+    for idx, el in enumerate(all_elements, start=1):
+        globalid_to_id[el.GlobalId] = idx
 
     # Extract classification and system data
-    classification_id_map, classification_data, next_id = _extract_classification_data(
-        ifc_file, all_elements, len(all_elements) + 1
-    )
-    system_id_map, system_data = _extract_system_data(ifc_file, all_elements, next_id)
+    classification_id_map = {}
+    classification_data = []
+    system_id_map = {}
+    system_data = []
+    next_id = len(all_elements) + 1
 
-    # Build element records
-    elements_data = classification_data + system_data
-    attribute_counts = {}  # Track attribute counts
+    # Process elements and build records
+    elements_data = []
+    attribute_counts = {}
     for idx, el in enumerate(all_elements, start=1):
-        record = _create_element_record(el, idx, globalid_to_id, {})
+        record = {
+            "id": idx,
+            "GlobalId": el.GlobalId,
+            "IfcEntity": el.is_a(),
+            "Classifications": [],
+            "Systems": []
+        }
 
-        # Count attributes
-        for key in record.keys():
-            if key not in ["id", "GlobalId", "IfcEntity", "Classifications", "Systems"]:
-                attribute_counts[key] = attribute_counts.get(key, 0) + 1
+        # Extract attributes
+        for attr in dir(el):
+            if (not attr.startswith('_') and 
+                not callable(getattr(el, attr)) and
+                attr not in [
+                    'ObjectPlacement', 
+                    'OwnerHistory', 
+                    'Representation',
+                    'RepresentationContexts',
+                    'UnitsInContext',
+                    'file',
+                    'IsDefinedBy',
+                    'HasAssociations',
+                    'IsDecomposedBy',
+                    'Decomposes'
+                ]):
+                value = getattr(el, attr, None)
+                if value is not None:
+                    record[attr] = value
+                    attribute_counts[attr] = attribute_counts.get(attr, 0) + 1
 
         # Add classification and system references
         if hasattr(el, "HasAssociations"):
@@ -118,13 +85,10 @@ def _process_ifc_metadata_logic(ifc_file):
                 if association.is_a("IfcRelAssociatesClassification"):
                     classification = association.RelatingClassification
                     classification_key = str(classification)
-                    if classification_key in classification_id_map:
-                        record["Classifications"].append(classification_id_map[classification_key])
-                elif association.is_a("IfcRelAssociatesLibrary"):
-                    library = association.RelatingLibrary
-                    library_key = str(library)
-                    if library_key in classification_id_map:
-                        record["Classifications"].append(classification_id_map[library_key])
+                    if classification_key not in classification_id_map:
+                        classification_id_map[classification_key] = next_id
+                        next_id += 1
+                    record["Classifications"].append(classification_id_map[classification_key])
 
         if hasattr(el, "HasAssignments"):
             for assignment in el.HasAssignments:
@@ -132,23 +96,12 @@ def _process_ifc_metadata_logic(ifc_file):
                     group = assignment.RelatingGroup
                     if group.is_a("IfcSystem"):
                         system_key = str(group)
-                        if system_key in system_id_map:
-                            record["Systems"].append(system_id_map[system_key])
-                elif assignment.is_a("IfcRelAssignsToProcess"):
-                    process = assignment.RelatingProcess
-                    system_key = str(process)
-                    if system_key in system_id_map:
-                        record["Systems"].append(system_id_map[system_key])
-                elif assignment.is_a("IfcRelAssignsToResource"):
-                    resource = assignment.RelatingResource
-                    system_key = str(resource)
-                    if system_key in system_id_map:
+                        if system_key not in system_id_map:
+                            system_id_map[system_key] = next_id
+                            next_id += 1
                         record["Systems"].append(system_id_map[system_key])
 
         elements_data.append(record)
-
-    # Create elements dictionary for JSON
-    elements_dict = {str(elem["id"]): elem for elem in elements_data}
 
     # Create summary statistics
     summary = {
@@ -161,8 +114,9 @@ def _process_ifc_metadata_logic(ifc_file):
         }
     }
 
+    # Create JSON data
     json_data = {
-        "elements": elements_dict,
+        "elements": {str(elem["id"]): elem for elem in elements_data},
         "summary": summary
     }
 
@@ -170,11 +124,6 @@ def _process_ifc_metadata_logic(ifc_file):
     df = pd.DataFrame(elements_data)
 
     return df, json_data, summary
-
-
-# Example usage:
-# df = extract_ifc_metadata("path/to/your.ifc", "output.json")
-
 
 def safe_instances_by_type(ifc_file, query):
     """
@@ -450,19 +399,17 @@ def _extract_metadata(product: Any) -> Dict[str, Any]:
     return _flatten_dict(metadata)
 
 
-def extract_metadata(ifc_file_path, output_dir=None, project_name=None):
+def extract_metadata(ifc_file_path, project_name=None, output_dir=None):
     """
     Extracts IFC metadata and saves it to the specified output formats.
     
     Args:
         ifc_file_path: Path to the IFC file
-        output_formats: List of desired output formats. Can include "json", "json_file", "dataframe"
-        output_dir: Directory to save output files (required if json_file is in output_formats)
         project_name: Name of the project (used for output filenames)
+        output_dir: Directory to save output files
         
     Returns:
-        Tuple containing only the requested outputs in order: (dataframe, json_data, json_path)
-        Only returns the values that were requested in output_formats
+        ResultBundle: A bundle containing the extracted metadata
     """        
     if not project_name:
         project_name = Path(ifc_file_path).stem
@@ -472,22 +419,22 @@ def extract_metadata(ifc_file_path, output_dir=None, project_name=None):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Extract metadata
-    result_bundle_metadata = extract_ifc_metadata(ifc_file_path)
+    # Extract metadata using the main extractor function
+    result_bundle_metadata = ifc_metadata_extractor(ifc_file_path=ifc_file_path, output_dir=output_dir)
     
     return result_bundle_metadata
 
 
-def _build_element_id_mapping(ifc_file):
+def _build_element_id_mapping(loader):
     """Build a mapping of GlobalId to sequential IDs for all elements."""
     globalid_to_id = {}
     all_elements = []
 
     # Get project and products
-    project = ifc_file.by_type("IfcProject")[0]
+    project = loader.model.by_type("IfcProject")[0]
     all_elements.append(project)
 
-    for el in ifc_file.by_type("IfcProduct"):
+    for el in loader.model.by_type("IfcProduct"):
         if not el.is_a("IfcOpeningElement"):  # Skip openings
             all_elements.append(el)
 

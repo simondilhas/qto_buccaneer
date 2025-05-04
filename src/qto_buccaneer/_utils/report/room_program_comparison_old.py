@@ -2,7 +2,7 @@ from typing import Optional
 import pandas as pd
 import openpyxl
 from openpyxl.utils import get_column_letter
-from qto_buccaneer.reports import ExcelLayoutConfig
+from qto_buccaneer.report import ExcelLayoutConfig
 import os
 
 

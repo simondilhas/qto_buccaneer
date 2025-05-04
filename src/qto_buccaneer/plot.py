@@ -4,8 +4,8 @@ from pathlib import Path
 import yaml
 from typing import Dict, List, Optional, Union
 
-from qto_buccaneer._utils.plots.floorplan import create_floorplan_per_storey
-from qto_buccaneer._utils.plots.three_d import create_3d_visualization
+from qto_buccaneer._utils.plot.floorplan import create_floorplan_per_storey
+from qto_buccaneer._utils.plot.three_d import create_3d_visualization
 
 def create_all_plots(
     geometry_dir: Union[str, Path],
