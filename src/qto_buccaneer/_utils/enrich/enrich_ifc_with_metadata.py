@@ -188,7 +188,7 @@ def _process_enrich_ifc_with_df_logic(
         try:
             element = new_ifc.by_guid(element_data['GlobalId'])
             
-            if element is not None and element.is_a('IfcSpace'):
+            if element is not None:
                 summary_data["enriched_elements"] += 1
                 
                 # Create or update property set
@@ -238,10 +238,7 @@ def _process_enrich_ifc_with_df_logic(
                         )
                         existing_pset.HasProperties = list(existing_pset.HasProperties) + [prop]
             else:
-                if element is None:
-                    summary_data["errors"].append(f"Element with GlobalId {element_data['GlobalId']} not found")
-                else:
-                    summary_data["errors"].append(f"Element with GlobalId {element_data['GlobalId']} is not an IfcSpace")
+                summary_data["errors"].append(f"Element with GlobalId {element_data['GlobalId']} not found")
         except Exception as e:
             summary_data["errors"].append(f"Error processing element {element_data['GlobalId']}: {str(e)}")
     
