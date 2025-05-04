@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from urllib.parse import urljoin
 from qto_buccaneer._utils.extract.extract_geometry_and_metadata_via_api import _upload_ifc_file, _validate_api_key
 from qto_buccaneer._utils._result_bundle import ResultBundle
-from qto_buccaneer._utils.extract.extract_metadata_from_ifc import _process_ifc_metadata_extractor
+from qto_buccaneer._utils.extract.extract_metadata_from_ifc import extract_metadata_from_ifc_privat
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 import ifcopenshell
 
@@ -93,41 +93,13 @@ def extract_metadata_from_ifc(
             - summary: Summary statistics
 
     Example:
-        >>> result = ifc_metadata_extractor("path/to/model.ifc")
+        >>> result = extract_metadata_from_ifc("path/to/model.ifc")
         >>> df = result.to_df()  # Get the DataFrame
         >>> json_data = result.to_dict()  # Get the JSON data
     """
-    TOOL_NAME = "extract_ifc_metadata"
-    logger.info(f"Starting {TOOL_NAME}")
 
-    if ifc_file_or_path is None:
-        raise ValueError("No IFC file or path provided")
-
-    # Convert Path to string if needed
-    if isinstance(ifc_file_or_path, Path):
-        ifc_file_or_path = str(ifc_file_or_path)
-
-    # 1. Load IFC file using IfcLoader
-    try:
-        loader = IfcLoader(ifc_file_or_path)
-        if not hasattr(loader, 'model'):
-            raise ValueError("Failed to load IFC file: loader.model is not available")
-    except Exception as e:
-        raise ValueError(f"Failed to load IFC file: {str(e)}")
-
-    logger.info("Processing IFC file for metadata extraction")
-
-    # 2. Process logic
-    df, json_data, summary = _process_ifc_metadata_extractor(loader)
-
-    # 3. Package results
-    result_bundle = ResultBundle(
-        dataframe=df,
-        json=json_data,
-        folderpath=None,
-        summary=summary
+    result_bundle = extract_metadata_from_ifc_privat(
+        ifc_file_or_path=ifc_file_or_path
     )
 
-    # 4. Return results
-    logger.info(f"Finished {TOOL_NAME}")
     return result_bundle

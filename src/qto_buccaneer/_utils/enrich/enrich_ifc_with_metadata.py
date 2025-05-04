@@ -5,7 +5,7 @@ import pandas as pd
 from pathlib import Path
 import logging
 from qto_buccaneer._utils._result_bundle import ResultBundle
-from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
+from qto_buccaneer._utils._general_tool_utils import unpack_dataframe
 
 
 logger = logging.getLogger(__name__)
@@ -32,25 +32,25 @@ class MetadataUpdateTracker:
         
         if '.' in property_path:
             pset_name, property_name = property_path.split('.')
-            if guid not in self.pset_updates:
-                self.pset_updates[guid] = {}
-            if pset_name not in self.pset_updates[guid]:
-                self.pset_updates[guid][pset_name] = {}
-            self.pset_updates[guid][pset_name][property_name] = new_value
+            if guid not in self.updates['pset_updates']:
+                self.updates['pset_updates'][guid] = {}
+            if pset_name not in self.updates['pset_updates'][guid]:
+                self.updates['pset_updates'][guid][pset_name] = {}
+            self.updates['pset_updates'][guid][pset_name][property_name] = new_value
             change['type'] = 'pset'
             change['pset_name'] = pset_name
             change['property_name'] = property_name
         else:
-            if guid not in self.property_updates:
-                self.property_updates[guid] = {}
-            self.property_updates[guid][property_path] = new_value
+            if guid not in self.updates['property_updates']:
+                self.updates['property_updates'][guid] = {}
+            self.updates['property_updates'][guid][property_path] = new_value
             change['type'] = 'property'
             
-        self.changes.append(change)
+        self.updates['changes'].append(change)
         
     def add_warning(self, message: str):
         """Add a warning message"""
-        self.warnings.append({
+        self.updates['warnings'].append({
             'message': message,
             'timestamp': pd.Timestamp.now().isoformat()
         })
@@ -58,17 +58,17 @@ class MetadataUpdateTracker:
     def get_summary(self) -> Dict[str, Any]:
         """Get a summary of all updates"""
         return {
-            'total_updates': len(self.changes),
+            'total_updates': len(self.updates['changes']),
             'updated_guids': list(self.updates['matched_guids']),
-            'failed_guids': [w['message'] for w in self.warnings if 'GUID' in w['message']],
-            'property_updates': sum(1 for c in self.changes if c['type'] == 'property'),
-            'pset_updates': sum(1 for c in self.changes if c['type'] == 'pset'),
-            'warnings': self.warnings
+            'failed_guids': [w['message'] for w in self.updates['warnings'] if 'GUID' in w['message']],
+            'property_updates': sum(1 for c in self.updates['changes'] if c['type'] == 'property'),
+            'pset_updates': sum(1 for c in self.updates['changes'] if c['type'] == 'pset'),
+            'warnings': self.updates['warnings']
         }
 
 def enrich_ifc_with_metadata(
     enrichment_data: pd.DataFrame,
-    metadata_data: Union[pd.DataFrame, ResultBundle],
+    metadata_data: ResultBundle,
     config: Dict[str, Any],
 ) -> ResultBundle:
     """
@@ -95,22 +95,39 @@ def enrich_ifc_with_metadata(
             - ifc_model: Updated IFC model
             - json: Summary of updates
     """
-    validate_config(config)
-
-    TOOL_NAME = config['tool_name']
+    TOOL_NAME = config["description"]
     logger.info(f"Starting {TOOL_NAME}")
 
     # 1. Unpack DataFrames
-    df = unpack_dataframe(enrichment_data)
-    metadata = unpack_dataframe(metadata_data)
+    df = enrichment_data
+    metadata = metadata_data.to_dict()
 
-    # 2. Extract required columns
-    required_columns = config['actual_columns']
+    print(metadata)
 
-    # 3. Validate DataFrame
-    validation = validate_df(df, required_columns=required_columns, df_name="Enrichment DataFrame")
-    if not validation['is_valid']:
-        raise ValueError(f"Validation failed: {validation['errors']}")
+    # Get the key column from config
+    key_column = config.get('key_column', 'Kürzel (LongName)')
+    
+    # Create mapping between key and GlobalId from metadata
+    key_to_globalid = {}
+    for element in metadata.values():
+        if isinstance(element, dict) and key_column in element and 'GlobalId' in element:
+            key_to_globalid[element[key_column]] = element['GlobalId']
+
+    # Log the mapping for debugging
+    logger.info(f"Created mapping for {len(key_to_globalid)} elements")
+    logger.info(f"Sample mapping: {dict(list(key_to_globalid.items())[:3])}")
+
+    # Add GlobalId to enrichment DataFrame using the mapping
+    if 'GlobalId' not in df.columns and key_column in df.columns:
+        df = df.copy()
+        df['GlobalId'] = df[key_column].map(key_to_globalid)
+        
+        # Check for missing mappings
+        missing_keys = df[df['GlobalId'].isna()][key_column].unique()
+        if len(missing_keys) > 0:
+            logger.warning(f"Could not find GlobalIds for these {key_column}s: {missing_keys}")
+            # Remove rows with missing GlobalIds
+            df = df.dropna(subset=['GlobalId'])
 
     # 4. Process DataFrame
     updated_ifc_model, summary_data = _process_enrich_ifc_with_metadata_logic(
@@ -152,30 +169,31 @@ def _process_enrich_ifc_with_metadata_logic(
         
         # Process each row in the enrichment data
         for _, row in df.iterrows():
-            guid = row['guid']
-            update_tracker.updates['matched_guids'].add(guid)
+            # Use GlobalId instead of guid
+            global_id = row['GlobalId']
+            update_tracker.updates['matched_guids'].add(global_id)
             
             try:
                 # Get IFC element
-                ifc_element = ifc_model.by_guid(guid)
+                ifc_element = ifc_model.by_guid(global_id)
                 if not ifc_element:
-                    update_tracker.add_warning(f"GUID {guid} not found in IFC model")
+                    update_tracker.add_warning(f"GlobalId {global_id} not found in IFC model")
                     continue
                 
                 # Find element in metadata by GlobalId
                 element_id = None
                 for id, element in metadata['elements'].items():
-                    if element.get('GlobalId') == guid:
+                    if element.get('GlobalId') == global_id:
                         element_id = id
                         break
                 
                 if not element_id:
-                    update_tracker.add_warning(f"GUID {guid} not found in metadata")
+                    update_tracker.add_warning(f"GlobalId {global_id} not found in metadata")
                     continue
                 
-                # Process each column (except guid)
+                # Process each column (except GlobalId)
                 for column in df.columns:
-                    if column == 'guid':
+                    if column == 'GlobalId':
                         continue
                         
                     new_value = row[column]
@@ -193,17 +211,17 @@ def _process_enrich_ifc_with_metadata_logic(
                         # Update IFC
                         _update_pset_property(ifc_element, pset_name, property_name, new_value)
                         # Track update
-                        update_tracker.add_update(guid, column, old_value, new_value)
+                        update_tracker.add_update(global_id, column, old_value, new_value)
                     else:
                         # Direct property update
                         metadata['elements'][element_id][column] = new_value
                         if hasattr(ifc_element, column):
                             setattr(ifc_element, column, new_value)
                             # Track update
-                            update_tracker.add_update(guid, column, old_value, new_value)
+                            update_tracker.add_update(global_id, column, old_value, new_value)
                     
             except Exception as e:
-                update_tracker.add_warning(f"Failed to process GUID {guid}: {str(e)}")
+                update_tracker.add_warning(f"Failed to process GlobalId {global_id}: {str(e)}")
                 continue
         
         # Prepare summary data

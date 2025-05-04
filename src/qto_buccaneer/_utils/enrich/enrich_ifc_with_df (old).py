@@ -1,5 +1,5 @@
 from qto_buccaneer.utils.ifc_loader import IfcLoader
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 import pandas as pd
 import ifcopenshell
 from pathlib import Path

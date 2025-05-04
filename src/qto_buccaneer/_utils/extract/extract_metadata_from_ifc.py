@@ -15,115 +15,83 @@ from qto_buccaneer.utils.ifc_loader import IfcLoader
 # Configure logging
 logger = logging.getLogger(__name__)
 
-
-def _process_ifc_metadata_extractor(loader: IfcLoader) -> Tuple[pd.DataFrame, Dict, Dict]:
-    """Core processing logic for IFC metadata extraction.
+def extract_metadata_from_ifc_privat(
+        ifc_file_or_path: Union[str, Path, ifcopenshell.file],
+    ) -> ResultBundle:
     
+    """Extract metadata from an IFC file.
+    
+    This function processes an IFC file to extract comprehensive metadata including:
+    - Element properties and attributes
+    - Classification data
+    - System assignments
+    - Parent-child relationships
+    - Material information
+    - Property sets and quantities
+    
+    The extracted data is organized into a structured format and returned in a ResultBundle.
+
     Args:
-        loader (IfcLoader): Loaded IFC model
-        
+        ifc_file_or_path (Union[str, Path, ifcopenshell.file]): Either a path to an IFC file or an already loaded IFC model
+
     Returns:
-        Tuple[pd.DataFrame, Dict, Dict]: DataFrame with metadata, JSON data, and summary statistics
+        ResultBundle: A bundle containing:
+            - dataframe: pandas DataFrame with all extracted metadata
+            - json: Dictionary containing the complete metadata structure
+            - summary: Summary statistics
+
+    Example:
+        >>> result = extract_metadata_from_ifc("path/to/model.ifc")
+        >>> df = result.to_df()  # Get the DataFrame
+        >>> json_data = result.to_dict()  # Get the JSON data
     """
-    # Build basic mappings
-    globalid_to_id = {}
-    all_elements = []
-    project = loader.model.by_type("IfcProject")[0]
-    all_elements.append(project)
+    TOOL_NAME = "extract_ifc_metadata"
+    logger.info(f"Starting {TOOL_NAME}")
 
-    for el in loader.model.by_type("IfcProduct"):
-        if not el.is_a("IfcOpeningElement"):  # Skip openings
-            all_elements.append(el)
+    if ifc_file_or_path is None:
+        raise ValueError("No IFC file or path provided")
 
-    # Assign sequential IDs
-    for idx, el in enumerate(all_elements, start=1):
-        globalid_to_id[el.GlobalId] = idx
+    # Convert Path to string if needed
+    if isinstance(ifc_file_or_path, Path):
+        ifc_file_or_path = str(ifc_file_or_path)
 
-    # Extract classification and system data
-    classification_id_map = {}
-    classification_data = []
-    system_id_map = {}
-    system_data = []
-    next_id = len(all_elements) + 1
+    # 1. Load IFC file using IfcLoader
+    try:
+        loader = IfcLoader(ifc_file_or_path)
+        if not hasattr(loader, 'model'):
+            raise ValueError("Failed to load IFC file: loader.model is not available")
+    except Exception as e:
+        raise ValueError(f"Failed to load IFC file: {str(e)}")
 
-    # Process elements and build records
-    elements_data = []
-    attribute_counts = {}
-    for idx, el in enumerate(all_elements, start=1):
-        record = {
-            "id": idx,
-            "GlobalId": el.GlobalId,
-            "IfcEntity": el.is_a(),
-            "Classifications": [],
-            "Systems": []
-        }
+    logger.info("Processing IFC file for metadata extraction")
 
-        # Extract attributes
-        for attr in dir(el):
-            if (not attr.startswith('_') and 
-                not callable(getattr(el, attr)) and
-                attr not in [
-                    'ObjectPlacement', 
-                    'OwnerHistory', 
-                    'Representation',
-                    'RepresentationContexts',
-                    'UnitsInContext',
-                    'file',
-                    'IsDefinedBy',
-                    'HasAssociations',
-                    'IsDecomposedBy',
-                    'Decomposes'
-                ]):
-                value = getattr(el, attr, None)
-                if value is not None:
-                    record[attr] = value
-                    attribute_counts[attr] = attribute_counts.get(attr, 0) + 1
+    # 2. Process logic
+    df, json_data, summary = extract_ifc_metadata(loader)
 
-        # Add classification and system references
-        if hasattr(el, "HasAssociations"):
-            for association in el.HasAssociations:
-                if association.is_a("IfcRelAssociatesClassification"):
-                    classification = association.RelatingClassification
-                    classification_key = str(classification)
-                    if classification_key not in classification_id_map:
-                        classification_id_map[classification_key] = next_id
-                        next_id += 1
-                    record["Classifications"].append(classification_id_map[classification_key])
+    # 3. Package results
+    result_bundle = ResultBundle(
+        dataframe=df,
+        json=json_data,
+        folderpath=None,
+        summary=summary
+    )
 
-        if hasattr(el, "HasAssignments"):
-            for assignment in el.HasAssignments:
-                if assignment.is_a("IfcRelAssignsToGroup"):
-                    group = assignment.RelatingGroup
-                    if group.is_a("IfcSystem"):
-                        system_key = str(group)
-                        if system_key not in system_id_map:
-                            system_id_map[system_key] = next_id
-                            next_id += 1
-                        record["Systems"].append(system_id_map[system_key])
+    # 4. Return results
+    logger.info(f"Finished {TOOL_NAME}")
+    return result_bundle
 
-        elements_data.append(record)
+import ifcopenshell
+import logging
+from typing import Dict, List, Any, Optional, Tuple, Union
+import pandas as pd
+import os
+from pathlib import Path
+import json
+import numpy as np
+import concurrent.futures
 
-    # Create summary statistics
-    summary = {
-        "extracted_ifc_metadata": {
-            "total_elements": len(all_elements),
-            "total_classifications": len(classification_data),
-            "total_systems": len(system_data),
-            "total_attributes": sum(attribute_counts.values()),
-            "total_unique_attributes": len(attribute_counts),
-        }
-    }
-
-    # Create JSON data
-    json_data = {
-        "elements": {str(elem["id"]): elem for elem in elements_data},
-        "summary": summary
-    }
-
-    # Create DataFrame
-    df = pd.DataFrame(elements_data)
-
-    return df, json_data, summary
+# Configure logging
+logger = logging.getLogger(__name__)
 
 def safe_instances_by_type(ifc_file, query):
     """
@@ -141,6 +109,7 @@ def safe_instances_by_type(ifc_file, query):
     Returns:
         List of matching instances, or empty list if not found or invalid input.
     """
+    import ifcopenshell
 
     try:
         if isinstance(query, ifcopenshell.entity_instance):
@@ -399,18 +368,23 @@ def _extract_metadata(product: Any) -> Dict[str, Any]:
     return _flatten_dict(metadata)
 
 
-def extract_metadata(ifc_file_path, project_name=None, output_dir=None):
+def extract_metadata(ifc_file_path, output_formats=["json", "json_file", "dataframe"], output_dir=None, project_name=None):
     """
     Extracts IFC metadata and saves it to the specified output formats.
     
     Args:
         ifc_file_path: Path to the IFC file
+        output_formats: List of desired output formats. Can include "json", "json_file", "dataframe"
+        output_dir: Directory to save output files (required if json_file is in output_formats)
         project_name: Name of the project (used for output filenames)
-        output_dir: Directory to save output files
         
     Returns:
-        ResultBundle: A bundle containing the extracted metadata
-    """        
+        Tuple containing only the requested outputs in order: (dataframe, json_data, json_path)
+        Only returns the values that were requested in output_formats
+    """
+    if "json_file" in output_formats and not output_dir:
+        raise ValueError("output_dir must be specified when json_file is requested")
+        
     if not project_name:
         project_name = Path(ifc_file_path).stem
 
@@ -419,22 +393,46 @@ def extract_metadata(ifc_file_path, project_name=None, output_dir=None):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Extract metadata using the main extractor function
-    result_bundle_metadata = ifc_metadata_extractor(ifc_file_path=ifc_file_path, output_dir=output_dir)
+    # Extract metadata
+    elements_data = extract_ifc_metadata(ifc_file_path)
+
+    # Prepare return values
+    return_values = []
+
+    # Create elements dictionary for JSON
+    elements_dict = {str(elem["id"]): elem for elem in elements_data}
+    json_data = {"elements": elements_dict}
+
+    # Handle requested formats in order
+    if "dataframe" in output_formats:
+        # Convert to DataFrame only if requested
+        df = pd.DataFrame(elements_data)
+        return_values.append(df)
     
-    return result_bundle_metadata
+    if "json" in output_formats:
+        return_values.append(json_data)
+    
+    if "json_file" in output_formats:
+        json_path = output_dir / f"{project_name}_metadata.json"
+        with open(json_path, 'w') as f:
+            json.dump(json_data, f, indent=2, ensure_ascii=False)
+        logger.info(f"Metadata saved to {json_path}")
+        return_values.append(str(json_path))
+
+    # Return only the requested values
+    return tuple(return_values)
 
 
-def _build_element_id_mapping(loader):
+def _build_element_id_mapping(ifc_file):
     """Build a mapping of GlobalId to sequential IDs for all elements."""
     globalid_to_id = {}
     all_elements = []
 
     # Get project and products
-    project = loader.model.by_type("IfcProject")[0]
+    project = ifc_file.by_type("IfcProject")[0]
     all_elements.append(project)
 
-    for el in loader.model.by_type("IfcProduct"):
+    for el in ifc_file.by_type("IfcProduct"):
         if not el.is_a("IfcOpeningElement"):  # Skip openings
             all_elements.append(el)
 
@@ -444,15 +442,188 @@ def _build_element_id_mapping(loader):
 
     return globalid_to_id, all_elements
 
+def _build_parent_child_mapping(ifc_file, project, globalid_to_id):
+    """Build a mapping of child GlobalIds to their parent GlobalIds."""
+    child_to_parent = {}
+
+    # Project is root, sites point to it
+    for site in ifc_file.by_type("IfcSite"):
+        child_to_parent[site.GlobalId] = project.GlobalId
+
+    # Handle aggregation relationships
+    for rel in ifc_file.by_type("IfcRelAggregates"):
+        if rel.RelatedObjects:
+            parent = rel.RelatingObject
+            for child in rel.RelatedObjects:
+                child_to_parent[child.GlobalId] = parent.GlobalId
+
+    # Handle spatial containment relationships
+    for rel in ifc_file.by_type("IfcRelContainedInSpatialStructure"):
+        if rel.RelatedElements:
+            parent = rel.RelatingStructure
+            for child in rel.RelatedElements:
+                if child.GlobalId not in child_to_parent:  # Prefer aggregation relationships
+                    child_to_parent[child.GlobalId] = parent.GlobalId
+
+    return child_to_parent
+
+def _extract_classification_data(ifc_file, all_elements, start_id):
+    """Extract classification data and build ID mappings."""
+    classification_id_map = {}
+    elements_data = []
+    counter = start_id
+
+    for el in all_elements:
+        if hasattr(el, "HasAssociations"):
+            for association in el.HasAssociations:
+                if association.is_a("IfcRelAssociatesClassification"):
+                    classification = association.RelatingClassification
+                    classification_key = str(classification)
+                    if classification_key not in classification_id_map:
+                        classification_data = _create_classification_record(classification, counter)
+                        elements_data.append(classification_data)
+                        classification_id_map[classification_key] = counter
+                        counter += 1
+                elif association.is_a("IfcRelAssociatesLibrary"):
+                    library = association.RelatingLibrary
+                    library_key = str(library)
+                    if library_key not in classification_id_map:
+                        library_data = _create_library_record(library, counter)
+                        elements_data.append(library_data)
+                        classification_id_map[library_key] = counter
+                        counter += 1
+
+    return classification_id_map, elements_data, counter
+
+def _create_classification_record(classification, id):
+    """Create a record for a classification entity."""
+    if classification.is_a("IfcClassificationReference"):
+        return {
+            "id": id,
+            "parent_id": None,
+            "GlobalId": getattr(classification, "GlobalId", None),
+            "IfcEntity": "IfcClassificationReference",
+            "Name": str(getattr(classification, "Name", "")),
+            "Description": str(getattr(classification, "Description", "")),
+            "Location": str(getattr(classification, "Location", "")),
+            "ItemReference": str(getattr(classification, "ItemReference", "")),
+            "ReferencedSource": str(getattr(classification, "ReferencedSource", ""))
+        }
+    else:
+        return {
+            "id": id,
+            "parent_id": None,
+            "GlobalId": getattr(classification, "GlobalId", None),
+            "IfcEntity": "IfcClassification",
+            "Name": str(getattr(classification, "Name", "")),
+            "Description": str(getattr(classification, "Description", "")),
+            "Location": str(getattr(classification, "Location", "")),
+            "Edition": str(getattr(classification, "Edition", "")),
+            "EditionDate": str(getattr(classification, "EditionDate", ""))
+        }
+
+def _create_library_record(library, id):
+    """Create a record for a library reference entity."""
+    return {
+        "id": id,
+        "parent_id": None,
+        "GlobalId": getattr(library, "GlobalId", None),
+        "IfcEntity": "IfcLibraryReference",
+        "Name": str(getattr(library, "Name", "")),
+        "Description": str(getattr(library, "Description", "")),
+        "Version": str(getattr(library, "Version", "")),
+        "VersionDate": str(getattr(library, "VersionDate", ""))
+    }
+
+def _extract_system_data(ifc_file, all_elements, start_id):
+    """Extract system data and build ID mappings."""
+    system_id_map = {}
+    elements_data = []
+    counter = start_id
+
+    for el in all_elements:
+        if hasattr(el, "HasAssignments"):
+            for assignment in el.HasAssignments:
+                if assignment.is_a("IfcRelAssignsToGroup"):
+                    group = assignment.RelatingGroup
+                    if group.is_a("IfcSystem"):
+                        system_key = str(group)
+                        if system_key not in system_id_map:
+                            system_data = _create_system_record(group, counter, "System")
+                            elements_data.append(system_data)
+                            system_id_map[system_key] = counter
+                            counter += 1
+                elif assignment.is_a("IfcRelAssignsToProcess"):
+                    process = assignment.RelatingProcess
+                    system_key = str(process)
+                    if system_key not in system_id_map:
+                        system_data = _create_system_record(process, counter, "Process")
+                        elements_data.append(system_data)
+                        system_id_map[system_key] = counter
+                        counter += 1
+                elif assignment.is_a("IfcRelAssignsToResource"):
+                    resource = assignment.RelatingResource
+                    system_key = str(resource)
+                    if system_key not in system_id_map:
+                        system_data = _create_system_record(resource, counter, "Resource")
+                        elements_data.append(system_data)
+                        system_id_map[system_key] = counter
+                        counter += 1
+
+    return system_id_map, elements_data
+
+def _create_system_record(entity, id, type):
+    """Create a record for a system entity."""
+    return {
+        "id": id,
+        "parent_id": None,
+        "GlobalId": getattr(entity, "GlobalId", None),
+        "IfcEntity": entity.is_a(),
+        "Name": str(getattr(entity, "Name", "")),
+        "Description": str(getattr(entity, "Description", "")),
+        "ObjectType": str(getattr(entity, "ObjectType", "")),
+        "Type": type
+    }
+
+def _extract_quantities(el):
+    """Extract quantities from an IFC element."""
+    quantities = {}
+    if hasattr(el, "IsDefinedBy"):
+        for rel_def in el.IsDefinedBy:
+            if rel_def.is_a("IfcRelDefinesByProperties"):
+                prop_def = rel_def.RelatingPropertyDefinition
+                if prop_def.is_a("IfcElementQuantity"):
+                    qset_name = prop_def.Name
+                    for quantity in prop_def.Quantities:
+                        if hasattr(quantity, "LengthValue"):
+                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.LengthValue
+                        elif hasattr(quantity, "AreaValue"):
+                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.AreaValue
+                        elif hasattr(quantity, "VolumeValue"):
+                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.VolumeValue
+                        elif hasattr(quantity, "CountValue"):
+                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.CountValue
+                        elif hasattr(quantity, "WeightValue"):
+                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.WeightValue
+                        elif hasattr(quantity, "TimeValue"):
+                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.TimeValue
+    return quantities
+
 def _create_element_record(el, idx, globalid_to_id, child_to_parent):
     """Create a record for an IFC element."""
     record = {
         "id": idx,
+        "parent_id": None,
         "GlobalId": el.GlobalId,
         "IfcEntity": el.is_a(),
         "Classifications": [],
         "Systems": []
     }
+
+    # Set parent ID if exists
+    parent_gid = child_to_parent.get(el.GlobalId)
+    if parent_gid:
+        record["parent_id"] = globalid_to_id.get(parent_gid)
 
     # Extract attributes
     record.update(_extract_attributes(el))
@@ -621,145 +792,100 @@ def _extract_property_sets(el):
 
     return properties
 
-def _extract_quantities(el):
-    """Extract quantities from an IFC element."""
-    quantities = {}
-    if hasattr(el, "IsDefinedBy"):
-        for rel_def in el.IsDefinedBy:
-            if rel_def.is_a("IfcRelDefinesByProperties"):
-                prop_def = rel_def.RelatingPropertyDefinition
-                if prop_def.is_a("IfcElementQuantity"):
-                    qset_name = prop_def.Name
-                    for quantity in prop_def.Quantities:
-                        if hasattr(quantity, "LengthValue"):
-                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.LengthValue
-                        elif hasattr(quantity, "AreaValue"):
-                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.AreaValue
-                        elif hasattr(quantity, "VolumeValue"):
-                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.VolumeValue
-                        elif hasattr(quantity, "CountValue"):
-                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.CountValue
-                        elif hasattr(quantity, "WeightValue"):
-                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.WeightValue
-                        elif hasattr(quantity, "TimeValue"):
-                            quantities[f"{qset_name}.{quantity.Name}"] = quantity.TimeValue
-    return quantities
+def _save_to_json(elements_data, output_json_path):
+    """Save elements data to a JSON file."""
+    if output_json_path:
+        os.makedirs(os.path.dirname(output_json_path), exist_ok=True)
+        json_data = {
+            "elements": {str(elem["id"]): elem for elem in elements_data}
+        }
+        with open(output_json_path, 'w') as f:
+            json.dump(json_data, f, indent=2, ensure_ascii=False)
+        logger.info(f"Metadata saved to {output_json_path}")
 
-def _extract_classification_data(ifc_file, all_elements, start_id):
-    """Extract classification data and build ID mappings."""
-    classification_id_map = {}
-    elements_data = []
-    counter = start_id
+def extract_ifc_metadata(loader: IfcLoader) -> Tuple[pd.DataFrame, Dict, Dict]:
+    """Extract metadata from an IFC file and return a tuple of (dataframe, json_data, summary).
+    
+    Args:
+        loader (IfcLoader): An IfcLoader instance containing the loaded IFC model
+        
+    Returns:
+        Tuple[pd.DataFrame, Dict, Dict]: A tuple containing:
+            - dataframe: pandas DataFrame with all extracted metadata
+            - json_data: Dictionary containing the complete metadata structure
+            - summary: Summary statistics
+    """
+    ifc_file = loader.model
+    logger.info("Processing IFC file for metadata extraction")
 
-    for el in all_elements:
+    # Build basic mappings
+    globalid_to_id, all_elements = _build_element_id_mapping(ifc_file)
+    project = all_elements[0]  # First element is the project
+    child_to_parent = _build_parent_child_mapping(ifc_file, project, globalid_to_id)
+
+    # Extract classification and system data
+    classification_id_map, classification_data, next_id = _extract_classification_data(
+        ifc_file, all_elements, len(all_elements) + 1
+    )
+    system_id_map, system_data = _extract_system_data(ifc_file, all_elements, next_id)
+
+    # Build element records
+    elements_data = classification_data + system_data
+    for idx, el in enumerate(all_elements, start=1):
+        record = _create_element_record(el, idx, globalid_to_id, child_to_parent)
+        
+        # Add classification and system references
         if hasattr(el, "HasAssociations"):
             for association in el.HasAssociations:
                 if association.is_a("IfcRelAssociatesClassification"):
                     classification = association.RelatingClassification
                     classification_key = str(classification)
-                    if classification_key not in classification_id_map:
-                        classification_data = _create_classification_record(classification, counter)
-                        elements_data.append(classification_data)
-                        classification_id_map[classification_key] = counter
-                        counter += 1
+                    if classification_key in classification_id_map:
+                        record["Classifications"].append(classification_id_map[classification_key])
                 elif association.is_a("IfcRelAssociatesLibrary"):
                     library = association.RelatingLibrary
                     library_key = str(library)
-                    if library_key not in classification_id_map:
-                        library_data = _create_library_record(library, counter)
-                        elements_data.append(library_data)
-                        classification_id_map[library_key] = counter
-                        counter += 1
+                    if library_key in classification_id_map:
+                        record["Classifications"].append(classification_id_map[library_key])
 
-    return classification_id_map, elements_data, counter
-
-def _create_classification_record(classification, id):
-    """Create a record for a classification entity."""
-    if classification.is_a("IfcClassificationReference"):
-        return {
-            "id": id,
-            "parent_id": None,
-            "GlobalId": getattr(classification, "GlobalId", None),
-            "IfcEntity": "IfcClassificationReference",
-            "Name": str(getattr(classification, "Name", "")),
-            "Description": str(getattr(classification, "Description", "")),
-            "Location": str(getattr(classification, "Location", "")),
-            "ItemReference": str(getattr(classification, "ItemReference", "")),
-            "ReferencedSource": str(getattr(classification, "ReferencedSource", ""))
-        }
-    else:
-        return {
-            "id": id,
-            "parent_id": None,
-            "GlobalId": getattr(classification, "GlobalId", None),
-            "IfcEntity": "IfcClassification",
-            "Name": str(getattr(classification, "Name", "")),
-            "Description": str(getattr(classification, "Description", "")),
-            "Location": str(getattr(classification, "Location", "")),
-            "Edition": str(getattr(classification, "Edition", "")),
-            "EditionDate": str(getattr(classification, "EditionDate", ""))
-        }
-
-def _create_library_record(library, id):
-    """Create a record for a library reference entity."""
-    return {
-        "id": id,
-        "parent_id": None,
-        "GlobalId": getattr(library, "GlobalId", None),
-        "IfcEntity": "IfcLibraryReference",
-        "Name": str(getattr(library, "Name", "")),
-        "Description": str(getattr(library, "Description", "")),
-        "Version": str(getattr(library, "Version", "")),
-        "VersionDate": str(getattr(library, "VersionDate", ""))
-    }
-
-def _extract_system_data(ifc_file, all_elements, start_id):
-    """Extract system data and build ID mappings."""
-    system_id_map = {}
-    elements_data = []
-    counter = start_id
-
-    for el in all_elements:
         if hasattr(el, "HasAssignments"):
             for assignment in el.HasAssignments:
                 if assignment.is_a("IfcRelAssignsToGroup"):
                     group = assignment.RelatingGroup
                     if group.is_a("IfcSystem"):
                         system_key = str(group)
-                        if system_key not in system_id_map:
-                            system_data = _create_system_record(group, counter, "System")
-                            elements_data.append(system_data)
-                            system_id_map[system_key] = counter
-                            counter += 1
+                        if system_key in system_id_map:
+                            record["Systems"].append(system_id_map[system_key])
                 elif assignment.is_a("IfcRelAssignsToProcess"):
                     process = assignment.RelatingProcess
                     system_key = str(process)
-                    if system_key not in system_id_map:
-                        system_data = _create_system_record(process, counter, "Process")
-                        elements_data.append(system_data)
-                        system_id_map[system_key] = counter
-                        counter += 1
+                    if system_key in system_id_map:
+                        record["Systems"].append(system_id_map[system_key])
                 elif assignment.is_a("IfcRelAssignsToResource"):
                     resource = assignment.RelatingResource
                     system_key = str(resource)
-                    if system_key not in system_id_map:
-                        system_data = _create_system_record(resource, counter, "Resource")
-                        elements_data.append(system_data)
-                        system_id_map[system_key] = counter
-                        counter += 1
+                    if system_key in system_id_map:
+                        record["Systems"].append(system_id_map[system_key])
 
-    return system_id_map, elements_data
+        elements_data.append(record)
 
-def _create_system_record(entity, id, type):
-    """Create a record for a system entity."""
-    return {
-        "id": id,
-        "parent_id": None,
-        "GlobalId": getattr(entity, "GlobalId", None),
-        "IfcEntity": entity.is_a(),
-        "Name": str(getattr(entity, "Name", "")),
-        "Description": str(getattr(entity, "Description", "")),
-        "ObjectType": str(getattr(entity, "ObjectType", "")),
-        "Type": type
+    # Create elements dictionary for JSON
+    elements_dict = {str(elem["id"]): elem for elem in elements_data}
+    json_data = {"elements": elements_dict}
+
+    # Convert to DataFrame
+    df = pd.DataFrame(elements_data)
+
+    # Create summary statistics
+    summary = {
+        "total_elements": len(elements_data),
+        "element_types": df["IfcEntity"].value_counts().to_dict(),
+        "total_classifications": len(classification_data),
+        "total_systems": len(system_data)
     }
 
+    return df, json_data, summary
+
+
+# Example usage:
+# df = extract_ifc_metadata("path/to/your.ifc", "output.json")

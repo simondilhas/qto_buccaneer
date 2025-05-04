@@ -290,44 +290,42 @@ def process_compare_target_actual_logic(
 ) -> tuple[pd.DataFrame, Dict[str, Any]]:
     """Core data processing logic for the tool"""
     try:
-        # Try to get configuration from the new format first
-        if 'config' in config:
-            check_config = config['config']
-            target_key = check_config['keys']['target']
-            actual_key = check_config['keys']['actual']
-            filter_str = check_config.get('filter', '')
+        # Get configuration from the config
+        # The config is nested under 'config' key
+        check_config = config.get('config', {})
+        if not check_config:
+            raise ValueError("No 'config' section found in the check configuration")
             
-            # Log available columns for debugging
-            logger.info(f"Target DataFrame columns: {target_df.columns.tolist()}")
-            logger.info(f"Actual DataFrame columns: {actual_df.columns.tolist()}")
-            logger.info(f"Looking for target key: {target_key}")
-            logger.info(f"Looking for actual key: {actual_key}")
-            
-            # Verify column existence before proceeding
-            if target_key not in target_df.columns:
-                raise ValueError(f"Target key '{target_key}' not found in target DataFrame. Available columns: {target_df.columns.tolist()}")
-            if actual_key not in actual_df.columns:
-                raise ValueError(f"Actual key '{actual_key}' not found in actual DataFrame. Available columns: {actual_df.columns.tolist()}")
-            
-            # Get return values from the new structure
-            return_values = []
-            if 'return_values' in check_config:
-                if 'target' in check_config['return_values']:
-                    return_values.extend([f"{col}_target" for col in check_config['return_values']['target']])
-                if 'actual' in check_config['return_values']:
-                    return_values.extend([f"{col}_actual" for col in check_config['return_values']['actual']])
-        else:
-            # Fall back to the old format
-            target_key = config.get('key_target_column', 'LongName')
-            actual_key = config.get('key_actual_column', 'LongName')
-            filter_str = config.get('filter', '')
-            
-            # Get return values from the old structure
-            return_values = []
-            if 'return_values_target' in config:
-                return_values.extend([f"{col}_target" for col in config['return_values_target']])
-            if 'return_values_actual' in config:
-                return_values.extend([f"{col}_actual" for col in config['return_values_actual']])
+        target_key = check_config['keys']['target']
+        actual_key = check_config['keys']['actual']
+        filter_str = check_config.get('filter', '')
+        
+        # Log available columns for debugging
+        logger.info(f"Target DataFrame columns: {target_df.columns.tolist()}")
+        logger.info(f"Actual DataFrame columns: {actual_df.columns.tolist()}")
+        logger.info(f"Looking for target key: {target_key}")
+        logger.info(f"Looking for actual key: {actual_key}")
+        
+        # Verify column existence before proceeding
+        if target_key not in target_df.columns:
+            raise ValueError(f"Target key '{target_key}' not found in target DataFrame. Available columns: {target_df.columns.tolist()}")
+        if actual_key not in actual_df.columns:
+            raise ValueError(f"Actual key '{actual_key}' not found in actual DataFrame. Available columns: {actual_df.columns.tolist()}")
+        
+        # Get return values from the config
+        return_values = []
+        if 'return_values' in check_config:
+            if 'target' in check_config['return_values']:
+                return_values.extend([f"{col}_target" for col in check_config['return_values']['target']])
+            if 'actual' in check_config['return_values']:
+                # Map 'guid' to 'GlobalId' in return values if needed
+                actual_return_values = []
+                for col in check_config['return_values']['actual']:
+                    if col == 'guid':
+                        actual_return_values.append('GlobalId')
+                    else:
+                        actual_return_values.append(col)
+                return_values.extend([f"{col}_actual" for col in actual_return_values])
         
         # Add calculated columns to return values
         calculated_columns = ['status']  # Always include status
@@ -389,17 +387,25 @@ def process_compare_target_actual_logic(
             axis=1
         )
         
-        # Create ComparisonResult object
+        # Filter the merged DataFrame to only include the requested return values
+        # First, ensure all requested columns exist
+        available_columns = merged_df.columns.tolist()
+        valid_return_values = [col for col in return_values if col in available_columns]
+        if valid_return_values != return_values:
+            missing_columns = set(return_values) - set(valid_return_values)
+            logger.warning(f"Some return values not found in DataFrame: {missing_columns}")
+        
+        # Create ComparisonResult object with filtered DataFrame
         comparison = ComparisonResult(
-            merged_df=merged_df,
-            return_values=return_values,
+            merged_df=merged_df[valid_return_values],
+            return_values=valid_return_values,
             comparison_type="name"
         )
         
         # Get ResultBundle
         result_bundle = comparison.to_result_bundle()
         
-        return merged_df, result_bundle.summary
+        return merged_df[valid_return_values], result_bundle.summary
         
     except Exception as e:
         logger.exception(f"Processing failed in compare_target_actual")
