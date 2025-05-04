@@ -6,7 +6,7 @@ from typing import Dict, Any, List, Optional, Union
 from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urljoin
-from qto_buccaneer._utils.extract.extract_geometry_and_metadata_via_api import _upload_ifc_file, _validate_api_key
+from qto_buccaneer._utils.extract.extract_geometry_and_metadata_via_api import calculate_geometry_json_via_api_internal
 from qto_buccaneer._utils._result_bundle import ResultBundle
 from qto_buccaneer._utils.extract.extract_metadata_from_ifc import extract_metadata_from_ifc_privat
 from qto_buccaneer.utils.ifc_loader import IfcLoader
@@ -23,8 +23,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 def extract_geometry_and_metadata_via_api(
-    ifc_path: str,
-    output_dir: str
+    ifc_file: Union[str, Path, ifcopenshell.file, ResultBundle],
 ) -> ResultBundle:
     """
     This module sends IFC geometry to an external FastAPI service 
@@ -44,28 +43,11 @@ def extract_geometry_and_metadata_via_api(
     Returns:
         ResultBundle: A ResultBundle containing the geometry data and metadata
     """
-    try:
-        # Validate API key
-        _validate_api_key()
-        
-        # Create output directory if it doesn't exist
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Upload IFC file and get geometry data
-        result_bundle = _upload_ifc_file(
-            file_path=ifc_path,
-            output_dir=output_dir,
-            include_geometry=True,
-            include_metadata=True,
-            debug=True
-        )
-            
-        logger.info(f"Geometry JSON files generated in directory: {output_dir}")
-        return result_bundle
-        
-    except Exception as e:
-        logger.error(f"Error in calculate_geometry_json: {str(e)}", exc_info=True)
-        raise
+    result_bundle = calculate_geometry_json_via_api_internal(
+        ifc_file=ifc_file
+    )
+    return result_bundle
+    
 
 def extract_metadata_from_ifc(
         ifc_file_or_path: Union[str, Path, ifcopenshell.file],

@@ -3,6 +3,10 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 import pandas as pd
 import json, yaml
+import zipfile
+import os
+import ifcopenshell
+import io
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder that can handle entity_instance objects."""
@@ -45,6 +49,8 @@ class ResultBundle:
         get_summary_dict: Get the summary as a dictionary
         get_ifc: Get the IFC model if available
         save_ifc: Save the IFC model to a file if available
+        get_geometry: Get the geometry data for a specific entity type
+        save_geometry: Save the geometry data for a specific entity type to a file
     """
     dataframe: Optional[pd.DataFrame]
     json: Optional[Dict[str, Any]] = None
@@ -280,4 +286,51 @@ class ResultBundle:
         path.parent.mkdir(parents=True, exist_ok=True)
         
         self.ifc_model.write(str(path))
+        return path
+
+    def get_geometry(self, entity_type: str) -> Optional[Dict[str, Any]]:
+        """Get the geometry data for a specific entity type.
+        
+        Args:
+            entity_type: The type of entity to get geometry for
+            
+        Returns:
+            Optional[Dict[str, Any]]: The geometry data if available, None otherwise
+            
+        Note:
+            The geometry data is stored in the json attribute with the entity type as the key.
+            If the entity type is not found, this method will return None.
+        """
+        if self.json is None:
+            return None
+        return self.json.get(entity_type)
+
+    def save_geometry(self, path: Union[str, Path]) -> Path:
+        """Extract geometry zip file to a directory.
+        
+        Args:
+            path: String or Path object specifying where to extract the geometry files.
+                 If relative, will be extracted relative to folderpath if set.
+            
+        Returns:
+            Path: The path where the files were extracted
+            
+        Note:
+            Creates parent directories if they don't exist
+        """
+        if self.json is None or "zip_content" not in self.json:
+            raise ValueError("No geometry zip content available")
+
+        path = Path(path)
+        if not path.is_absolute() and self.folderpath is not None:
+            path = self.folderpath / path
+        path.mkdir(parents=True, exist_ok=True)
+        
+        # Create a BytesIO object from the zip content
+        zip_buffer = io.BytesIO(self.json["zip_content"])
+        
+        # Extract all files from the zip
+        with zipfile.ZipFile(zip_buffer, 'r') as zip_file:
+            zip_file.extractall(path)
+        
         return path
