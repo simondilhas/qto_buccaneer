@@ -1,8 +1,6 @@
 import pandas as pd
 import re
 from typing import Dict, Any, Literal
-import time
-import json
 
 class MetadataFilter:
     """Filter structured metadata based on criteria.
@@ -125,6 +123,13 @@ class MetadataFilter:
         for part in parts:
             part = part.strip()
             
+            # Handle max() in filter
+            if 'max(' in part and ')' in part:
+                # Extract the property name from max(property)
+                prop_name = part[part.find('max(')+4:part.find(')')]
+                filters[prop_name] = [('max', None)]
+                continue
+                
             # Handle OR conditions in parentheses
             if part.startswith('(') and part.endswith(')'):
                 inner_parts = part[1:-1].split(' OR ')
@@ -213,8 +218,12 @@ class MetadataFilter:
                 raise KeyError(f"Column '{key}' not found in DataFrame. Available columns: {sorted(df.columns.tolist())}")
                 
             if isinstance(value, list):
-                if value and isinstance(value[0], tuple):  # Comparison operator
+                if value and isinstance(value[0], tuple):
                     op, val = value[0]
+                    if op == 'max':
+                        # For max() filter, we don't filter the DataFrame
+                        # We'll handle this in calculate_metric
+                        continue
                     mask = df[key].apply(lambda x: MetadataFilter._compare_values(x, op, val))
                 else:  # List of values
                     mask = df[key].isin(value)
@@ -223,21 +232,20 @@ class MetadataFilter:
             masks.append(mask)
             
         if logic == "AND":
-            final_mask = pd.concat(masks, axis=1).all(axis=1)
+            final_mask = pd.concat(masks, axis=1).all(axis=1) if masks else pd.Series(True, index=df.index)
         else:  # OR
-            final_mask = pd.concat(masks, axis=1).any(axis=1)
+            final_mask = pd.concat(masks, axis=1).any(axis=1) if masks else pd.Series(True, index=df.index)
             
         return df[final_mask]
 
     @staticmethod
-    def calculate_metric(df: pd.DataFrame, metric_config: dict, building_name: str) -> pd.DataFrame:
+    def calculate_metric(df: pd.DataFrame, metric_config: dict, building_name: str, previous_results: dict = None) -> pd.DataFrame:
         """Calculate a metric based on the provided configuration."""
-        start_time = time.time()
-        
         if 'config' in metric_config:
             config = metric_config['config']
+            formula = config['formula']
             
-            # If formula contains components, calculate each component
+            # Handle formulas with components
             if 'components' in config:
                 component_values = {}
                 for component_name, component_config in config['components'].items():
@@ -252,20 +260,41 @@ class MetadataFilter:
                     base_quantity = component_config['base_quantity']
                     pset_name, prop_name = base_quantity.split('.')
                     
-                    # Calculate the component value
-                    component_values[component_name] = filtered_df[prop_name].sum()
+                    # Check if we need to calculate max
+                    if any(v == [('max', None)] for v in filters.values()):
+                        # Convert values to float before calculating max
+                        values = pd.to_numeric(filtered_df[prop_name], errors='coerce')
+                        value = values.max() if len(values) > 0 else 0
+                    else:
+                        # Convert values to float before calculating sum
+                        values = pd.to_numeric(filtered_df[prop_name], errors='coerce')
+                        value = values.sum() if len(values) > 0 else 0
+                    
+                    component_values[component_name] = value
                 
-                # Evaluate the formula using component values
+                # Evaluate the formula
                 try:
-                    formula = config['formula']
-                    # Replace component names with their values
-                    for name, value in component_values.items():
-                        formula = formula.replace(name, str(value))
-                    value = eval(formula)
+                    # If formula is just a component name, use its value directly
+                    if formula in component_values:
+                        value = component_values[formula]
+                    else:
+                        # Try to convert formula to float if it's a number
+                        try:
+                            value = float(formula)
+                        except ValueError:
+                            # If not a number, evaluate as a formula
+                            formula_to_eval = formula
+                            for name, val in component_values.items():
+                                formula_to_eval = formula_to_eval.replace(name, str(val))
+                            if previous_results:
+                                for name, val in previous_results.items():
+                                    formula_to_eval = formula_to_eval.replace(name, str(val))
+                            value = eval(formula_to_eval)
                 except Exception as e:
                     raise ValueError(f"Error evaluating formula '{formula}': {str(e)}")
+            
+            # Handle simple calculation without components
             else:
-                # Original simple calculation
                 filter_str = config['filter']
                 filters = MetadataFilter._parse_filter_expression(filter_str)
                 filtered_df = MetadataFilter.filter_df(df, filters)
@@ -273,15 +302,12 @@ class MetadataFilter:
             
             # Create result DataFrame
             result = pd.DataFrame({
-                'metric_name': [metric_config['name']],
-                'value': [value],
-                'unit': [config['unit']],
-                'success': [True],
-                'calculation_time': [time.time() - start_time],
-                'building': [building_name],
-                'description': [metric_config['description']],
-                'formula': [config['formula']],
-                'components': [json.dumps(config.get('components', {}), indent=2)]  # Convert components to JSON string
+                'Building': [building_name],
+                'Metric': [metric_config['name']],
+                'Value': [value],
+                'Unit': [config['unit']],
+                'Description': [metric_config['description']],
+                'Components': [str(config.get('components', {}))]
             })
             
         else:
@@ -307,17 +333,14 @@ class MetadataFilter:
             
             # Create result DataFrame
             result = pd.DataFrame({
-                'metric_name': [metric_config.get('name', metric_config['description'])],
-                'value': [value],
-                'unit': ['m2' if metric_config['quantity_type'] == 'area' else 
+                'Building': [building_name],
+                'Metric': [metric_config.get('name', metric_config['description'])],
+                'Value': [value],
+                'Unit': ['m2' if metric_config['quantity_type'] == 'area' else 
                         'm3' if metric_config['quantity_type'] == 'volume' else 
                         'count'],
-                'success': [True],
-                'calculation_time': [time.time() - start_time],
-                'building': [building_name],
-                'description': [metric_config['description']],
-                'formula': [metric_config.get('formula', '')],
-                'components': [json.dumps({}, indent=2)]  # Empty JSON for old style config
+                'Description': [metric_config['description']],
+                'Components': ['{}']
             })
             
         return result

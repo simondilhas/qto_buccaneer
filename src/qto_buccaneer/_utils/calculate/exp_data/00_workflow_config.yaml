@@ -256,6 +256,18 @@ metrics:
           filter: "IfcEntity=IfcSpace AND LongName=LUF"
           base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
 
+  FBF:
+    name: "FBF"
+    description: "Fläche Bodenplatte, Fundament"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "FBF"
+      components:
+        FBF:
+          filter: "IfcEntity=IfcSlab AND PredefinedType=BASESLAB"
+          base_quantity: "Qto_SlabBaseQuantities.NetArea"
+
   E1:
     name: "E1 Fläche Aussenwand unter Terrain"
     description: "Die Fläche der Aussenwand unter Terrain. Deckenstirnflächen sind inkludiert"
@@ -352,7 +364,7 @@ metrics:
     config:
       quantity_type: "area"
       unit: "m2"
-      formula: ""
+      formula: "(external_coverings - Balkonuntersichten + Fenster + Türen) / (GF - LUF -NNF_UG_gr_als_10)"
       components:
         external_coverings:
           filter: "IfcEntity=IfcCovering AND Pset_CoveringCommon.IsExternal=true"
@@ -360,4 +372,53 @@ metrics:
         Balkonuntersichten:
           filter: "IfcEntity=IfcCovering AND PredefinedType=INSULATION AND Pset_SpatialData.ElevationOfStory>0.5"
           base_quantity: "Qto_CoveringBaseQuantities.NetArea"
-  
+        Fenster:
+          filter: "IfcEntity=IfcWindow AND Pset_WindowCommon.IsExternal=true"
+          base_quantity: "Qto_WindowBaseQuantities.Area"
+        Türen:
+          filter: "IfcEntity=IfcDoor AND Pset_DoorCommon.IsExternal=true"
+          base_quantity: "Qto_DoorBaseQuantities.Area"
+        NNF_UG_gr_als_10:
+          filter: "IfcEntity=IfcSpace AND PredefinedType=INTERNAL AND Qto_SpaceBaseQuantities.NetFloorArea>10 AND Pset_SpatialData.ElevationOfStory<=-0.5"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+        GF:
+          filter: "IfcEntity=IfcSpace AND Name=GrossArea"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+        LUF:
+          filter: "IfcEntity=IfcSpace AND LongName=LUF"
+          base_quantity: "Qto_SpaceBaseQuantities.NetFloorArea"
+
+  Glasflächen:
+    name: "Glasflächen"
+    description: "Die Fläche aller Glasflächen (Fensterfläche - Rahmenanteil von 15% angenommen)"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "Glasflächen - (Glasflächen * 0.15)"
+      components:
+        Glasflächen:
+          filter: "IfcEntity=IfcWindow AND Pset_WindowCommon.IsExternal=true"
+          base_quantity: "Qto_WindowBaseQuantities.Area"
+
+  AWF:
+    name: "Aussenwandfläche (exkl. FEA)"
+    description: "Aussenwandfläche exkl. Fenster und Türen"
+    config:
+      quantity_type: "area"
+      unit: "m2"
+      formula: "AWF"
+      components:
+        AWF:
+          filter: "IfcEntity=IfcCovering AND PredefinedType=CLADDING AND Pset_CoveringCommon.IsExternal=true"
+          base_quantity: "Qto_CoveringBaseQuantities.NetArea"
+  #gebauede_hoehe:
+  #  name: "Gebäudenhöhe"
+  #  description: "Die Höhe des Gebäudes (nur aproximativ, muss Projektweise im Detail überprüft werden)"
+  #  config:
+  #    quantity_type: "length"
+  #    unit: "m"
+  #    formula: "elevation_of_story"
+  #    components:
+  #      elevation_of_story:
+  #        filter: "IfcEntity=IfcSlab AND max(Pset_SpatialData.ElevationOfStory)"
+  #        base_quantity: "Pset_SpatialData.ElevationOfStory"
