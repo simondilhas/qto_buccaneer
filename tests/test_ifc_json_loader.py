@@ -43,7 +43,11 @@ SAMPLE_IFC_JSON = """
 @pytest.fixture
 def ifc_json_loader():
     """Create an IfcJsonLoader instance with sample data."""
-    with patch("builtins.open", mock_open(read_data=SAMPLE_IFC_JSON)):
+    # Parsăm JSON-ul înainte de a-l folosi
+    parsed_json = json.loads(SAMPLE_IFC_JSON)
+    
+    # Folosim un mock care returnează direct obiectul Python, nu string-ul JSON
+    with patch.object(IfcJsonLoader, '_load_data', return_value=parsed_json):
         loader = IfcJsonLoader("dummy_path.json")
         return loader
 
