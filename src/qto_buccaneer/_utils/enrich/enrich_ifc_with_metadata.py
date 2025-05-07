@@ -87,7 +87,6 @@ def enrich_metadata_json(
     ) -> ResultBundle:
     pass
 
-
 def _process_enrich_ifc_with_df_logic(
                        ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
                        df_for_ifc_enrichment: pd.DataFrame,
@@ -225,7 +224,8 @@ def _process_enrich_ifc_with_df_logic(
                         if isinstance(value, bool):
                             ifc_value = new_ifc.create_entity("IfcBoolean", value)
                         elif isinstance(value, str):
-                            ifc_value = new_ifc.create_entity("IfcText", str(value))
+                            # Store string directly without escape sequences
+                            ifc_value = new_ifc.create_entity("IfcText", value)
                         elif isinstance(value, (int, float)):
                             ifc_value = new_ifc.create_entity("IfcReal", float(value))
                         else:

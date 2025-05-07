@@ -251,8 +251,10 @@ def _extract_property_value(prop: Any, pset_name: str) -> Tuple[str, Any]:
         if isinstance(value, bool):
             return key, value
         elif isinstance(value, str):
+            # Preserve the original string without any encoding/decoding
             return key, value
         else:
+            # For non-string values, convert to string but preserve special characters
             return key, str(value)
             
     except Exception as e:
@@ -414,7 +416,7 @@ def extract_metadata(ifc_file_path, output_formats=["json", "json_file", "datafr
     
     if "json_file" in output_formats:
         json_path = output_dir / f"{project_name}_metadata.json"
-        with open(json_path, 'w') as f:
+        with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(json_data, f, indent=2, ensure_ascii=False)
         logger.info(f"Metadata saved to {json_path}")
         return_values.append(str(json_path))
@@ -779,8 +781,13 @@ def _extract_property_sets(el):
                     if prop_value:
                         try:
                             value = prop_value.wrappedValue
-                            properties[prop_name] = value if isinstance(value, bool) else str(value)
+                            # Preserve special characters in string values
+                            if isinstance(value, str):
+                                properties[prop_name] = value
+                            else:
+                                properties[prop_name] = value if isinstance(value, bool) else str(value)
                         except AttributeError:
+                            # If wrappedValue is not available, use the string representation
                             properties[prop_name] = str(prop_value)
                     else:
                         # Include property even if it has no value
@@ -799,7 +806,7 @@ def _save_to_json(elements_data, output_json_path):
         json_data = {
             "elements": {str(elem["id"]): elem for elem in elements_data}
         }
-        with open(output_json_path, 'w') as f:
+        with open(output_json_path, 'w', encoding='utf-8') as f:
             json.dump(json_data, f, indent=2, ensure_ascii=False)
         logger.info(f"Metadata saved to {output_json_path}")
 

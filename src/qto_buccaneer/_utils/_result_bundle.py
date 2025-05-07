@@ -9,11 +9,14 @@ import ifcopenshell
 import io
 
 class CustomJSONEncoder(json.JSONEncoder):
-    """Custom JSON encoder that can handle entity_instance objects."""
+    """Custom JSON encoder that can handle entity_instance objects and special characters."""
     def default(self, obj):
         if hasattr(obj, '__dict__'):
             return obj.__dict__
         return str(obj)
+
+    def encode(self, obj):
+        return super().encode(obj)
 
 @dataclass
 class BaseResultBundle:
@@ -35,7 +38,7 @@ class BaseResultBundle:
         if not path.is_absolute() and self.folderpath is not None:
             path = self.folderpath / path
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(self.json, indent=2, cls=CustomJSONEncoder), encoding="utf-8")
+        path.write_text(json.dumps(self.json, indent=2, cls=CustomJSONEncoder, ensure_ascii=False), encoding="utf-8")
         return path
 
     def save_excel(self, path: Union[str, Path]) -> Path:
@@ -159,6 +162,18 @@ class MetricsResultBundle(BaseResultBundle):
             self.dataframe = self.to_df()
         self.dataframe.to_excel(path, index=False)
         return path
+    
+    def add_metric(self, metric_name: str, metric_value: float, metric_unit: str, description: str = "") -> None:
+        """Add a metric to the metrics DataFrame."""
+        if self.dataframe is None:
+            self.dataframe = pd.DataFrame()
+        new_row = pd.DataFrame([{
+            "metric_name": metric_name,
+            "value": metric_value,
+            "unit": metric_unit,
+            "description": description
+        }])
+        self.dataframe = pd.concat([self.dataframe, new_row], ignore_index=True)
 
 # For backward compatibility
 ResultBundle = BaseResultBundle
