@@ -8,7 +8,7 @@ import json
 import numpy as np
 import concurrent.futures
 from dataclasses import dataclass
-from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import MetadataResultBundle
 import yaml
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def extract_metadata_from_ifc_privat(
         ifc_file_or_path: Union[str, Path, ifcopenshell.file],
-    ) -> ResultBundle:
+    ) -> MetadataResultBundle:
     
     """Extract metadata from an IFC file.
     
@@ -29,13 +29,13 @@ def extract_metadata_from_ifc_privat(
     - Material information
     - Property sets and quantities
     
-    The extracted data is organized into a structured format and returned in a ResultBundle.
+    The extracted data is organized into a structured format and returned in a MetadataResultBundle.
 
     Args:
         ifc_file_or_path (Union[str, Path, ifcopenshell.file]): Either a path to an IFC file or an already loaded IFC model
 
     Returns:
-        ResultBundle: A bundle containing:
+        MetadataResultBundle: A bundle containing:
             - dataframe: pandas DataFrame with all extracted metadata
             - json: Dictionary containing the complete metadata structure
             - summary: Summary statistics
@@ -69,7 +69,7 @@ def extract_metadata_from_ifc_privat(
     df, json_data, summary = extract_ifc_metadata(loader)
 
     # 3. Package results
-    result_bundle = ResultBundle(
+    result_bundle = MetadataResultBundle(
         dataframe=df,
         json=json_data,
         folderpath=None,

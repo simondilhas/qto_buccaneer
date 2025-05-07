@@ -7,7 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urljoin
 from qto_buccaneer._utils.extract.extract_geometry_and_metadata_via_api import calculate_geometry_json_via_api_internal
-from qto_buccaneer._utils._result_bundle import ResultBundle, GeometryResultBundle
+from qto_buccaneer._utils._result_bundle import ResultBundle, GeometryResultBundle, MetadataResultBundle
 from qto_buccaneer._utils.extract.extract_metadata_from_ifc import extract_metadata_from_ifc_privat
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 import ifcopenshell
@@ -51,8 +51,7 @@ def extract_geometry_and_metadata_via_api(
 
 def extract_metadata_from_ifc(
         ifc_file_or_path: Union[str, Path, ifcopenshell.file],
-    ) -> ResultBundle:
-    
+    ) -> MetadataResultBundle:
     """Extract metadata from an IFC file.
     
     This function processes an IFC file to extract comprehensive metadata including:
@@ -63,13 +62,13 @@ def extract_metadata_from_ifc(
     - Material information
     - Property sets and quantities
     
-    The extracted data is organized into a structured format and returned in a ResultBundle.
+    The extracted data is organized into a structured format and returned in a MetadataResultBundle.
 
     Args:
         ifc_file_or_path (Union[str, Path, ifcopenshell.file]): Either a path to an IFC file or an already loaded IFC model
 
     Returns:
-        ResultBundle: A bundle containing:
+        MetadataResultBundle: A bundle containing:
             - dataframe: pandas DataFrame with all extracted metadata
             - json: Dictionary containing the complete metadata structure
             - summary: Summary statistics

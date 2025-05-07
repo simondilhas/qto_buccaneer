@@ -89,33 +89,6 @@ class GeometryResultBundle(BaseResultBundle):
         
         return path
 
-@dataclass
-class ProcessingResultBundle(BaseResultBundle):
-    """ResultBundle for processing summaries and file-based data."""
-    def to_df(self) -> pd.DataFrame:
-        """Convert processing summary to DataFrame."""
-        if self.dataframe is None and self.json is not None:
-            if "files" in self.json:
-                records = []
-                for file in self.json["files"]:
-                    file_path = self.folderpath / f"{file}.json"
-                    if file_path.exists():
-                        with open(file_path, 'r', encoding='utf-8') as f:
-                            data = json.load(f)
-                            if isinstance(data, list):
-                                records.extend(data)
-                            elif isinstance(data, dict) and "elements" in data:
-                                for key, value in data["elements"].items():
-                                    record = value.copy()
-                                    record['element_key'] = key
-                                    records.append(record)
-                if records:
-                    self.dataframe = pd.DataFrame(records)
-                else:
-                    self.dataframe = pd.DataFrame([self.json])
-            else:
-                self.dataframe = pd.DataFrame([self.json])
-        return self.dataframe
 
 @dataclass
 class IFCResultBundle(BaseResultBundle):
