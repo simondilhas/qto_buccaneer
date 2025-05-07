@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import pandas as pd
 import ifcopenshell
 from pathlib import Path
-from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle
 import yaml
 
 def enrich_ifc_with_df(
@@ -12,7 +12,7 @@ def enrich_ifc_with_df(
     key_ifc_element: str = "LongName",
     key_df_element: str = "LongName",
     pset_name: Optional[str] = "Pset_Enrichment",
-) -> ResultBundle:
+) -> BaseResultBundle:
 
     """
     Enrich IFC elements with data from a DataFrame.
@@ -25,7 +25,7 @@ def enrich_ifc_with_df(
         pset_name: Name for the property set storing enriched data
 
     Returns:
-        ResultBundle: Contains the enriched IFC model and enrichment statistics
+        BaseResultBundle: Contains the enriched IFC model and enrichment statistics
     """
     # Initialize IFC loader
     loader = IfcLoader(ifc_file) if isinstance(ifc_file, (str, ifcopenshell.file)) else ifc_file

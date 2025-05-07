@@ -2,21 +2,21 @@ import ifcopenshell
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 from typing import Optional, Union
 from qto_buccaneer._utils.enrich.enrich_ifc_with_metadata import enrich_ifc_with_metadata_internal
-from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle
 from qto_buccaneer._utils._general_tool_utils import validate_config
 import logging
 
 logger = logging.getLogger(__name__)
 
 def enrich_ifc_with_spatial_data_internal(
-    ifc_file: Union[str, IfcLoader, 'ifcopenshell.file', ResultBundle],
+    ifc_file: Union[str, IfcLoader, 'ifcopenshell.file', BaseResultBundle],
     config: dict,
-) -> ResultBundle:
+) -> BaseResultBundle:
     """
     Add spatial relationship data to IFC elements as a new property set.
     
     Args:
-        ifc_file: Either a file path, IfcLoader instance, ifcopenshell model, or ResultBundle
+        ifc_file: Either a file path, IfcLoader instance, ifcopenshell model, or BaseResultBundle
         config: Configuration dictionary containing:
             - description: Tool description
             - config:
@@ -28,7 +28,7 @@ def enrich_ifc_with_spatial_data_internal(
                 - output_dir: Optional output directory for the enriched IFC file
         
     Returns:
-        ResultBundle containing:
+        BaseResultBundle containing:
             - ifc_model: The enriched IFC model
             - dataframe: The spatial relationship DataFrame
             - json: Summary of the enrichment process
@@ -41,7 +41,7 @@ def enrich_ifc_with_spatial_data_internal(
     # Create loader if needed
     if isinstance(ifc_file, (str, ifcopenshell.file)):
         loader = IfcLoader(ifc_file)
-    elif isinstance(ifc_file, ResultBundle):
+    elif isinstance(ifc_file, BaseResultBundle):
         loader = IfcLoader(ifc_file.ifc_model)
     else:
         loader = ifc_file
@@ -59,7 +59,7 @@ def enrich_ifc_with_spatial_data_internal(
                 "elements_processed": 0
             }
         }
-        return ResultBundle(
+        return BaseResultBundle(
             ifc_model=loader.model,
             dataframe=spatial_df,
             json=summary_data
@@ -103,7 +103,7 @@ def enrich_ifc_with_spatial_data_internal(
                 "elements_processed": 0
             }
         }
-        return ResultBundle(
+        return BaseResultBundle(
             ifc_model=loader.model,
             dataframe=None,
             json=summary_data

@@ -7,7 +7,7 @@ from typing import Optional, Union, Dict, Any, List
 import pandas as pd
 import yaml
 import logging
-from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle
 from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 from qto_buccaneer.utils.metadata_filter import MetadataFilter
 
@@ -30,18 +30,18 @@ class ComparisonResult:
     """Main data structure for comparison results."""
     merged_df: pd.DataFrame
     return_values: List[str]
-    area_target_column: Optional[str] = None
-    area_actual_column: Optional[str] = None
-    comparison_type: str = "area"  # "area" or "name"
+    numerical_target_column: Optional[str] = None
+    numerical_actual_column: Optional[str] = None
+    comparison_type: str = "name"  # "name" or "numerical"
     
-    def to_result_bundle(self) -> ResultBundle:
-        """Convert the comparison to a ResultBundle."""
+    def to_result_bundle(self) -> BaseResultBundle:
+        """Convert the comparison to a BaseResultBundle."""
         if self.comparison_type == "name":
             return self._create_name_comparison_bundle()
-        return self._create_area_comparison_bundle()
+        return self._create_numerical_comparison_bundle()
     
-    def _create_name_comparison_bundle(self) -> ResultBundle:
-        """Create a ResultBundle for room name comparison."""
+    def _create_name_comparison_bundle(self) -> BaseResultBundle:
+        """Create a BaseResultBundle for room name comparison."""
         actual_name_col = self._find_name_column('_actual')
         target_name_col = self._find_name_column('_target')
         
@@ -67,23 +67,23 @@ class ComparisonResult:
             }
         }
         
-        return ResultBundle(dataframe=self.merged_df[self.return_values], json=summary_data)
+        return BaseResultBundle(dataframe=self.merged_df[self.return_values], json=summary_data)
     
-    def _create_area_comparison_bundle(self) -> ResultBundle:
-        """Create a ResultBundle for area comparison."""
+    def _create_numerical_comparison_bundle(self) -> BaseResultBundle:
+        """Create a BaseResultBundle for numerical comparison."""
         # Check if required columns exist
         missing_columns = []
-        if self.area_target_column and self.area_target_column not in self.merged_df.columns:
-            missing_columns.append(self.area_target_column)
-        if self.area_actual_column and self.area_actual_column not in self.merged_df.columns:
-            missing_columns.append(self.area_actual_column)
+        if self.numerical_target_column and self.numerical_target_column not in self.merged_df.columns:
+            missing_columns.append(self.numerical_target_column)
+        if self.numerical_actual_column and self.numerical_actual_column not in self.merged_df.columns:
+            missing_columns.append(self.numerical_actual_column)
         
         if missing_columns:
             logger.error(f"Missing required columns: {missing_columns}")
             logger.info(f"Available columns: {self.merged_df.columns.tolist()}")
             raise ValueError(f"Missing required columns: {missing_columns}")
         
-        stats = self._calculate_area_statistics()
+        stats = self._calculate_numerical_statistics()
         
         summary_data = {
             "name": "Target Program vs Actual Program",
@@ -91,10 +91,10 @@ class ComparisonResult:
             "overview": {
                 "total_items": int(stats['total_items']),
                 "compliance_rate": float(stats['compliance_rate']),
-                "total_area": {
-                    "target": float(stats['total_target_area']),
-                    "actual": float(stats['total_actual_area']),
-                    "difference_pct": float(stats['total_area_diff_pct'])
+                "total_values": {
+                    "target": float(stats['total_target_value']),
+                    "actual": float(stats['total_actual_value']),
+                    "difference_pct": float(stats['total_diff_pct'])
                 }
             },
             "issues": {
@@ -109,7 +109,7 @@ class ComparisonResult:
         if valid_return_values != self.return_values:
             logger.warning(f"Some return values not found in DataFrame: {set(self.return_values) - set(valid_return_values)}")
         
-        return ResultBundle(dataframe=self.merged_df[valid_return_values], json=summary_data)
+        return BaseResultBundle(dataframe=self.merged_df[valid_return_values], json=summary_data)
     
     def _find_name_column(self, suffix: str) -> str:
         """Find the name column with the given suffix."""
@@ -130,37 +130,37 @@ class ComparisonResult:
             return "additional roomtypes used"
         return "error"
     
-    def _calculate_area_statistics(self) -> Dict[str, float]:
-        """Calculate statistics for area comparison."""
+    def _calculate_numerical_statistics(self) -> Dict[str, float]:
+        """Calculate statistics for numerical comparison."""
         total_items = len(self.merged_df)
         items_within_tolerance = len(self.merged_df[self.merged_df['status'] == 'within_tolerance'])
         missing_items = len(self.merged_df[self.merged_df['status'] == 'missing'])
         extra_items = len(self.merged_df[self.merged_df['status'] == 'extra'])
         
-        total_target_area = float(self.merged_df[self.area_target_column].sum())
-        total_actual_area = float(self.merged_df[self.area_actual_column].sum())
-        total_area_diff = float(total_actual_area - total_target_area)
-        total_area_diff_pct = float((total_area_diff / total_target_area * 100) if total_target_area > 0 else 0)
+        total_target_value = float(self.merged_df[self.numerical_target_column].sum())
+        total_actual_value = float(self.merged_df[self.numerical_actual_column].sum())
+        total_diff = float(total_actual_value - total_target_value)
+        total_diff_pct = float((total_diff / total_target_value * 100) if total_target_value > 0 else 0)
         
-        status = self._determine_area_comparison_status(missing_items, extra_items, items_within_tolerance, total_items)
+        status = self._determine_numerical_comparison_status(missing_items, extra_items, items_within_tolerance, total_items)
         
         return {
             'total_items': total_items,
             'items_within_tolerance': items_within_tolerance,
             'missing_items': missing_items,
             'extra_items': extra_items,
-            'total_target_area': total_target_area,
-            'total_actual_area': total_actual_area,
-            'total_area_diff': total_area_diff,
-            'total_area_diff_pct': total_area_diff_pct,
+            'total_target_value': total_target_value,
+            'total_actual_value': total_actual_value,
+            'total_diff': total_diff,
+            'total_diff_pct': total_diff_pct,
             'status': status,
             'compliance_rate': float((items_within_tolerance / total_items * 100) if total_items > 0 else 0),
             'out_of_tolerance_items': total_items - items_within_tolerance - missing_items - extra_items
         }
     
-    def _determine_area_comparison_status(self, missing_items: int, extra_items: int, 
+    def _determine_numerical_comparison_status(self, missing_items: int, extra_items: int, 
                                         items_within_tolerance: int, total_items: int) -> str:
-        """Determine the status of an area comparison."""
+        """Determine the status of a numerical comparison."""
         if missing_items > 0:
             return "failed"
         if extra_items > 0:
@@ -191,44 +191,44 @@ def calculate_differences(
     key_target_column: str,
     key_actual_column: str
 ) -> pd.DataFrame:
-    """Calculate area differences and determine status based on percentage tolerance."""
+    """Calculate numerical differences and determine status based on percentage tolerance."""
     # Fill missing values
     merged_df[actual_area_column] = merged_df[actual_area_column].fillna(0.0)
     merged_df[target_area_column] = merged_df[target_area_column].fillna(0.0)
 
-    # Compute area difference
-    merged_df['area_diff'] = merged_df[actual_area_column] - merged_df[target_area_column]
+    # Compute difference
+    merged_df['diff'] = merged_df[actual_area_column] - merged_df[target_area_column]
 
-    # Compute percentage difference based on target area, safely
-    merged_df['area_diff_pct'] = 0.0
+    # Compute percentage difference based on target value, safely
+    merged_df['diff_pct'] = 0.0
     mask = merged_df[target_area_column] > 0
-    merged_df.loc[mask, 'area_diff_pct'] = (
-        (merged_df.loc[mask, 'area_diff'].abs() / merged_df.loc[mask, target_area_column]) * 100
+    merged_df.loc[mask, 'diff_pct'] = (
+        (merged_df.loc[mask, 'diff'].abs() / merged_df.loc[mask, target_area_column]) * 100
     )
 
     # Determine status
     def get_status(row):
-        actual_area = row.get(actual_area_column, 0.0)
-        target_area = row.get(target_area_column, 0.0)
+        actual_value = row.get(actual_area_column, 0.0)
+        target_value = row.get(target_area_column, 0.0)
         key_target = row.get(key_target_column, None)
 
         # 1. Missing → Target exists, actual missing
-        if target_area > EPSILON and actual_area < EPSILON:
+        if target_value > EPSILON and actual_value < EPSILON:
             return 'missing'
 
-        # 2. Project-specific → Target exists (LongName present), no area planned, but actual area > 0
-        if pd.notna(key_target) and target_area < EPSILON and actual_area > EPSILON:
+        # 2. Project-specific → Target exists (LongName present), no value planned, but actual value > 0
+        if pd.notna(key_target) and target_value < EPSILON and actual_value > EPSILON:
             return 'project_specific'
 
-        # 3. Extra space → No target LongName, but actual area > 0
-        if pd.isna(key_target) and actual_area > EPSILON:
+        # 3. Extra space → No target LongName, but actual value > 0
+        if pd.isna(key_target) and actual_value > EPSILON:
             return 'extra_space'
 
         # 4. Within tolerance
-        if target_area > EPSILON:
-            lower_bound = target_area * (1 - tolerance / 100.0)
-            upper_bound = target_area * (1 + tolerance / 100.0)
-            if lower_bound <= actual_area <= upper_bound:
+        if target_value > EPSILON:
+            lower_bound = target_value * (1 - tolerance / 100.0)
+            upper_bound = target_value * (1 + tolerance / 100.0)
+            if lower_bound <= actual_value <= upper_bound:
                 return 'within_tolerance'
 
         # 5. Otherwise: Out of tolerance
@@ -379,13 +379,37 @@ def process_compare_target_actual_logic(
         except KeyError as e:
             raise ValueError(f"Error during merge: {e}. Available columns in target_df: {target_df.columns.tolist()}, actual_df: {actual_df.columns.tolist()}")
         
-        # For name comparison, set status based on presence in target and actual
-        merged_df['status'] = merged_df.apply(
-            lambda row: 'missing' if pd.isna(row[f'{actual_key}_actual']) else 
-                       'extra' if pd.isna(row[f'{target_key}_target']) else 
-                       'match',
-            axis=1
-        )
+        # Calculate differences if numerical comparison columns are provided
+        if 'numerical_comparison' in check_config:
+            numerical_config = check_config['numerical_comparison']
+            tolerance = numerical_config.get('tolerance', 5.0)  # Default tolerance of 5%
+            
+            # Add _actual and _target suffixes to the column names
+            target_column = f"{numerical_config['target']}_target"
+            actual_column = f"{numerical_config['actual']}_actual"
+            
+            # Verify the columns exist after renaming
+            if target_column not in merged_df.columns:
+                raise ValueError(f"Target column '{target_column}' not found in merged DataFrame. Available columns: {merged_df.columns.tolist()}")
+            if actual_column not in merged_df.columns:
+                raise ValueError(f"Actual column '{actual_column}' not found in merged DataFrame. Available columns: {merged_df.columns.tolist()}")
+            
+            merged_df = calculate_differences(
+                merged_df=merged_df,
+                tolerance=tolerance,
+                target_area_column=target_column,
+                actual_area_column=actual_column,
+                key_target_column=f"{target_key}_target",
+                key_actual_column=f"{actual_key}_actual"
+            )
+        else:
+            # For name comparison, set status based on presence in target and actual
+            merged_df['status'] = merged_df.apply(
+                lambda row: 'missing' if pd.isna(row[f'{actual_key}_actual']) else 
+                           'extra' if pd.isna(row[f'{target_key}_target']) else 
+                           'match',
+                axis=1
+            )
         
         # Filter the merged DataFrame to only include the requested return values
         # First, ensure all requested columns exist
@@ -394,6 +418,14 @@ def process_compare_target_actual_logic(
         if valid_return_values != return_values:
             missing_columns = set(return_values) - set(valid_return_values)
             logger.warning(f"Some return values not found in DataFrame: {missing_columns}")
+            
+        # Add calculated columns if they exist in the DataFrame and are not duplicates
+        calculated_columns = ['status', 'diff', 'diff_pct']
+        valid_calculated_columns = [
+            col for col in calculated_columns 
+            if col in available_columns and col not in valid_return_values
+        ]
+        valid_return_values.extend(valid_calculated_columns)
         
         # Create ComparisonResult object with filtered DataFrame
         comparison = ComparisonResult(
@@ -402,7 +434,7 @@ def process_compare_target_actual_logic(
             comparison_type="name"
         )
         
-        # Get ResultBundle
+        # Get BaseResultBundle
         result_bundle = comparison.to_result_bundle()
         
         return merged_df[valid_return_values], result_bundle.summary

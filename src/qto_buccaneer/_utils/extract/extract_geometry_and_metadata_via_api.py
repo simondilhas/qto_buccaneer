@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 import pandas as pd
 from dotenv import load_dotenv
-from qto_buccaneer._utils._result_bundle import ResultBundle, GeometryResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle, GeometryResultBundle
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 import ifcopenshell
 
@@ -42,14 +42,14 @@ class IFCAPIClient:
         self.headers = {API_KEY_NAME: api_key}
 
     def upload_ifc(self, 
-                  ifc_file: Union[str, Path, ifcopenshell.file, ResultBundle],
+                  ifc_file: Union[str, Path, ifcopenshell.file, BaseResultBundle],
                   include_geometry: bool = True, 
                   include_metadata: bool = True) -> GeometryResultBundle:
         """
         Upload an IFC file and get the processed data as a GeometryResultBundle.
         
         Args:
-            ifc_file: Path to the IFC file, ifcopenshell.file, or ResultBundle
+            ifc_file: Path to the IFC file, ifcopenshell.file, or BaseResultBundle
             include_geometry: Whether to include geometry data
             include_metadata: Whether to include metadata
             
@@ -60,7 +60,7 @@ class IFCAPIClient:
             # Create loader if needed
             if isinstance(ifc_file, (str, Path, ifcopenshell.file)):
                 loader = IfcLoader(ifc_file)
-            elif isinstance(ifc_file, ResultBundle):
+            elif isinstance(ifc_file, BaseResultBundle):
                 loader = IfcLoader(ifc_file.ifc_model)
             else:
                 raise ValueError(f"Unsupported input type: {type(ifc_file)}")
@@ -102,7 +102,7 @@ class IFCAPIClient:
             )
             zip_response.raise_for_status()
             
-            # Process the zip file and create ResultBundle
+            # Process the zip file and create BaseResultBundle
             return self._process_zip_response(
                 zip_response=zip_response,
                 response_data=response_data,
@@ -208,7 +208,7 @@ class IFCAPIClient:
         )
 
 def calculate_geometry_json_via_api_internal(
-    ifc_file: Union[str, Path, ifcopenshell.file, ResultBundle]
+    ifc_file: Union[str, Path, ifcopenshell.file, BaseResultBundle]
 ) -> GeometryResultBundle:
     """
     This module sends IFC geometry to an external FastAPI service 
@@ -222,7 +222,7 @@ def calculate_geometry_json_via_api_internal(
     - Run this as part of your QTO pipeline if 3D JSON output is needed
         
     Args:
-        ifc_file: Path to the IFC file, ifcopenshell.file, or ResultBundle
+        ifc_file: Path to the IFC file, ifcopenshell.file, or BaseResultBundle
         
     Returns:
         GeometryResultBundle: A GeometryResultBundle containing:

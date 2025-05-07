@@ -4,7 +4,7 @@ import os
 import shutil
 import ifcopenshell
 from .utils.ifc_loader import IfcLoader
-from ._utils._result_bundle import ResultBundle
+from ._utils._result_bundle import BaseResultBundle
 from typing import Union, List, Optional, Dict, Any, Tuple
 import yaml
 from pathlib import Path
@@ -45,7 +45,7 @@ def enrich_ifc_with_metadata(
     enrichment_df: pd.DataFrame,
     ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
     config: Dict[str, Any],
-    ) -> ResultBundle:
+    ) -> BaseResultBundle:
 
     result = enrich_ifc_with_metadata_internal(
         enrichment_df=enrichment_df,
@@ -59,7 +59,7 @@ def enrich_ifc_with_metadata(
 def enrich_ifc_with_spatial_data(
     ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
     config: Dict[str, Any],
-) -> ResultBundle:
+) -> BaseResultBundle:
 
     result = enrich_ifc_with_spatial_data_internal(
         ifc_file=ifc_file,

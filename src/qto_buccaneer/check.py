@@ -11,27 +11,27 @@ from qto_buccaneer.report import ExcelLayoutConfig
 
 from qto_buccaneer._utils.checks.compare_target_actual import process_compare_target_actual_logic
 import json
-from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle
 import logging
 from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 
 logger = logging.getLogger(__name__)
 
 def compare_target_actual(
-    target_df: Union[pd.DataFrame, ResultBundle],
-    actual_df: Union[pd.DataFrame, ResultBundle],
+    target_df: Union[pd.DataFrame, BaseResultBundle],
+    actual_df: Union[pd.DataFrame, BaseResultBundle],
     config: Dict[str, Any]
-) -> ResultBundle:
+) -> BaseResultBundle:
     """
     Compare target and actual building data.
     
     Args:
-        target_df: Target data as DataFrame or ResultBundle
-        actual_df: Actual data as DataFrame or ResultBundle
+        target_df: Target data as DataFrame or BaseResultBundle
+        actual_df: Actual data as DataFrame or BaseResultBundle
         config: Configuration dictionary containing tool_name, tool_description, and tool_config
         
     Returns:
-        ResultBundle containing comparison results
+        BaseResultBundle containing comparison results
         
     Example:
         config = {
@@ -97,7 +97,7 @@ def compare_target_actual(
     df, summary_data = process_compare_target_actual_logic(target_df, actual_df, config)
 
     # 5. Package results
-    result_bundle = ResultBundle(
+    result_bundle = BaseResultBundle(
         dataframe=df,
         json=summary_data,
         summary=summary_data

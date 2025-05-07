@@ -7,6 +7,9 @@ import zipfile
 import os
 import ifcopenshell
 import io
+from openpyxl.styles import Font, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
+from qto_buccaneer._utils.report.excel_styling import ExcelLayoutConfig
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder that can handle entity_instance objects and special characters."""
@@ -20,7 +23,7 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 @dataclass
 class BaseResultBundle:
-    """Base class for all ResultBundle types with common functionality."""
+    """Base class for all BaseResultBundle types with common functionality."""
     dataframe: Optional[pd.DataFrame]
     json: Optional[Dict[str, Any]] = None
     summary: Optional[str] = None
@@ -41,20 +44,104 @@ class BaseResultBundle:
         path.write_text(json.dumps(self.json, indent=2, cls=CustomJSONEncoder, ensure_ascii=False), encoding="utf-8")
         return path
 
-    def save_excel(self, path: Union[str, Path]) -> Path:
-        """Save the result bundle to an Excel file."""
+    def save_excel(self, path: Union[str, Path], layout_config: Optional[ExcelLayoutConfig] = None) -> Path:
+        """Save the result bundle to an Excel file with optional styling.
+        
+        Args:
+            path: String or Path object specifying where to save the Excel file.
+                 If relative, will be saved relative to folderpath if set.
+            layout_config: Optional ExcelLayoutConfig for styling the Excel file.
+                          If None, uses default ExcelLayoutConfig settings.
+            
+        Returns:
+            Path: The path where the Excel file was saved
+        """
         if self.dataframe is None:
             self.dataframe = self.to_df()
         path = Path(path)
         if not path.is_absolute() and self.folderpath is not None:
             path = self.folderpath / path
         path.parent.mkdir(parents=True, exist_ok=True)
-        self.dataframe.to_excel(path, index=False)
+        
+        # Use default config if none provided
+        config = layout_config or ExcelLayoutConfig()
+        
+        with pd.ExcelWriter(path, engine='openpyxl') as writer:
+            self.dataframe.to_excel(writer, index=False, sheet_name='Sheet1')
+            worksheet = writer.sheets['Sheet1']
+            
+            # Freeze panes (first row and first two columns)
+            worksheet.freeze_panes = 'C2'
+            
+            # Add autofilter to header row
+            worksheet.auto_filter.ref = worksheet.dimensions
+            
+            # Apply styling based on config
+            if config.bold_headers:
+                for cell in worksheet[1]:
+                    cell.font = Font(bold=True)
+                    if config.header_color:
+                        cell.fill = PatternFill(
+                            start_color=config.header_color,
+                            end_color=config.header_color,
+                            fill_type='solid'
+                        )
+            
+            # Set number format
+            number_format = config.number_format
+            for row in worksheet.iter_rows(min_row=2):
+                for cell in row:
+                    if isinstance(cell.value, (int, float)):
+                        cell.number_format = number_format
+            
+            # Set row height if specified
+            if config.row_height:
+                for row in worksheet.iter_rows():
+                    worksheet.row_dimensions[row[0].row].height = config.row_height
+            
+            # Set column widths
+            if config.auto_column_width:
+                for column in worksheet.columns:
+                    max_length = 0
+                    column = [cell for cell in column]
+                    for cell in column:
+                        try:
+                            if len(str(cell.value)) > max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    adjusted_width = (max_length + 2)
+                    worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+            
+            # Apply borders
+            if config.horizontal_lines or config.vertical_lines:
+                for row in worksheet.iter_rows():
+                    for cell in row:
+                        border = Border()
+                        if config.horizontal_lines:
+                            border.top = Side(style='thin')
+                            border.bottom = Side(style='thin')
+                        if config.vertical_lines:
+                            border.left = Side(style='thin')
+                            border.right = Side(style='thin')
+                        cell.border = border
+            
+            # Apply alternating colors if enabled
+            if config.alternating_colors:
+                for row_idx, row in enumerate(worksheet.iter_rows(min_row=2), start=2):
+                    if row_idx % 2 == 0:
+                        for cell in row:
+                            cell.fill = PatternFill(
+                                start_color='F0F0F0',
+                                end_color='F0F0F0',
+                                fill_type='solid'
+                            )
+        
         return path
 
 @dataclass
 class MetadataResultBundle(BaseResultBundle):
-    """ResultBundle specifically for IFC metadata."""
+    """BaseResultBundle specifically for IFC metadata."""
     def to_df(self) -> pd.DataFrame:
         """Convert metadata JSON to DataFrame."""
         if self.dataframe is None and self.json is not None:
@@ -66,7 +153,7 @@ class MetadataResultBundle(BaseResultBundle):
 
 @dataclass
 class GeometryResultBundle(BaseResultBundle):
-    """ResultBundle specifically for geometry data."""
+    """BaseResultBundle specifically for geometry data."""
     def to_df(self) -> pd.DataFrame:
         """Convert geometry data to DataFrame."""
         if self.dataframe is None and self.json is not None:
@@ -95,7 +182,7 @@ class GeometryResultBundle(BaseResultBundle):
 
 @dataclass
 class IFCResultBundle(BaseResultBundle):
-    """ResultBundle specifically for IFC model operations."""
+    """BaseResultBundle specifically for IFC model operations."""
     def save_ifc(self, path: Union[str, Path]) -> Path:
         """Save the IFC model to a file if available.
         
@@ -133,7 +220,7 @@ class IFCResultBundle(BaseResultBundle):
 
 @dataclass
 class MetricsResultBundle(BaseResultBundle):
-    """ResultBundle specifically for metrics calculations."""
+    """BaseResultBundle specifically for metrics calculations."""
     def to_df(self) -> pd.DataFrame:
         """Convert metrics data to DataFrame."""
         if self.dataframe is None and self.json is not None:
@@ -142,26 +229,6 @@ class MetricsResultBundle(BaseResultBundle):
             else:
                 self.dataframe = pd.DataFrame([self.json])
         return self.dataframe
-
-    def save_excel(self, path: Union[str, Path]) -> Path:
-        """Save metrics data to an Excel file.
-        
-        Args:
-            path: String or Path object specifying where to save the Excel file.
-                 If relative, will be saved relative to folderpath if set.
-            
-        Returns:
-            Path: The path where the Excel file was saved
-        """
-        path = Path(path)
-        if not path.is_absolute() and self.folderpath is not None:
-            path = self.folderpath / path
-        path.parent.mkdir(parents=True, exist_ok=True)
-        
-        if self.dataframe is None:
-            self.dataframe = self.to_df()
-        self.dataframe.to_excel(path, index=False)
-        return path
     
     def add_metric(self, metric_name: str, metric_value: float, metric_unit: str, description: str = "") -> None:
         """Add a metric to the metrics DataFrame."""
@@ -175,5 +242,3 @@ class MetricsResultBundle(BaseResultBundle):
         }])
         self.dataframe = pd.concat([self.dataframe, new_row], ignore_index=True)
 
-# For backward compatibility
-ResultBundle = BaseResultBundle

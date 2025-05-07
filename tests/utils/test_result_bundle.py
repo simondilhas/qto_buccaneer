@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 import json
 import yaml
-from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle
 
 def test_result_bundle_initialization():
     # Test initialization with all parameters
@@ -12,7 +12,7 @@ def test_result_bundle_initialization():
     folderpath = Path('test/path')
     yaml_summary = 'test: value'
     
-    bundle = ResultBundle(
+    bundle = BaseResultBundle(
         dataframe=df,
         json=json_data,
         folderpath=folderpath,
@@ -25,7 +25,7 @@ def test_result_bundle_initialization():
     assert bundle.yaml_summary == yaml_summary
     
     # Test initialization with minimal parameters
-    minimal_bundle = ResultBundle(dataframe=df, json=json_data)
+    minimal_bundle = BaseResultBundle(dataframe=df, json=json_data)
     assert minimal_bundle.dataframe.equals(df)
     assert minimal_bundle.json == json_data
     assert minimal_bundle.folderpath is None
@@ -34,7 +34,7 @@ def test_result_bundle_initialization():
 def test_result_bundle_conversions():
     df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
     json_data = {'key': 'value'}
-    bundle = ResultBundle(dataframe=df, json=json_data)
+    bundle = BaseResultBundle(dataframe=df, json=json_data)
     
     # Test to_df
     assert bundle.to_df().equals(df)
@@ -53,7 +53,7 @@ def test_result_bundle_conversions():
 def test_save_json(tmp_path):
     df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
     json_data = {'key': 'value'}
-    bundle = ResultBundle(dataframe=df, json=json_data)
+    bundle = BaseResultBundle(dataframe=df, json=json_data)
     
     # Test saving to file
     output_path = tmp_path / 'test_output.json'
@@ -68,7 +68,7 @@ def test_save_json(tmp_path):
 def test_yaml_summary_caching():
     df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
     json_data = {'key': 'value'}
-    bundle = ResultBundle(dataframe=df, json=json_data)
+    bundle = BaseResultBundle(dataframe=df, json=json_data)
     
     # First call should generate the YAML
     first_yaml = bundle.to_yaml_summary()

@@ -6,7 +6,7 @@ from typing import Dict, Any, List, Optional
 from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urljoin
-from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 from logging import getLogger
 from datetime import datetime
@@ -53,8 +53,8 @@ def _create_geometry_result_bundle(
     output_dir: Path,
     base_filename: str,
     metadata: Optional[Dict[str, Any]] = None
-) -> ResultBundle:
-    """Create a ResultBundle from the geometry API response.
+) -> BaseResultBundle:
+    """Create a BaseResultBundle from the geometry API response.
     
     Args:
         response_data: The raw response data from the API
@@ -63,7 +63,7 @@ def _create_geometry_result_bundle(
         metadata: Optional additional metadata to include
         
     Returns:
-        ResultBundle containing the geometry data and metadata
+        BaseResultBundle containing the geometry data and metadata
     """
     # Create summary data with Geometry and Metadata JSON as top-level key
     summary = {
@@ -96,8 +96,8 @@ def _create_geometry_result_bundle(
         if records:
             dataframe = pd.DataFrame(records)
     
-    # Create the ResultBundle
-    return ResultBundle(
+    # Create the BaseResultBundle
+    return BaseResultBundle(
         dataframe=dataframe,
         json=response_data,
         folderpath=output_dir,
@@ -113,8 +113,8 @@ def _upload_ifc_file(
     include_metadata: bool = True,
     output_dir: Optional[str] = None,
     debug: bool = False
-) -> ResultBundle:
-    """Upload IFC file to the server and return a ResultBundle with the response.
+) -> BaseResultBundle:
+    """Upload IFC file to the server and return a BaseResultBundle with the response.
     
     Args:
         file_path: Path to the IFC file
@@ -127,7 +127,7 @@ def _upload_ifc_file(
         debug: Whether to enable debug logging
         
     Returns:
-        ResultBundle containing the API response and saved files
+        BaseResultBundle containing the API response and saved files
     """
     try:
         # Get base filename without extension
@@ -182,7 +182,7 @@ def _upload_ifc_file(
             response_data = response.json()
             logger.info(f"Successfully processed IFC file. Generated files: {response_data['files']}")
             
-            # Create metadata for the ResultBundle
+            # Create metadata for the BaseResultBundle
             metadata = {
                 "status_code": response.status_code,
                 "entities": entities,
@@ -190,7 +190,7 @@ def _upload_ifc_file(
                 "include_metadata": include_metadata
             }
             
-            # Create ResultBundle
+            # Create BaseResultBundle
             result_bundle = _create_geometry_result_bundle(
                 response_data=response_data,
                 output_dir=output_dir,
@@ -227,13 +227,13 @@ def _upload_ifc_file(
             if debug:
                 logger.error(f"Error details: {response.text}")
             
-            # Create error ResultBundle
+            # Create error BaseResultBundle
             error_data = {
                 'status_code': response.status_code,
                 'error': response.text
             }
             
-            error_bundle = ResultBundle(
+            error_bundle = BaseResultBundle(
                 dataframe=None,
                 json=error_data,
                 folderpath=output_dir,
@@ -256,8 +256,8 @@ def _upload_ifc_file(
     except Exception as e:
         logger.error(f"Error in upload_ifc_file: {str(e)}", exc_info=True)
         
-        # Create error ResultBundle
-        error_bundle = ResultBundle(
+        # Create error BaseResultBundle
+        error_bundle = BaseResultBundle(
             dataframe=None,
             json={"error": str(e)},
             folderpath=output_dir,
@@ -274,7 +274,7 @@ def _upload_ifc_file(
 def calculate_geometry_json_via_api(
     ifc_path: str,
     output_dir: str
-) -> ResultBundle:
+) -> BaseResultBundle:
     """
     This module sends IFC geometry to an external FastAPI service 
     to convert it into JSON format for visualization.
@@ -291,7 +291,7 @@ def calculate_geometry_json_via_api(
         output_dir (str): Directory where the JSON file should be saved
         
     Returns:
-        ResultBundle: A ResultBundle containing:
+        BaseResultBundle: A BaseResultBundle containing:
             - json: The raw API response data
             - folderpath: Path to the output directory
             - summary: Metadata about the operation including:
@@ -319,8 +319,8 @@ def calculate_geometry_json_via_api(
     except Exception as e:
         logger.error(f"Error in calculate_geometry_json: {str(e)}", exc_info=True)
         
-        # Create error ResultBundle
-        error_bundle = ResultBundle(
+        # Create error BaseResultBundle
+        error_bundle = BaseResultBundle(
             dataframe=None,
             json={"error": str(e)},
             folderpath=Path(output_dir),

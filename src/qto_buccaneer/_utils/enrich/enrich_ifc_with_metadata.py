@@ -10,7 +10,7 @@ from typing import Union, Dict, Any, Optional
 import pandas as pd
 from pathlib import Path
 import logging
-from qto_buccaneer._utils._result_bundle import IFCResultBundle, ResultBundle
+from qto_buccaneer._utils._result_bundle import IFCResultBundle, BaseResultBundle
 from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 
 
@@ -25,11 +25,11 @@ def enrich_ifc_with_metadata_internal(
     Template for a data processing tool.
 
     Pattern:
-    1. Unpack the DataFrame (handles both DataFrame or ResultBundle).
+    1. Unpack the DataFrame (handles both DataFrame or BaseResultBundle).
     2. Extract required configuration.
     3. Validate the DataFrame using `validate_df`.
     4. Process the DataFrame.
-    5. Package and return results as a ResultBundle.
+    5. Package and return results as a BaseResultBundle.
 
     Args:
         enrichment_df: Input data as DataFrame.
@@ -84,7 +84,7 @@ def enrich_metadata_json(
     enrichment_df: pd.DataFrame,
     ifc_file: Union[str, IfcLoader, 'ifcopenshell.file'],
     config: Dict[str, Any],
-    ) -> ResultBundle:
+    ) -> BaseResultBundle:
     pass
 
 def _process_enrich_ifc_with_df_logic(

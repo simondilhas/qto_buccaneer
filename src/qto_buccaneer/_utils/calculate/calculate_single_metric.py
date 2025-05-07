@@ -2,34 +2,34 @@ from typing import Union, Dict, Any, Optional
 import pandas as pd
 from pathlib import Path
 import logging
-from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle
 from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 from exp
 
 logger = logging.getLogger(__name__)
 
 def tool_template(
-    metadata_df: Union[pd.DataFrame, ResultBundle], #different inputs like ifc, df, ...
+    metadata_df: Union[pd.DataFrame, BaseResultBundle], #different inputs like ifc, df, ...
     config: Dict[str, Any],
-) -> ResultBundle:
+) -> BaseResultBundle:
     """
     Template for a data processing tool.
 
     Pattern:
-    1. Unpack the DataFrame (handles both DataFrame and ResultBundle).
+    1. Unpack the DataFrame (handles both DataFrame and BaseResultBundle).
     2. Extract required configuration.
     3. Validate the DataFrame using `validate_df`.
     4. Process the DataFrame.
-    5. Package and return results as a ResultBundle.
+    5. Package and return results as a BaseResultBundle.
 
     Args:
-        df: Input data as DataFrame or ResultBundle.
+        df: Input data as DataFrame or BaseResultBundle.
         config: Configuration dictionary.
         folder_dir: Directory for output files.
         file_name: Name for the output summary file.
 
     Returns:
-        ResultBundle with processed data and summary.
+        BaseResultBundle with processed data and summary.
     """
 
     validate_config(config)
@@ -58,7 +58,7 @@ def tool_template(
     # 5. Package results
      # your summary logic here
 
-    result_bundle = ResultBundle(
+    result_bundle = BaseResultBundle(
         dataframe=df,
         json=summary_data,
         )

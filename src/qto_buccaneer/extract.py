@@ -7,7 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urljoin
 from qto_buccaneer._utils.extract.extract_geometry_and_metadata_via_api import calculate_geometry_json_via_api_internal
-from qto_buccaneer._utils._result_bundle import ResultBundle, GeometryResultBundle, MetadataResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle, GeometryResultBundle, MetadataResultBundle
 from qto_buccaneer._utils.extract.extract_metadata_from_ifc import extract_metadata_from_ifc_privat
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 import ifcopenshell
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 def extract_geometry_and_metadata_via_api(
-    ifc_file: Union[str, Path, ifcopenshell.file, ResultBundle],
+    ifc_file: Union[str, Path, ifcopenshell.file, BaseResultBundle],
 ) -> GeometryResultBundle:
     """
     This module sends IFC geometry to an external FastAPI service 

@@ -2,7 +2,7 @@ from typing import Union, Dict, Any, Optional
 import pandas as pd
 from pathlib import Path
 import logging
-from qto_buccaneer._utils._result_bundle import ResultBundle, MetricsResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle, MetricsResultBundle
 from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 from qto_buccaneer._utils.calculate.exp_data.metadata_filter_exp import MetadataFilter
 import json
@@ -12,7 +12,7 @@ import time
 logger = logging.getLogger(__name__)
 
 def calculate_metrics_internal(
-    input_data: Union[pd.DataFrame, ResultBundle, Dict[str, Any]],
+    input_data: Union[pd.DataFrame, BaseResultBundle, Dict[str, Any]],
     config: Dict[str, Any],
 ) -> MetricsResultBundle:
     """
@@ -27,7 +27,7 @@ def calculate_metrics_internal(
     Args:
         input_data: Input data in one of the following formats:
                    - pandas DataFrame containing IFC model metadata
-                   - ResultBundle containing IFC model metadata
+                   - BaseResultBundle containing IFC model metadata
                    - JSON-compatible dictionary with IFC model metadata
         config: Configuration dictionary containing:
                - metrics: Dictionary of metric configurations
@@ -44,7 +44,7 @@ def calculate_metrics_internal(
     logger.info(f"Starting {TOOL_NAME}")
 
     # 1. Unpack and validate input data
-    if isinstance(input_data, ResultBundle):
+    if isinstance(input_data, BaseResultBundle):
         df = input_data.to_df()  # This will handle zip_content and other special cases
         input_json = input_data.json
     elif isinstance(input_data, pd.DataFrame):
@@ -57,14 +57,14 @@ def calculate_metrics_internal(
             df = pd.DataFrame([input_data])
         input_json = input_data
     else:
-        raise ValueError("Input must be a DataFrame, ResultBundle, or dictionary")
+        raise ValueError("Input must be a DataFrame, BaseResultBundle, or dictionary")
 
     # 2. Extract and validate required columns
     #required_columns = ['IfcEntity', 'Name', 'Qto_SpaceBaseQuantities.NetFloorArea']
     #validation = validate_df(df, required_columns=required_columns, df_name="Input DataFrame")
     #if not validation['is_valid']:
     #    # If validation fails, try to extract from zip_content if available
-    #    if isinstance(input_data, ResultBundle) and input_data.json and "zip_content" in input_data.json:
+    #    if isinstance(input_data, BaseResultBundle) and input_data.json and "zip_content" in input_data.json:
     #        # Extract the zip content to a temporary directory
     #        temp_dir = Path("/tmp/ifc_extract")
     #        temp_dir.mkdir(exist_ok=True)
@@ -107,7 +107,7 @@ def calculate_metrics_internal(
                     TOOL_NAME: {
                         "status": "Warning",
                         "message": "No metrics configuration found",
-                        "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "ResultBundle" if isinstance(input_data, ResultBundle) else "JSON"
+                        "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "BaseResultBundle" if isinstance(input_data, BaseResultBundle) else "JSON"
                     }
                 }
             )
@@ -188,7 +188,7 @@ def calculate_metrics_internal(
                         "status": "Warning",
                         "message": "No metrics were calculated successfully",
                         "failed_metrics": failed_metrics,
-                        "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "ResultBundle" if isinstance(input_data, ResultBundle) else "JSON"
+                        "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "BaseResultBundle" if isinstance(input_data, BaseResultBundle) else "JSON"
                     }
                 }
             )
@@ -200,7 +200,7 @@ def calculate_metrics_internal(
         summary_data = {
             TOOL_NAME: {
                 "status": "Success",
-                "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "ResultBundle" if isinstance(input_data, ResultBundle) else "JSON",
+                "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "BaseResultBundle" if isinstance(input_data, BaseResultBundle) else "JSON",
                 "metrics_calculated": len(combined_results),
                 "building": building_name,
                 "failed_metrics": failed_metrics,
@@ -253,8 +253,8 @@ config = {
 df = pd.read_json("ifc_model_metadata.json")
 result = calculate_metrics(df, config)
 
-# Using ResultBundle input
-result_bundle = ResultBundle(dataframe=df, json={'metadata': 'value'})
+# Using BaseResultBundle input
+result_bundle = BaseResultBundle(dataframe=df, json={'metadata': 'value'})
 result = calculate_metrics(result_bundle, config)
 
 # Using JSON input

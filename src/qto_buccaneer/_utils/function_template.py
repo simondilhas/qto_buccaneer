@@ -2,7 +2,7 @@ from typing import Union, Dict, Any, Optional
 import pandas as pd
 from pathlib import Path
 import logging
-from qto_buccaneer._utils._result_bundle import ResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle
 from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 import json
 import yaml
@@ -12,26 +12,26 @@ import io
 logger = logging.getLogger(__name__)
 
 def process_metadata(
-    input_data: Union[pd.DataFrame, ResultBundle, Dict[str, Any]],
+    input_data: Union[pd.DataFrame, BaseResultBundle, Dict[str, Any]],
     config: Dict[str, Any],
-) -> ResultBundle:
+) -> BaseResultBundle:
     """
-    Process metadata from various input formats and return a standardized ResultBundle.
+    Process metadata from various input formats and return a standardized BaseResultBundle.
 
-    This function handles different input formats (DataFrame, ResultBundle, or JSON dictionary)
+    This function handles different input formats (DataFrame, BaseResultBundle, or JSON dictionary)
     and processes them according to the provided configuration. It validates the input,
-    processes the data, and returns a ResultBundle containing both the processed DataFrame
+    processes the data, and returns a BaseResultBundle containing both the processed DataFrame
     and JSON summary.
 
     Args:
         input_data: Input data in one of the following formats:
                    - pandas DataFrame
-                   - ResultBundle
+                   - BaseResultBundle
                    - JSON-compatible dictionary
         config: Configuration dictionary containing processing parameters
 
     Returns:
-        ResultBundle containing:
+        BaseResultBundle containing:
         - dataframe: Processed DataFrame
         - json: Summary data in JSON format
     """
@@ -41,7 +41,7 @@ def process_metadata(
     logger.info(f"Starting {TOOL_NAME}")
 
     # 1. Unpack and validate input data
-    if isinstance(input_data, ResultBundle):
+    if isinstance(input_data, BaseResultBundle):
         df = input_data.to_df()
         input_json = input_data.json
     elif isinstance(input_data, pd.DataFrame):
@@ -51,7 +51,7 @@ def process_metadata(
         df = pd.DataFrame([input_data])
         input_json = input_data
     else:
-        raise ValueError("Input must be a DataFrame, ResultBundle, or dictionary")
+        raise ValueError("Input must be a DataFrame, BaseResultBundle, or dictionary")
 
     # 2. Extract and validate required columns
     required_columns = config.get('required_columns', [])
@@ -69,7 +69,7 @@ def process_metadata(
         summary_data = {
             TOOL_NAME: {
                 "status": "Success",
-                "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "ResultBundle" if isinstance(input_data, ResultBundle) else "JSON",
+                "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "BaseResultBundle" if isinstance(input_data, BaseResultBundle) else "JSON",
                 "row_count": len(processed_df),
                 "column_count": len(processed_df.columns),
                 "columns": list(processed_df.columns),
@@ -78,7 +78,7 @@ def process_metadata(
         }
 
         # 4. Package results
-        result_bundle = ResultBundle(
+        result_bundle = BaseResultBundle(
             dataframe=processed_df,
             json=summary_data
         )
@@ -101,8 +101,8 @@ config = {
 df = pd.DataFrame({'column1': [1, 2], 'column2': ['a', 'b']})
 result = process_metadata(df, config)
 
-# Using ResultBundle input
-result_bundle = ResultBundle(dataframe=df, json={'metadata': 'value'})
+# Using BaseResultBundle input
+result_bundle = BaseResultBundle(dataframe=df, json={'metadata': 'value'})
 result = process_metadata(result_bundle, config)
 
 # Using JSON input

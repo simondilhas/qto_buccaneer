@@ -1,13 +1,13 @@
 from typing import Union, Dict, Any, List
 import pandas as pd
-from qto_buccaneer._utils._result_bundle import ResultBundle, MetricsResultBundle
+from qto_buccaneer._utils._result_bundle import BaseResultBundle, MetricsResultBundle
 from qto_buccaneer._utils.calculate.calculate_metrics import calculate_metrics_internal
 import logging
 
 logger = logging.getLogger(__name__)
 
 def calculate_metrics(
-    input_data: Union[pd.DataFrame, ResultBundle, Dict[str, Any]],
+    input_data: Union[pd.DataFrame, BaseResultBundle, Dict[str, Any]],
     config: Dict[str, Any],
 ) -> MetricsResultBundle:
     """
@@ -21,7 +21,7 @@ def calculate_metrics(
     Args:
         input_data: Input data in one of the following formats:
                    - pandas DataFrame containing IFC model metadata
-                   - ResultBundle containing IFC model metadata
+                   - BaseResultBundle containing IFC model metadata
                    - JSON-compatible dictionary with IFC model metadata
         config: Configuration dictionary containing:
                - metrics: Dictionary of metric configurations
@@ -53,7 +53,7 @@ def calculate_metrics(
             config.get('tool_name', 'metrics_calculator'): {
                 "status": "Warning",
                 "message": "No metrics were calculated",
-                "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "ResultBundle" if isinstance(input_data, ResultBundle) else "JSON"
+                "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "BaseResultBundle" if isinstance(input_data, BaseResultBundle) else "JSON"
             }
         }
     
@@ -62,7 +62,7 @@ def calculate_metrics(
 
 
 def calculate_all_metrics(
-    input_data: Union[pd.DataFrame, ResultBundle, Dict[str, Any]],
+    input_data: Union[pd.DataFrame, BaseResultBundle, Dict[str, Any]],
     config: Dict[str, Any],
 ) -> MetricsResultBundle:
     """
@@ -76,7 +76,7 @@ def calculate_all_metrics(
     Args:
         input_data: Input data in one of the following formats:
                    - pandas DataFrame containing IFC model metadata
-                   - ResultBundle containing IFC model metadata
+                   - BaseResultBundle containing IFC model metadata
                    - JSON-compatible dictionary with IFC model metadata
         config: Configuration dictionary containing:
                - metrics: Dictionary of metric configurations
@@ -135,7 +135,7 @@ def calculate_all_metrics(
             config.get('tool_name', 'metrics_calculator'): {
                 "status": "Warning",
                 "message": "No metrics were calculated",
-                "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "ResultBundle" if isinstance(input_data, ResultBundle) else "JSON"
+                "input_type": "DataFrame" if isinstance(input_data, pd.DataFrame) else "BaseResultBundle" if isinstance(input_data, BaseResultBundle) else "JSON"
             }
         }
     
