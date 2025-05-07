@@ -163,13 +163,15 @@ def _process_enrich_ifc_with_df_logic(
             # Find matching DataFrame value
             matching_df_rows = df_for_ifc_enrichment[df_for_ifc_enrichment[key_df] == ifc_value]
             if not matching_df_rows.empty:
-                df_to_ifc[ifc_value] = guid
+                if ifc_value not in df_to_ifc:
+                    df_to_ifc[ifc_value] = []
+                df_to_ifc[ifc_value].append(guid)
         
         # Map the values from the DataFrame to GlobalIds
-        df_for_ifc_enrichment['GlobalId'] = df_for_ifc_enrichment[key_df].map(df_to_ifc)
+        df_for_ifc_enrichment['GlobalIds'] = df_for_ifc_enrichment[key_df].map(lambda x: df_to_ifc.get(x, []))
         
         # Check for missing mappings
-        missing_keys = df_for_ifc_enrichment[df_for_ifc_enrichment['GlobalId'].isna()][key_df].unique()
+        missing_keys = df_for_ifc_enrichment[df_for_ifc_enrichment['GlobalIds'].apply(len) == 0][key_df].unique()
         if len(missing_keys) > 0:
             summary_data["missing_mappings"] = list(missing_keys)
             logger.warning(f"Could not find GlobalIds for these {key_df}s: {missing_keys}")
@@ -185,62 +187,66 @@ def _process_enrich_ifc_with_df_logic(
     
     for _, element_data in df_for_ifc_enrichment.iterrows():
         try:
-            element = new_ifc.by_guid(element_data['GlobalId'])
+            # Get all GlobalIds for this element
+            global_ids = element_data['GlobalIds'] if 'GlobalIds' in element_data else [element_data['GlobalId']]
             
-            if element is not None:
-                summary_data["enriched_elements"] += 1
+            for guid in global_ids:
+                element = new_ifc.by_guid(guid)
                 
-                # Create or update property set
-                existing_pset = None
-                for rel in element.IsDefinedBy:
-                    if hasattr(rel, 'RelatingPropertyDefinition'):
-                        pdef = rel.RelatingPropertyDefinition
-                        if pdef.is_a('IfcPropertySet') and pdef.Name == pset_name:
-                            existing_pset = pdef
-                            break
-                
-                if not existing_pset:
-                    existing_pset = new_ifc.create_entity(
-                        "IfcPropertySet",
-                        GlobalId=ifcopenshell.guid.new(),
-                        Name=pset_name,
-                        Description="Enriched properties",
-                        HasProperties=[]
-                    )
-                    new_ifc.create_entity(
-                        "IfcRelDefinesByProperties",
-                        GlobalId=ifcopenshell.guid.new(),
-                        RelatedObjects=[element],
-                        RelatingPropertyDefinition=existing_pset
-                    )
-                
-                # Add new properties
-                columns_to_add = [col for col in df_for_ifc_enrichment.columns 
-                                if col != 'GlobalId' and col != key_df]
-                
-                for column in columns_to_add:
-                    value = element_data[column]
-                    if pd.notna(value):
-                        if isinstance(value, bool):
-                            ifc_value = new_ifc.create_entity("IfcBoolean", value)
-                        elif isinstance(value, str):
-                            # Store string directly without escape sequences
-                            ifc_value = new_ifc.create_entity("IfcText", value)
-                        elif isinstance(value, (int, float)):
-                            ifc_value = new_ifc.create_entity("IfcReal", float(value))
-                        else:
-                            ifc_value = new_ifc.create_entity("IfcText", str(value))
-                        
-                        prop = new_ifc.create_entity(
-                            "IfcPropertySingleValue",
-                            Name=column,
-                            NominalValue=ifc_value
+                if element is not None:
+                    summary_data["enriched_elements"] += 1
+                    
+                    # Create or update property set
+                    existing_pset = None
+                    for rel in element.IsDefinedBy:
+                        if hasattr(rel, 'RelatingPropertyDefinition'):
+                            pdef = rel.RelatingPropertyDefinition
+                            if pdef.is_a('IfcPropertySet') and pdef.Name == pset_name:
+                                existing_pset = pdef
+                                break
+                    
+                    if not existing_pset:
+                        existing_pset = new_ifc.create_entity(
+                            "IfcPropertySet",
+                            GlobalId=ifcopenshell.guid.new(),
+                            Name=pset_name,
+                            Description="Enriched properties",
+                            HasProperties=[]
                         )
-                        existing_pset.HasProperties = list(existing_pset.HasProperties) + [prop]
-            else:
-                summary_data["errors"].append(f"Element with GlobalId {element_data['GlobalId']} not found")
+                        new_ifc.create_entity(
+                            "IfcRelDefinesByProperties",
+                            GlobalId=ifcopenshell.guid.new(),
+                            RelatedObjects=[element],
+                            RelatingPropertyDefinition=existing_pset
+                        )
+                    
+                    # Add new properties
+                    columns_to_add = [col for col in df_for_ifc_enrichment.columns 
+                                    if col not in ['GlobalId', 'GlobalIds', key_df]]
+                    
+                    for column in columns_to_add:
+                        value = element_data[column]
+                        if pd.notna(value):
+                            if isinstance(value, bool):
+                                ifc_value = new_ifc.create_entity("IfcBoolean", value)
+                            elif isinstance(value, str):
+                                # Store string directly without escape sequences
+                                ifc_value = new_ifc.create_entity("IfcText", value)
+                            elif isinstance(value, (int, float)):
+                                ifc_value = new_ifc.create_entity("IfcReal", float(value))
+                            else:
+                                ifc_value = new_ifc.create_entity("IfcText", str(value))
+                            
+                            prop = new_ifc.create_entity(
+                                "IfcPropertySingleValue",
+                                Name=column,
+                                NominalValue=ifc_value
+                            )
+                            existing_pset.HasProperties = list(existing_pset.HasProperties) + [prop]
+                else:
+                    summary_data["errors"].append(f"Element with GlobalId {guid} not found")
         except Exception as e:
-            summary_data["errors"].append(f"Error processing element {element_data['GlobalId']}: {str(e)}")
+            summary_data["errors"].append(f"Error processing element {element_data.get('GlobalId', 'unknown')}: {str(e)}")
     
     return new_ifc, summary_data
 

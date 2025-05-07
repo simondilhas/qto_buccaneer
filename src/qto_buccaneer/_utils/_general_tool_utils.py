@@ -4,16 +4,16 @@ from qto_buccaneer._utils._result_bundle import BaseResultBundle
 from typing import List, Dict, Any
 
 def unpack_dataframe(data: Union[pd.DataFrame, BaseResultBundle]) -> pd.DataFrame:
-    """Unpack a DataFrame from either a DataFrame or BaseResultBundle.
+    """Unpack a DataFrame from either a DataFrame or ResultBundle.
     
     Args:
-        data: Either a pandas DataFrame or a BaseResultBundle containing a DataFrame
+        data: Either a pandas DataFrame or a ResultBundle containing a DataFrame
         
     Returns:
         pd.DataFrame: The unpacked DataFrame
         
     Raises:
-        ValueError: If the input is neither a DataFrame nor a BaseResultBundle with a DataFrame
+        ValueError: If the input is neither a DataFrame nor a ResultBundle with a DataFrame
     """
     if isinstance(data, pd.DataFrame):
         return data
@@ -21,9 +21,9 @@ def unpack_dataframe(data: Union[pd.DataFrame, BaseResultBundle]) -> pd.DataFram
         if data.dataframe is not None:
             return data.dataframe
         else:
-            raise ValueError("BaseResultBundle does not contain a DataFrame")
+            raise ValueError("ResultBundle does not contain a DataFrame")
     else:
-        raise ValueError("Input must be either a DataFrame or a BaseResultBundle")
+        raise ValueError("Input must be either a DataFrame or a ResultBundle")
     
 def validate_df(
     df: pd.DataFrame,

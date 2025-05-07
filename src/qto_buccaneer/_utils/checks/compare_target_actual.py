@@ -192,9 +192,8 @@ def calculate_differences(
     key_actual_column: str
 ) -> pd.DataFrame:
     """Calculate numerical differences and determine status based on percentage tolerance."""
-    # Fill missing values
+    # Fill missing values only in actual column
     merged_df[actual_area_column] = merged_df[actual_area_column].fillna(0.0)
-    merged_df[target_area_column] = merged_df[target_area_column].fillna(0.0)
 
     # Compute difference
     merged_df['diff'] = merged_df[actual_area_column] - merged_df[target_area_column]
@@ -209,29 +208,34 @@ def calculate_differences(
     # Determine status
     def get_status(row):
         actual_value = row.get(actual_area_column, 0.0)
-        target_value = row.get(target_area_column, 0.0)
+        target_value = row.get(target_area_column, None)  # Changed from 0.0 to None
         key_target = row.get(key_target_column, None)
+        key_actual = row.get(key_actual_column, None)
 
         # 1. Missing → Target exists, actual missing
-        if target_value > EPSILON and actual_value < EPSILON:
+        if pd.notna(key_target) and pd.isna(key_actual):
             return 'missing'
 
-        # 2. Project-specific → Target exists (LongName present), no value planned, but actual value > 0
-        if pd.notna(key_target) and target_value < EPSILON and actual_value > EPSILON:
+        # 2. Project-specific size → Target exists (LongName present), no value planned, but actual value > 0
+        if pd.notna(key_target) and (pd.isna(target_value) or target_value < EPSILON) and actual_value > EPSILON:
             return 'project_specific'
 
-        # 3. Extra space → No target LongName, but actual value > 0
+        # 3. Project-specific name → No target LongName, but actual value > 0
+        if pd.isna(key_target) and pd.notna(key_actual) and actual_value > EPSILON:
+            return 'project_specific_name'
+
+        # 4. Extra space → No target LongName, but actual value > 0
         if pd.isna(key_target) and actual_value > EPSILON:
             return 'extra_space'
 
-        # 4. Within tolerance
-        if target_value > EPSILON:
+        # 5. Within tolerance - only check if target value exists
+        if pd.notna(target_value) and target_value > EPSILON:
             lower_bound = target_value * (1 - tolerance / 100.0)
             upper_bound = target_value * (1 + tolerance / 100.0)
             if lower_bound <= actual_value <= upper_bound:
                 return 'within_tolerance'
 
-        # 5. Otherwise: Out of tolerance
+        # 6. Otherwise: Out of tolerance
         return 'out_of_tolerance'
 
     merged_df['status'] = merged_df.apply(get_status, axis=1)
@@ -347,13 +351,9 @@ def process_compare_target_actual_logic(
         # Check for duplicates in the merge keys before merging
         if target_df[f"{target_key}_target"].duplicated().any():
             logger.warning(f"Found {target_df[f'{target_key}_target'].duplicated().sum()} duplicate values in target key")
-            # Keep only the first occurrence of each target key
-            target_df = target_df.drop_duplicates(subset=[f"{target_key}_target"], keep='first')
         
         if actual_df[f"{actual_key}_actual"].duplicated().any():
             logger.warning(f"Found {actual_df[f'{actual_key}_actual'].duplicated().sum()} duplicate values in actual key")
-            # Keep only the first occurrence of each actual key
-            actual_df = actual_df.drop_duplicates(subset=[f"{actual_key}_actual"], keep='first')
         
         # Merge dataframes
         try:
