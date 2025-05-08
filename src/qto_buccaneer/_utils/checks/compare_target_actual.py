@@ -287,161 +287,374 @@ def handle_duplicate_global_ids(df: pd.DataFrame) -> pd.DataFrame:
     logger.info(f"Aggregated data for {len(duplicate_global_ids['GlobalId'].unique())} duplicate GlobalIds")
     return df
 
+
+### Needed functions for sure rest???
+
+def _aggregate_grouped_data(df: pd.DataFrame, key_columns: Union[str, list[str]], numerical_column: str) -> pd.DataFrame:
+    """
+    Aggregate data by grouping on key columns and performing various aggregations.
+    
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Input DataFrame to be aggregated
+    key_columns : Union[str, list[str]]
+        Column name(s) to group by. Can be a single string or list of strings
+    numerical_column : str
+        Column name containing numerical values to sum
+    
+    Returns:
+    --------
+    pandas.DataFrame
+        Aggregated DataFrame with counts, sums, and unique values as comma-separated lists
+    """
+    # Convert single string to list for consistent handling
+    if isinstance(key_columns, str):
+        key_columns = [key_columns]
+    
+    # First check if numerical column exists
+    if numerical_column not in df.columns:
+        raise KeyError(f"Numerical column '{numerical_column}' not found in DataFrame")
+    
+    # Check if all key columns exist
+    for col in key_columns:
+        if col not in df.columns:
+            raise KeyError(f"Key column '{col}' not found in DataFrame")
+    
+    # Create aggregation dictionary
+    agg_dict = {}
+    
+    # Add count for the first key column
+    agg_dict[key_columns[0]] = lambda x: None if df.loc[x.index, numerical_column].isna().all() else len(x)
+    
+    # Add numerical column aggregation
+    agg_dict[numerical_column] = lambda x: x.sum() if not x.isna().all() else None
+    
+    # Add other columns with unique values as comma-separated lists
+    for col in df.columns:
+        if col not in key_columns and col != numerical_column:
+            agg_dict[col] = lambda x: ', '.join(sorted(set(str(val) for val in x if pd.notna(val))))
+    
+    # Group by all key columns
+    grouped = df.groupby(key_columns).agg(agg_dict).rename(columns={
+        key_columns[0]: 'count',
+        numerical_column: f'sum_{numerical_column}'
+    })
+    
+    return grouped
+
+def _create_key_column(df, config, data_type='target'):
+    """
+    Create a new key column based on the config key.
+    If key is a single value, creates key column.
+    If key is a list, combines values from the list.
+    
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Input DataFrame
+    config : dict
+        Configuration dictionary containing key information
+    data_type : str, default='target'
+        Specifies whether to create key for 'target' or 'actual' data
+        
+    Returns:
+    --------
+    pandas.DataFrame
+        DataFrame with new key column added
+    """
+    # Get the key configuration
+    key_config = config['config']['keys']
+    
+    # Validate data_type
+    if data_type not in ['target', 'actual']:
+        raise ValueError("data_type must be either 'target' or 'actual'")
+    
+    # Get the appropriate key
+    key = key_config.get(data_type)
+    if key is None:
+        raise KeyError(f"No key configuration found for {data_type}")
+    
+    # Create column name
+    column_name = f'key'
+    
+    # Handle the key
+    if isinstance(key, list):
+        # If it's a list, combine values with underscore
+        df[column_name] = df[key].apply(lambda x: '_'.join(x.astype(str)), axis=1)
+    else:
+        # If it's a single value, just copy the column
+        df[column_name] = df[key]
+
+           
+    return df
+
+def _prepare_target_data(df, config, data_type='target'):
+    """
+    Prepare actual data for comparison by creating a key column and aggregating data.
+    
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Input DataFrame containing actual data
+    config : dict
+        Configuration dictionary containing key information
+    data_type : str, optional
+        Type of data being processed ('actual' or 'target'), defaults to 'actual'
+
+    Returns:
+    --------
+    pandas.DataFrame
+        DataFrame with key column and aggregated data
+    """ 
+    # Use the passed config directly instead of loading it again
+    key_columns = config['config']['keys'][data_type]
+    # Convert single string to list for consistent handling
+    if isinstance(key_columns, str):
+        key_columns = [key_columns]
+        
+    numerical_column = config['config']['numerical_columns'][data_type]
+    columns_to_keep = config['config']['return_values'][data_type]
+
+    # Create key column first
+    df = _create_key_column(df, config, data_type)
+    
+    # Then aggregate the data
+    grouped_data = _aggregate_grouped_data(df, 'key', numerical_column)
+    
+    # Reset index to make 'key' a regular column
+    grouped_data = grouped_data.reset_index()
+    
+    # Rename sum_m2 back to m2 if it exists
+    if f'sum_{numerical_column}' in grouped_data.columns:
+        grouped_data = grouped_data.rename(columns={f'sum_{numerical_column}': numerical_column})
+
+    columns_to_keep = columns_to_keep + ['count'] + ['key']
+
+    # Select only the columns we want to keep
+    df_filtered = grouped_data[columns_to_keep]
+
+    return df_filtered
+
+def _create_pivot_columns(df, pivot_column, quantity_column):
+    """
+    Create new columns based on unique values in pivot_column, filled with values from quantity_column.
+    Columns are created in order from smallest to biggest value.
+    
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Input dataframe
+    pivot_column : str
+        Name of the column to create new columns from
+    quantity_column : str
+        Name of the column containing the values to fill in the new columns
+    
+    Returns:
+    --------
+    tuple
+        (pandas.DataFrame with new columns added, list of newly created column names)
+    """
+    # Create a copy of the original dataframe
+    result = df.copy()
+    
+    # Get unique values from pivot column and sort them
+    unique_values = sorted(df[pivot_column].unique())
+    
+    # Keep track of created columns
+    created_columns = []
+    
+    # Create new columns for each unique value
+    for value in unique_values:
+        # Create new column name using just the value
+        new_column = str(value)
+        created_columns.append(new_column)
+        # Fill the new column with values where pivot_column matches the value
+        result[new_column] = np.where(result[pivot_column] == value, result[quantity_column], 0)
+        # NEW LINE: Ensure the column is float type
+        result[new_column] = result[new_column].astype(float)
+    
+    return result, created_columns
+
+def _prepare_actual_data(df, config, data_type='actual'):
+    """
+    Prepare actual data for comparison by creating a key column and aggregating data.
+    
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Input DataFrame containing actual data
+    config : dict
+        Configuration dictionary containing key information
+    data_type : str, optional
+        Type of data being processed ('actual' or 'target'), defaults to 'actual'
+
+    Returns:
+    --------
+    pandas.DataFrame
+        DataFrame with key column and aggregated data
+    """ 
+    # Use the passed config directly instead of loading it again
+    key_columns = config['config']['keys'][data_type]
+    # Convert single string to list for consistent handling
+    if isinstance(key_columns, str):
+        key_columns = [key_columns]
+        
+    numerical_column = config['config']['numerical_columns'][data_type]
+    columns_to_keep = config['config']['return_values'][data_type]
+    expand_column = config['config']['numerical_columns']['expand_column']
+    print(expand_column)
+
+    # Create pivot columns and get the list of created columns
+    df_pivot, pivot_columns = _create_pivot_columns(df, expand_column, numerical_column)
+
+    # Create key column first
+    df_for_aggregation = _create_key_column(df_pivot, config, data_type)
+    
+    # Then aggregate the data
+    grouped_data = _aggregate_grouped_data(df_for_aggregation, 'key', numerical_column)
+    
+    # Reset index to make 'key' a regular column
+    grouped_data = grouped_data.reset_index()
+    
+    if pivot_columns is not None:
+        for col in pivot_columns:
+            # Group by key and sum the values
+            sums = df_for_aggregation.groupby('key')[col].sum()
+            # Map the sums back to the grouped_data
+            grouped_data[col] = grouped_data['key'].map(sums)
+
+        numerical_sums = df_for_aggregation.groupby('key')[numerical_column].sum()
+        grouped_data[numerical_column] = grouped_data['key'].map(numerical_sums)
+
+    # Add count and key to columns to keep
+    columns_to_keep = columns_to_keep + ['count'] + ['key'] + [numerical_column]
+    
+    # Combine the filtered columns with the pivot columns
+    final_columns = columns_to_keep + pivot_columns
+    
+    # Select the combined columns, but only those that exist in grouped_data
+    available_columns = [col for col in final_columns if col in grouped_data.columns]
+    df_filtered = grouped_data[available_columns]
+
+    return df_filtered
+
+def _merge_target_and_actual(df_target, df_actual):
+    """
+    Merge target and actual dataframes on the 'key' column.
+    
+    Parameters:
+    df_target : pandas.DataFrame
+        Target dataframe
+    df_actual : pandas.DataFrame
+        Actual dataframe
+
+    Returns:
+    pandas.DataFrame
+        Merged dataframe with target and actual data
+
+    """
+    sufix_target = "_target"
+    sufix_actual = "_actual"
+    # rename the columns of the target dataframe
+    df_target.columns = [col + sufix_target for col in df_target.columns]
+    # rename the columns of the actual dataframe
+    df_actual.columns = [col + sufix_actual for col in df_actual.columns]
+
+    # Merge the dataframes on the 'key' column
+    df_merged = pd.merge(df_target, df_actual, left_on=f'key{sufix_target}', right_on=f'key{sufix_actual    }', how='left')
+    # Merge the dataframes on the 'key' column
+
+    
+    return df_merged
+
+
 def process_compare_target_actual_logic(
     target_df: pd.DataFrame,
     actual_df: pd.DataFrame,
     config: Dict[str, Any]
-) -> tuple[pd.DataFrame, Dict[str, Any]]:
+) -> BaseResultBundle:
     """Core data processing logic for the tool"""
-    try:
-        # Get configuration from the config
-        # The config is nested under 'config' key
-        check_config = config.get('config', {})
-        if not check_config:
-            raise ValueError("No 'config' section found in the check configuration")
-            
+
+    # Get configuration from the config
+    # The config is nested under 'config' key
+    check_config = config.get('config', {})
+    if not check_config:
+        raise ValueError("No 'config' section found in the check configuration")
+        
+    # Log available columns for debugging
+    logger.info(f"Target DataFrame columns: {target_df.columns.tolist()}")
+    logger.info(f"Actual DataFrame columns: {actual_df.columns.tolist()}")
+    
+    # Prepare target and actual data
+    target_df = _prepare_target_data(target_df, config, 'target')
+    actual_df = _prepare_actual_data(actual_df, config, 'actual')
+    merged_df = _merge_target_and_actual(target_df, actual_df)
+    
+    # Get return values from config
+    return_values = check_config.get('return_values', [])
+    
+    # Calculate differences if numerical comparison columns are provided
+    if 'numerical_comparison' in check_config:
+        numerical_config = check_config['numerical_comparison']
+        tolerance = numerical_config.get('tolerance', 5.0)  # Default tolerance of 5%
+        
         target_key = check_config['keys']['target']
         actual_key = check_config['keys']['actual']
-        filter_str = check_config.get('filter', '')
-        
-        # Log available columns for debugging
-        logger.info(f"Target DataFrame columns: {target_df.columns.tolist()}")
-        logger.info(f"Actual DataFrame columns: {actual_df.columns.tolist()}")
-        logger.info(f"Looking for target key: {target_key}")
-        logger.info(f"Looking for actual key: {actual_key}")
-        
-        # Verify column existence before proceeding
-        if target_key not in target_df.columns:
-            raise ValueError(f"Target key '{target_key}' not found in target DataFrame. Available columns: {target_df.columns.tolist()}")
-        if actual_key not in actual_df.columns:
-            raise ValueError(f"Actual key '{actual_key}' not found in actual DataFrame. Available columns: {actual_df.columns.tolist()}")
-        
-        # Get return values from the config
-        return_values = []
-        if 'return_values' in check_config:
-            if 'target' in check_config['return_values']:
-                return_values.extend([f"{col}_target" for col in check_config['return_values']['target']])
-            if 'actual' in check_config['return_values']:
-                # Map 'guid' to 'GlobalId' in return values if needed
-                actual_return_values = []
-                for col in check_config['return_values']['actual']:
-                    if col == 'guid':
-                        actual_return_values.append('GlobalId')
-                    else:
-                        actual_return_values.append(col)
-                return_values.extend([f"{col}_actual" for col in actual_return_values])
-        
-        # Add calculated columns to return values
-        calculated_columns = ['status']  # Always include status
-        return_values.extend(calculated_columns)
-        
-        # Apply filter if specified
-        if filter_str:
-            actual_df = apply_filter(actual_df, filter_str)
 
-        # Rename columns to avoid conflicts
-        actual_df = actual_df.copy()
-        actual_df.columns = [f"{col}_actual" for col in actual_df.columns]
-        target_df = target_df.copy()
-        target_df.columns = [f"{col}_target" for col in target_df.columns]
+        target_column = f"{numerical_config['target']}_target"
+        actual_column = f"{numerical_config['actual']}_actual"
         
-        # Log the merge keys for debugging
-        logger.info(f"Merge keys - Target: {target_key}_target, Actual: {actual_key}_actual")
-        
-        # Check for duplicates in the merge keys before merging
-        if target_df[f"{target_key}_target"].duplicated().any():
-            logger.warning(f"Found {target_df[f'{target_key}_target'].duplicated().sum()} duplicate values in target key")
-        
-        if actual_df[f"{actual_key}_actual"].duplicated().any():
-            logger.warning(f"Found {actual_df[f'{actual_key}_actual'].duplicated().sum()} duplicate values in actual key")
-        
-        # Merge dataframes
-        try:
-            # First try a left join to match target with actual
-            merged_df = pd.merge(
-                target_df,
-                actual_df,
-                how='left',
-                left_on=[f"{target_key}_target"],
-                right_on=[f"{actual_key}_actual"],
-            )
-            
-            # Then find any actual items that weren't matched (extra items)
-            extra_items = actual_df[~actual_df[f"{actual_key}_actual"].isin(merged_df[f"{actual_key}_actual"])]
-            if not extra_items.empty:
-                # Create a new DataFrame for extra items with NaN for target columns
-                extra_df = pd.DataFrame(columns=merged_df.columns)
-                for col in actual_df.columns:
-                    extra_df[col] = extra_items[col]
-                # Append extra items to the merged DataFrame
-                merged_df = pd.concat([merged_df, extra_df], ignore_index=True)
-                
-        except KeyError as e:
-            raise ValueError(f"Error during merge: {e}. Available columns in target_df: {target_df.columns.tolist()}, actual_df: {actual_df.columns.tolist()}")
-        
-        # Calculate differences if numerical comparison columns are provided
-        if 'numerical_comparison' in check_config:
-            numerical_config = check_config['numerical_comparison']
-            tolerance = numerical_config.get('tolerance', 5.0)  # Default tolerance of 5%
-            
-            # Add _actual and _target suffixes to the column names
-            target_column = f"{numerical_config['target']}_target"
-            actual_column = f"{numerical_config['actual']}_actual"
-            
-            # Verify the columns exist after renaming
-            if target_column not in merged_df.columns:
-                raise ValueError(f"Target column '{target_column}' not found in merged DataFrame. Available columns: {merged_df.columns.tolist()}")
-            if actual_column not in merged_df.columns:
-                raise ValueError(f"Actual column '{actual_column}' not found in merged DataFrame. Available columns: {merged_df.columns.tolist()}")
-            
-            merged_df = calculate_differences(
-                merged_df=merged_df,
-                tolerance=tolerance,
-                target_area_column=target_column,
-                actual_area_column=actual_column,
-                key_target_column=f"{target_key}_target",
-                key_actual_column=f"{actual_key}_actual"
-            )
-        else:
-            # For name comparison, set status based on presence in target and actual
-            merged_df['status'] = merged_df.apply(
-                lambda row: 'missing' if pd.isna(row[f'{actual_key}_actual']) else 
-                           'extra' if pd.isna(row[f'{target_key}_target']) else 
-                           'match',
-                axis=1
-            )
-        
-        # Filter the merged DataFrame to only include the requested return values
-        # First, ensure all requested columns exist
-        available_columns = merged_df.columns.tolist()
-        valid_return_values = [col for col in return_values if col in available_columns]
-        if valid_return_values != return_values:
-            missing_columns = set(return_values) - set(valid_return_values)
-            logger.warning(f"Some return values not found in DataFrame: {missing_columns}")
-            
-        # Add calculated columns if they exist in the DataFrame and are not duplicates
-        calculated_columns = ['status', 'diff', 'diff_pct']
-        valid_calculated_columns = [
-            col for col in calculated_columns 
-            if col in available_columns and col not in valid_return_values
-        ]
-        valid_return_values.extend(valid_calculated_columns)
-        
-        # Create ComparisonResult object with filtered DataFrame
-        comparison = ComparisonResult(
-            merged_df=merged_df[valid_return_values],
-            return_values=valid_return_values,
-            comparison_type="name"
+        merged_df = calculate_differences(
+            merged_df=merged_df,
+            tolerance=tolerance,
+            target_area_column=target_column,
+            actual_area_column=actual_column,
+            key_target_column=f"{target_key}_target",
+            key_actual_column=f"{actual_key}_actual"
         )
         
-        # Get BaseResultBundle
-        result_bundle = comparison.to_result_bundle()
+        # Create ComparisonResult object for numerical comparison
+        comparison = ComparisonResult(
+            merged_df=merged_df,
+            return_values=return_values,
+            numerical_target_column=target_column,
+            numerical_actual_column=actual_column,
+            comparison_type="numerical"
+        )
+    else:
+        # For name comparison, set status based on presence in target and actual
+        target_key = check_config['keys']['target']
+        actual_key = check_config['keys']['actual']
         
-        return merged_df[valid_return_values], result_bundle.summary
+        merged_df['status'] = merged_df.apply(
+            lambda row: 'missing' if pd.isna(row[f'{actual_key}_actual']) else 
+                       'extra' if pd.isna(row[f'{target_key}_target']) else 
+                       'match',
+            axis=1
+        )
         
-    except Exception as e:
-        logger.exception(f"Processing failed in compare_target_actual")
-        raise RuntimeError(f"Processing failed in compare_target_actual: {str(e)}")
+        # Create ComparisonResult object for name comparison
+        comparison = ComparisonResult(
+            merged_df=merged_df,
+            return_values=return_values,
+            comparison_type="name"
+        )
+    
+    # Get BaseResultBundle
+    result_bundle = comparison.to_result_bundle()
+    
+    # Filter the merged DataFrame to only include the requested return values
+    available_columns = merged_df.columns.tolist()
+    valid_return_values = [col for col in return_values if col in available_columns]
+    if valid_return_values != return_values:
+        missing_columns = set(return_values) - set(valid_return_values)
+        logger.warning(f"Some return values not found in DataFrame: {missing_columns}")
+    
+    # Update the result bundle with the filtered DataFrame
+    result_bundle.dataframe = merged_df[valid_return_values]
+    
+    return result_bundle
 
 
 
