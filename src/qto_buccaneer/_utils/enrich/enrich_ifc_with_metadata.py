@@ -159,6 +159,10 @@ def _process_enrich_ifc_with_df_logic(
         
         # Create a mapping from DataFrame values to IFC model values
         df_to_ifc = {}
+        
+        # Count unique values for each key
+        unique_counts = df_for_ifc_enrichment[key_df].value_counts().to_dict()
+        
         for guid, ifc_value in globalid_to_ifc.items():
             # Find matching DataFrame value
             matching_df_rows = df_for_ifc_enrichment[df_for_ifc_enrichment[key_df] == ifc_value]
@@ -169,6 +173,9 @@ def _process_enrich_ifc_with_df_logic(
         
         # Map the values from the DataFrame to GlobalIds
         df_for_ifc_enrichment['GlobalIds'] = df_for_ifc_enrichment[key_df].map(lambda x: df_to_ifc.get(x, []))
+        
+        # Add the count of unique values to the DataFrame
+        df_for_ifc_enrichment['Anzahl_Identische_Raeume'] = df_for_ifc_enrichment[key_df].map(unique_counts)
         
         # Check for missing mappings
         missing_keys = df_for_ifc_enrichment[df_for_ifc_enrichment['GlobalIds'].apply(len) == 0][key_df].unique()
@@ -227,6 +234,11 @@ def _process_enrich_ifc_with_df_logic(
                     for column in columns_to_add:
                         value = element_data[column]
                         if pd.notna(value):
+                            # Create a more descriptive property name for the count
+                            prop_name = column
+                            if column == 'Anzahl_Identische_Raeume':
+                                prop_name = f"Anzahl_Identische_{key_df}"
+                            
                             if isinstance(value, bool):
                                 ifc_value = new_ifc.create_entity("IfcBoolean", value)
                             elif isinstance(value, str):
@@ -239,7 +251,7 @@ def _process_enrich_ifc_with_df_logic(
                             
                             prop = new_ifc.create_entity(
                                 "IfcPropertySingleValue",
-                                Name=column,
+                                Name=prop_name,
                                 NominalValue=ifc_value
                             )
                             existing_pset.HasProperties = list(existing_pset.HasProperties) + [prop]
