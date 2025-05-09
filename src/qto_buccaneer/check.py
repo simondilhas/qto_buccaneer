@@ -8,7 +8,6 @@ import yaml
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Any
 from qto_buccaneer.report import ExcelLayoutConfig
-
 from qto_buccaneer._utils.checks.compare_target_actual import process_compare_target_actual_logic
 import json
 from qto_buccaneer._utils._result_bundle import BaseResultBundle
@@ -95,6 +94,8 @@ def compare_target_actual(
 
     # 4. Process DataFrames
     df, summary_data = process_compare_target_actual_logic(target_df, actual_df, config)
+
+    
 
     # 5. Package results
     result_bundle = BaseResultBundle(
