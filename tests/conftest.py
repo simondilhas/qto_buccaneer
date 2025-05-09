@@ -3,6 +3,7 @@ import sys
 import pytest
 from _pytest.runner import TestReport
 from _pytest.terminal import TerminalReporter
+from pathlib import Path
 
 class TestResultCollector:
     def __init__(self):
@@ -10,8 +11,18 @@ class TestResultCollector:
         self.failed = []
         self.skipped = []
         self.error_details = {}
+        self.current_test_module = None
 
     def pytest_runtest_logreport(self, report):
+        # Extract the test module name from the nodeid
+        if '::' in report.nodeid:
+            test_module = report.nodeid.split('::')[0]
+            if test_module.startswith('tests/'):
+                test_module = test_module[6:]  # Remove 'tests/' prefix
+            if test_module.endswith('.py'):
+                test_module = test_module[:-3]  # Remove '.py' suffix
+            self.current_test_module = test_module
+        
         if report.when == 'call':
             if report.passed:
                 self.passed.append(report.nodeid)
@@ -69,7 +80,7 @@ class TestResultCollector:
                 elif "with_parentheses" in test_name:
                     report.append("**Explanation**: The string filter parser doesn't properly evaluate expressions with parentheses.\n")
                 
-                report.append("**Suggested Fix**: Update the MetadataFilter implementation to correctly handle these cases.\n")
+                report.append("**Suggested Fix**: Update the implementation to correctly handle these cases.\n")
         
         return "\n".join(report)
 
@@ -92,6 +103,30 @@ def pytest_unconfigure(config):
     collector = getattr(config, "test_collector", None)
     if collector:
         report = collector.generate_report()
-        with open("test_report.md", "w") as f:
+        
+        # Create reports directory if it doesn't exist
+        reports_dir = Path("test_reports")
+        reports_dir.mkdir(exist_ok=True)
+        
+        # Generate a report file name based on the current test module
+        if collector.current_test_module:
+            report_file = reports_dir / f"test_report_{collector.current_test_module}.md"
+        else:
+            report_file = reports_dir / "test_report.md"
+        
+        # Write the report
+        with open(report_file, "w", encoding="utf-8") as f:
             f.write(report)
-        print("\n\nTest report generated: test_report.md") 
+        
+        print(f"\n\nTest report generated: {report_file}")
+
+# Add a hook to track which test module is currently running
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup(item):
+    collector = getattr(item.config, "test_collector", None)
+    if collector:
+        # Extract module name from the test item
+        module_name = item.module.__name__
+        if module_name.startswith('tests.'):
+            module_name = module_name[6:]  # Remove 'tests.' prefix
+        collector.current_test_module = module_name 
