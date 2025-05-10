@@ -305,10 +305,73 @@ def handle_duplicate_global_ids(df: pd.DataFrame) -> pd.DataFrame:
 
 ### Needed functions for sure rest???
 
-def _aggregate_grouped_data(df: pd.DataFrame, key_columns: Union[str, list[str]], numerical_column: str) -> pd.DataFrame:
+def _aggregate_grouped_data_new(df: pd.DataFrame, key_columns: Union[str, list[str]], numerical_column: str) -> pd.DataFrame:
+    """
+    Aggregate data by grouping on key columns and performing various aggregations.
+    
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Input DataFrame to be aggregated
+    key_columns : Union[str, list[str]]
+        Column name(s) to group by. Can be a single string or list of strings
+    numerical_column : str
+        Column name containing numerical values to sum
+    
+    Returns:
+    --------
+    pandas.DataFrame
+        Aggregated DataFrame with counts, sums, and other columns preserved
+    """
+    # First check if numerical column exists and when convert them to float, but why are the pivoted columns str?
+    #exclude_cols_for_numeric_conversion = {'id', 'parent_id'}
+    #for col in df.columns:
+    #    if col not in exclude_cols_for_numeric_conversion and df[col].dtype == object:
+    #        if df[col].str.replace('.', '', 1).str.isnumeric().any():
+    #            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    
+    # Convert single string to list for consistent handling
+    if isinstance(key_columns, str):
+        key_columns = [key_columns]
+    
+    # First check if numerical column exists
+    if numerical_column not in df.columns:
+        raise KeyError(f"Numerical column '{numerical_column}' not found in DataFrame")
+    
+    # Check if all key columns exist
+    for col in key_columns:
+        if col not in df.columns:
+            raise KeyError(f"Key column '{col}' not found in DataFrame")
+    
+    # Create aggregation dictionary
+    agg_dict = {}
+    
+    # Add count for the first key column
+    agg_dict[key_columns[0]] = lambda x: None if df.loc[x.index, numerical_column].isna().all() else len(x)
+    
+    # Add numerical column aggregation
+    agg_dict[numerical_column] = lambda x: x.sum() if not x.isna().all() else None
+    
+    # Add other columns with 'first' aggregation
+    for col in df.columns:
+        if col not in key_columns and col != numerical_column:
+            agg_dict[col] = 'first'
+    
+    # Group by all key columns
+    grouped = df.groupby(key_columns).agg(agg_dict).rename(columns={
+        key_columns[0]: 'count',
+        numerical_column: f'sum_{numerical_column}'
+    })
+    
+    return grouped
+
+def _aggregate_grouped_data_old(df: pd.DataFrame, key_columns: Union[str, list[str]], numerical_column: str) -> pd.DataFrame:
     """
     Aggregate data by grouping on key columns and performing various aggregations.
     """
+
+    
     # Convert single string to list for consistent handling
     if isinstance(key_columns, str):
         key_columns = [key_columns]
@@ -357,8 +420,59 @@ def _aggregate_grouped_data(df: pd.DataFrame, key_columns: Union[str, list[str]]
     
     return grouped
 
+def aggregate_grouped_data_custom(
+    df: pd.DataFrame,
+    key_columns: Union[str, list[str]],
+    numerical_column: str
+) -> pd.DataFrame:
+    """
+    Aggregate a DataFrame by:
+    - Grouping by key columns
+    - Counting non-null numerical values
+    - Summing the numerical column
+    - Summing all '__pivot_' columns
+    - Returning other columns as comma-separated unique values (excluding NaN)
 
-def _create_key_column(df, config, data_type='target'):
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        Input DataFrame
+    key_columns : str or list of str
+        Column(s) to group by
+    numerical_column : str
+        The main numerical column to sum and count
+
+    Returns:
+    --------
+    pd.DataFrame
+        Aggregated DataFrame
+    """
+    if isinstance(key_columns, str):
+        key_columns = [key_columns]
+
+    # Validate required columns
+    missing_cols = [col for col in key_columns + [numerical_column] if col not in df.columns]
+    if missing_cols:
+        raise KeyError(f"Missing required columns: {missing_cols}")
+
+    agg_dict = {
+        'count': (numerical_column, lambda x: x.notna().sum()),
+        f'sum_{numerical_column}': (numerical_column, lambda x: x.sum(skipna=True) if x.notna().any() else None)
+    }
+
+    for col in df.columns:
+        if col in key_columns or col == numerical_column:
+            continue
+        elif col.startswith("__pivot_"):
+            agg_dict[col] = (col, lambda x: x.sum(skipna=True))
+        else:
+            agg_dict[col] = (col, lambda x: ', '.join(map(str, pd.unique(x.dropna()))))
+
+    grouped = df.groupby(key_columns).agg(**agg_dict).reset_index()
+
+    return grouped
+
+def _create_key_column_old(df, config, data_type='target'):
     """
     Create a new key column based on the config key.
     If key is a single value, creates key column.
@@ -412,6 +526,61 @@ def _create_key_column(df, config, data_type='target'):
            
     return df
 
+def _create_key_column(df, config, data_type='target'):
+    """
+    Create a new key column based on the config key.
+    If key is a single value, creates key column.
+    If key is a list, combines values from the list.
+    If all configured key fields are missing/empty, fallback to Name, then GlobalId.
+
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Input DataFrame
+    config : dict
+        Configuration dictionary containing key information
+    data_type : str, default='target'
+        Specifies whether to create key for 'target' or 'actual' data
+
+    Returns:
+    --------
+    pandas.DataFrame
+        DataFrame with new key column added
+    """
+    import pandas as pd
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    key_config = config['config']['keys']
+    if data_type not in ['target', 'actual']:
+        raise ValueError("data_type must be either 'target' or 'actual'")
+    
+    key = key_config.get(data_type)
+    if key is None:
+        raise KeyError(f"No key configuration found for {data_type}")
+    
+    column_name = 'key'
+
+    if isinstance(key, list):
+        def create_key(row):
+            values = []
+            for k in key:
+                val = row.get(k, "")
+                if pd.isna(val) or str(val).strip() == "":
+                    continue
+                values.append(str(val))
+            # Fallback to Name if no key parts are usable
+            if not values:
+                return str(row.get("Name", row.get("GlobalId", "")))
+            return '_'.join(values)
+        df[column_name] = df.apply(create_key, axis=1)
+    else:
+        df[column_name] = df[key].fillna(df["Name"].fillna(df["GlobalId"])).astype(str)
+
+    return df
+
+
 def _prepare_target_data(df, config, data_type='target'):
     """
     Prepare actual data for comparison by creating a key column and aggregating data.
@@ -445,23 +614,46 @@ def _prepare_target_data(df, config, data_type='target'):
     df = _create_key_column(df, config, data_type)
     
     # Then aggregate the data
-    grouped_data = _aggregate_grouped_data(df, 'key', numerical_column)
+    grouped_data = _aggregate_grouped_data_new(df, 'key', numerical_column)
     
     # Reset index to make 'key' a regular column
     grouped_data = grouped_data.reset_index()
     
-    # Rename sum_m2 back to m2 if it exists
-    if f'sum_{numerical_column}' in grouped_data.columns:
-        grouped_data = grouped_data.rename(columns={f'sum_{numerical_column}': numerical_column})
+    #$ Rename sum_m2 back to m2 if it exists
+    #if f'sum_{numerical_column}' in grouped_data.columns:
+    #    grouped_data = grouped_data.rename(columns={f'sum_{numerical_column}': numerical_column})
 
-    columns_to_keep = columns_to_keep + ['count'] + ['key']
+    columns_to_keep = columns_to_keep + ['count'] + ['key'] + [f"sum_{numerical_column}"]
+    columns_to_keep = [item for item in columns_to_keep if item != 'm2']
 
     # Select only the columns we want to keep
     df_filtered = grouped_data[columns_to_keep]
 
     return df_filtered
 
-def _prepare_data(df, config, data_type='target'):
+
+def _create_pivot_columns(df, pivot_column, quantity_column):
+    """
+    For each unique value in `pivot_column`, add a new column (named str(value))
+    containing `quantity_column` where pivot == value, and 0 elsewhere.
+    Returns (new_df, list_of_new_column_names).
+    """
+    result = df.copy()
+    # 1) find and sort all unique pivot values (drop NaN if you don't want a column for it)
+    uniques = sorted(result[pivot_column].dropna().unique())
+    new_cols = []
+    # 2) for each pivot value, create one new column
+    for val in uniques:
+        col_name = "__pivot_" + str(val)
+        result[col_name] = (
+            result[quantity_column]
+            .where(result[pivot_column] == val, 0)
+            .astype(float)
+        )
+        new_cols.append(col_name)
+    return result, new_cols
+
+def _prepare_actual_data_old(df, config, data_type='actual'):
     """
     Prepare actual data for comparison by creating a key column and aggregating data.
     
@@ -479,57 +671,70 @@ def _prepare_data(df, config, data_type='target'):
     pandas.DataFrame
         DataFrame with key column and aggregated data
     """ 
+    logger.info(f"Initial columns in actual data: {df.columns.tolist()}")
+    
     # Use the passed config directly instead of loading it again
     key_columns = config['config']['keys'][data_type]
     # Convert single string to list for consistent handling
     if isinstance(key_columns, str):
         key_columns = [key_columns]
-
-    print(config)
         
     numerical_column = config['config']['numerical_columns'][data_type]
     columns_to_keep = config['config']['return_values'][data_type]
+    expand_column = config['config']['numerical_columns'].get('expand_column')
+
+    logger.info(f"Columns to keep from config: {columns_to_keep}")
+    logger.info(f"Numerical column: {numerical_column}")
+    logger.info(f"Expand column: {expand_column}")
 
     # Create key column first
-    df = _create_key_column(df, config, data_type)
+    df_for_aggregation = _create_key_column(df, config, data_type)
+    logger.info(f"Columns after creating key: {df_for_aggregation.columns.tolist()}")
     
-    # Then aggregate the data
-    grouped_data = _aggregate_grouped_data(df, 'key', numerical_column)
-    
-    # Reset index to make 'key' a regular column
-    grouped_data = grouped_data.reset_index()
-    
-    # Rename sum_m2 back to m2 if it exists
-    if f'sum_{numerical_column}' in grouped_data.columns:
-        grouped_data = grouped_data.rename(columns={f'sum_{numerical_column}': numerical_column})
+    # If we have an expand column, create pivot columns
+    if expand_column:
+        # Create pivot columns and get the list of created columns
+        df_pivot, pivot_columns = _create_pivot_columns(df_for_aggregation, expand_column, numerical_column)
+        logger.info(f"Pivot columns created: {pivot_columns}")
+        
+        # Group by key and sum the values for each pivot column
+        grouped_data = df_pivot.groupby('key').agg({
+            **{col: 'sum' for col in pivot_columns},
+            numerical_column: 'sum'
+        }).reset_index()
+        
+        # Add count column
+        grouped_data['count'] = df_pivot.groupby('key').size().values
+        
+        # Add total column that sums across all storeys
+        grouped_data['total'] = grouped_data[pivot_columns].sum(axis=1)
+    else:
+        # If no expand column, just aggregate normally
+        grouped_data = _aggregate_grouped_data(df_for_aggregation, 'key', numerical_column)
+        grouped_data = grouped_data.reset_index()
 
-    columns_to_keep = columns_to_keep + ['count'] + ['key']
+    logger.info(f"Columns after aggregation: {grouped_data.columns.tolist()}")
 
-    # Select only the columns we want to keep
-    df_filtered = grouped_data[columns_to_keep]
+    # Add count and key to columns to keep
+    columns_to_keep = columns_to_keep + ['count'] + ['key'] + [numerical_column]
+    
+    # If we have pivot columns, add them to the final columns
+    if expand_column:
+        final_columns = columns_to_keep + pivot_columns + ['total']
+    else:
+        final_columns = columns_to_keep
+    
+    logger.info(f"Final columns requested: {final_columns}")
+    
+    # Select the combined columns, but only those that exist in grouped_data
+    available_columns = [col for col in final_columns if col in grouped_data.columns]
+    logger.info(f"Available columns in grouped data: {grouped_data.columns.tolist()}")
+    logger.info(f"Final selected columns: {available_columns}")
+    
+    df_filtered = grouped_data[available_columns]
+    logger.info(f"Final columns in filtered data: {df_filtered.columns.tolist()}")
 
     return df_filtered
-
-def _create_pivot_columns(df, pivot_column, quantity_column):
-    """
-    For each unique value in `pivot_column`, add a new column (named str(value))
-    containing `quantity_column` where pivot == value, and 0 elsewhere.
-    Returns (new_df, list_of_new_column_names).
-    """
-    result = df.copy()
-    # 1) find and sort all unique pivot values (drop NaN if you don’t want a column for it)
-    uniques = sorted(result[pivot_column].dropna().unique())
-    new_cols = []
-    # 2) for each pivot value, create one new column
-    for val in uniques:
-        col_name = str(val)
-        result[col_name] = (
-            result[quantity_column]
-            .where(result[pivot_column] == val, 0)
-            .astype(float)
-        )
-        new_cols.append(col_name)
-    return result, new_cols
 
 def _prepare_actual_data(df, config, data_type='actual'):
     """
@@ -557,42 +762,39 @@ def _prepare_actual_data(df, config, data_type='actual'):
         
     numerical_column = config['config']['numerical_columns'][data_type]
     columns_to_keep = config['config']['return_values'][data_type]
-    expand_column = config['config']['numerical_columns'].get('expand_column')
-
+    expand_column = config['config']['numerical_columns']['expand_column']
+    print(expand_column)
 
     # Create key column first
     df_for_aggregation = _create_key_column(df, config, data_type)
+    df_for_aggregation.to_excel('df_for_aggregation.xlsx', index=False)
+
+    # Create pivot columns and get the list of created columns
+    df_pivot, pivot_columns = _create_pivot_columns(df_for_aggregation, expand_column, numerical_column)
+    df_pivot.to_excel('df_pivot.xlsx', index=False)
 
     
-    # If we have an expand column, create pivot columns
-    if expand_column:
-        # Create pivot columns and get the list of created columns
-        df_pivot, pivot_columns = _create_pivot_columns(df_for_aggregation, expand_column, numerical_column)
-        
-        # Group by key and sum the values for each pivot column
-        grouped_data = df_pivot.groupby('key').agg({
-            **{col: 'sum' for col in pivot_columns},
-            numerical_column: 'sum'
-        }).reset_index()
-        
-        # Add count column
-        grouped_data['count'] = df_pivot.groupby('key').size().values
-        
-        # Add total column that sums across all storeys
-        grouped_data['total'] = grouped_data[pivot_columns].sum(axis=1)
-    else:
-        # If no expand column, just aggregate normally
-        grouped_data = _aggregate_grouped_data(df_for_aggregation, 'key', numerical_column)
-        grouped_data = grouped_data.reset_index()
+    # Then aggregate the data
+    grouped_data = aggregate_grouped_data_custom(df_pivot, 'key', numerical_column)
+    grouped_data.to_excel('grouped_data.xlsx', index=False)
+    # Reset index to make 'key' a regular column
+    grouped_data = grouped_data.reset_index()
+    
+    #if pivot_columns is not None:
+    #    for col in pivot_columns:
+    #       # Group by key and sum the values
+    #        sums = df_for_aggregation.groupby('key')[col].sum()
+    #        # Map the sums back to the grouped_data
+    #        grouped_data[col] = grouped_data['key'].map(sums)
+
+    #    numerical_sums = df_for_aggregation.groupby('key')[numerical_column].sum()
+    #    grouped_data[numerical_column] = grouped_data['key'].map(numerical_sums)
 
     # Add count and key to columns to keep
-    columns_to_keep = columns_to_keep + ['count'] + ['key'] + [numerical_column]
+    columns_to_keep = columns_to_keep + ['count'] + ['key'] + [numerical_column] +[f"sum_{numerical_column}"]
     
-    # If we have pivot columns, add them to the final columns
-    if expand_column:
-        final_columns = columns_to_keep + pivot_columns + ['total']
-    else:
-        final_columns = columns_to_keep
+    # Combine the filtered columns with the pivot columns
+    final_columns = columns_to_keep + pivot_columns
     
     # Select the combined columns, but only those that exist in grouped_data
     available_columns = [col for col in final_columns if col in grouped_data.columns]
@@ -646,7 +848,11 @@ def process_compare_target_actual_logic(
     # Log available columns for debugging
     logger.info(f"Target DataFrame columns: {target_df.columns.tolist()}")
     logger.info(f"Actual DataFrame columns: {actual_df.columns.tolist()}")
-    
+
+    filter_config = config['config']['filter']
+
+    actual_df = apply_filter(actual_df, filter_config).copy()
+    actual_df.to_excel('actual_df_filtered.xlsx', index=False)
     # Prepare target and actual data
     target_df = _prepare_target_data(target_df, config, 'target')
     target_df.to_excel('target_df.xlsx', index=False)
