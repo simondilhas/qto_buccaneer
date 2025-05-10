@@ -18,7 +18,8 @@ def sample_df():
         'Area': [20.0, 25.0, 30.0, 15.0],
         'Type': ['Office', 'Meeting', 'Office', 'Storage'],
         'IsExternal': [True, False, True, False],
-        'Floor': [1, 1, 2, 2]
+        'Floor': [1, 1, 2, 2],
+        'IfcEntity': ['Office', 'Meeting', 'Office', 'Storage']
     })
 
 def test_filter_df_exact_match(sample_df):
@@ -74,20 +75,20 @@ def test_filter_df_boolean_field(sample_df):
 
 def test_filter_df_from_str_simple(sample_df):
     """Test filtering with simple string expression."""
-    filtered_df = MetadataFilter.filter_df_from_str(sample_df, "Type=Office")
+    filtered_df = MetadataFilter.filter_df_from_str(sample_df, "type=Office")
     
     assert len(filtered_df) == 2
-    assert all(filtered_df['Type'] == 'Office')
+    assert all(filtered_df['IfcEntity'] == 'Office')
 
 def test_filter_df_from_str_complex(sample_df):
     """Test filtering with complex string expression."""
-    filtered_df = MetadataFilter.filter_df_from_str(sample_df, "Type=Office AND Area>20.0")
+    filtered_df = MetadataFilter.filter_df_from_str(sample_df, "type=Office AND Area>20.0")
     
     assert len(filtered_df) == 1
     assert filtered_df.iloc[0]['Name'] == 'Room 103'
     
     # Test with OR condition
-    filtered_df = MetadataFilter.filter_df_from_str(sample_df, "Type=Office OR Area<20.0")
+    filtered_df = MetadataFilter.filter_df_from_str(sample_df, "type=Office OR Area<20.0")
     
     assert len(filtered_df) == 3
     assert set(filtered_df['Name']) == set(['Room 101', 'Room 103', 'Room 104'])
@@ -96,7 +97,7 @@ def test_filter_df_from_str_with_parentheses(sample_df):
     """Test filtering with parentheses in expression."""
     filtered_df = MetadataFilter.filter_df_from_str(
         sample_df, 
-        "Type=Office AND (Floor=1 OR Area>25.0)"
+        "type=Office AND (Floor=1 OR Area>25.0)"
     )
     
     assert len(filtered_df) == 2
