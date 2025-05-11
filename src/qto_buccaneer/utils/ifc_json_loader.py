@@ -2,6 +2,7 @@ from typing import Dict, List, Optional, Any, Union
 from pathlib import Path
 import json
 import pandas as pd
+from qto_buccaneer.utils.metadata_filter import MetadataFilter
 class IfcJsonLoader:
     """A class to load and manage IFC data from JSON files.
 
@@ -227,18 +228,94 @@ class IfcJsonLoader:
                 }
                 print(f"  - Loaded {len(geometry_data)} elements")
         
-        # Look up the geometry by ID
-        geometry = self._geometry_cache[ifc_type].get(str(elem_id))
-        if not geometry:
-            print(f"Warning: No geometry found for {ifc_type} with ID {elem_id}")
-            print(f"Available IDs in {ifc_type}: {list(self._geometry_cache[ifc_type].keys())[:5]}...")
-            return None
+        # Get geometry from cache
+        return self._geometry_cache[ifc_type].get(str(elem_id))
+
+    def get_geometry_by_list(self, elem_ids: List[str]) -> Dict[str, Optional[Dict[str, Any]]]:
+        """Get geometry for multiple elements efficiently.
+        
+        Args:
+            elem_ids: List of element IDs to get geometry for
             
-        if 'vertices' not in geometry or 'faces' not in geometry:
-            print(f"Warning: Geometry for {ifc_type} with ID {elem_id} is missing vertices or faces")
-            return None
+        Returns:
+            Dictionary mapping element IDs to their geometry data. Elements not found
+            will have None as their value.
             
-        return geometry
+        Example:
+            >>> geometries = ifc.get_geometry_by_list(['123', '456'])
+            >>> print(geometries['123'])  # Geometry data for element 123
+            >>> print(geometries['456'])  # Geometry data for element 456
+        """
+        if not self.json_paths:
+            print("Warning: No geometry path provided. Cannot load geometry files.")
+            return {elem_id: None for elem_id in elem_ids}
+            
+        print(f"\nGetting geometry for {len(elem_ids)} elements...")
+        print(f"Geometry path: {self.json_paths}")
+        
+        # Group elements by type for efficient loading
+        elements_by_type = {}
+        for elem_id in elem_ids:
+            element = self.properties.get('elements', {}).get(str(elem_id))
+            if element and isinstance(element, dict):
+                ifc_type = element.get("IfcEntity")
+                if ifc_type:
+                    if ifc_type not in elements_by_type:
+                        elements_by_type[ifc_type] = []
+                    elements_by_type[ifc_type].append(elem_id)
+        
+        print("\nElements by type:")
+        for ifc_type, ids in elements_by_type.items():
+            print(f"  - {ifc_type}: {len(ids)} elements")
+        
+        # Load geometry files for each type
+        for ifc_type, ids in elements_by_type.items():
+            if ifc_type not in self._geometry_cache:
+                geometry_file = self.json_paths / f"{ifc_type}.json"
+                print(f"\nLooking for geometry file: {geometry_file}")
+                
+                if not geometry_file.exists():
+                    print(f"Warning: No geometry file found for {ifc_type}")
+                    continue
+                    
+                try:
+                    with open(geometry_file, 'r') as f:
+                        geometry_data = json.load(f)
+                        if not isinstance(geometry_data, list):
+                            print(f"Warning: {geometry_file.name} does not contain a list of elements")
+                            continue
+                            
+                        # Create a dictionary for quick lookup by ID
+                        self._geometry_cache[ifc_type] = {
+                            str(item["id"]): item 
+                            for item in geometry_data 
+                            if "id" in item and "vertices" in item and "faces" in item
+                        }
+                        print(f"  - Loaded {len(self._geometry_cache[ifc_type])} elements with geometry")
+                except Exception as e:
+                    print(f"Error loading {geometry_file}: {e}")
+                    continue
+        
+        # Get geometry for each element
+        results = {}
+        for elem_id in elem_ids:
+            element = self.properties.get('elements', {}).get(str(elem_id))
+            if not element:
+                results[elem_id] = None
+                continue
+                
+            ifc_type = element.get("IfcEntity")
+            if not ifc_type:
+                results[elem_id] = None
+                continue
+                
+            geometry = self._geometry_cache.get(ifc_type, {}).get(str(elem_id))
+            results[elem_id] = geometry
+            
+            if not geometry:
+                print(f"Warning: No geometry found for {ifc_type} with ID {elem_id}")
+        
+        return results
 
     def get_properties(self, guid: str) -> Optional[Dict[str, Any]]:
         """Get properties for a given ID.
@@ -263,3 +340,197 @@ class IfcJsonLoader:
         elements = self.get_elements_by_type(ifc_type)
         return pd.DataFrame(elements)
 
+    def get_all_elements(self) -> List[Dict[str, Any]]:
+        """Get all elements from the IFC JSON data.
+        
+        Returns:
+            List[Dict[str, Any]]: List of dictionaries containing element metadata including:
+                - id
+                - IfcEntity
+                - All properties from the JSON data
+                - geometry (if available)
+        """
+        all_elements = []
+        
+        # Get all elements of each type
+        for ifc_type in self.by_type_index.keys():
+            elements = self.get_elements_by_type(ifc_type)
+            all_elements.extend(elements)
+        
+        print(f"\nTotal elements: {len(all_elements)}")
+        return all_elements
+
+    def get_elements_by_filter_old(self, filter_expression: str) -> List[Dict[str, Any]]:
+        """Get elements matching a filter expression.
+        
+        Args:
+            filter_expression: A string containing the filter expression. Examples:
+                - Simple: "IfcEntity=IfcSpace"
+                - Multiple values: "IfcEntity=IfcSpace AND (LongName=LUF OR LongName=SPH)"
+                - Comparison: "IfcEntity=IfcSpace AND Qto_SpaceBaseQuantities.NetFloorArea>20.0"
+                - Complex: "IfcEntity=IfcSpace AND (Qto_SpaceBaseQuantities.NetFloorArea>20.0 OR Qto_SpaceBaseQuantities.NetVolume>100.0)"
+                - Boolean: "IfcEntity=IfcSpace AND IsExternal=true"
+                - Max value: "IfcEntity=IfcSpace AND max(Qto_SpaceBaseQuantities.NetFloorArea)"
+            
+        Returns:
+            List[Dict[str, Any]]: List of elements matching the filter criteria
+        """
+        print(f"\nFilter expression: {filter_expression}")
+        
+        # Parse the filter expression
+        filters = MetadataFilter._parse_filter_expression(filter_expression)
+        print(f"Parsed filters: {filters}")
+        
+        # Get all elements
+        all_elements = self.get_all_elements()
+        print(f"Total elements before filtering: {len(all_elements)}")
+        
+        # Apply filters directly to the list of dictionaries
+        filtered_elements = []
+        for elem in all_elements:
+            matches = True
+            for key, value in filters.items():
+                if key not in elem:
+                    print(f"Key '{key}' not found in element. Available keys: {sorted(elem.keys())}")
+                    matches = False
+                    break
+                    
+                if isinstance(value, list):
+                    if value and isinstance(value[0], tuple):
+                        # Handle comparison operators
+                        elem_matches = False
+                        for op, val in value:
+                            if op == 'max':
+                                continue
+                            if MetadataFilter._compare_values(elem[key], op, val):
+                                elem_matches = True
+                                break
+                        if not elem_matches:
+                            matches = False
+                            break
+                    else:
+                        # Handle list of values (OR condition)
+                        if elem[key] not in value:
+                            matches = False
+                            break
+                else:
+                    # Handle single value
+                    if elem[key] != value:
+                        matches = False
+                        break
+            
+            if matches:
+                filtered_elements.append(elem)
+        
+        print(f"Found {len(filtered_elements)} matching elements")
+        return filtered_elements
+    
+    def get_elements_by_filter(self, filter_expression: str) -> Dict[int, Dict[str, Any]]:
+        """Get elements matching a filter expression, including geometry if available.
+        Returns a dict of id -> element.
+        """
+        print(f"\nFilter expression: {filter_expression}")
+
+        filters = MetadataFilter._parse_filter_expression(filter_expression)
+        print(f"Parsed filters: {filters}")
+
+        all_elements = self.get_all_elements()
+        print(f"Total elements before filtering: {len(all_elements)}")
+
+        filtered_elements = {}  # <-- now a dict, not a list!
+
+        for elem in all_elements:
+            matches = True
+            for key, value in filters.items():
+                if key not in elem:
+                    print(f"Key '{key}' not found in element. Available keys: {sorted(elem.keys())}")
+                    matches = False
+                    break
+
+                if isinstance(value, list):
+                    if value and isinstance(value[0], tuple):
+                        elem_matches = False
+                        for op, val in value:
+                            if op == 'max':
+                                continue
+                            if MetadataFilter._compare_values(elem[key], op, val):
+                                elem_matches = True
+                                break
+                        if not elem_matches:
+                            matches = False
+                            break
+                    else:
+                        if elem[key] not in value:
+                            matches = False
+                            break
+                else:
+                    if elem[key] != value:
+                        matches = False
+                        break
+
+            if matches:
+                # Now inject geometry if available
+                elem_id = elem["id"]
+                cached = self._element_cache.get(str(elem_id))
+                if cached and "geometry" in cached:
+                    elem["geometry"] = cached["geometry"]
+                filtered_elements[elem_id] = elem  # <-- save by ID into dict
+
+        print(f"Found {len(filtered_elements)} matching elements")
+        return filtered_elements
+
+
+
+    def plot_merged_geometry(self, merged_geometry: Dict[str, Any], title: str = "Merged Geometry") -> None:
+        """Create a Plotly 3D visualization of merged geometry.
+        
+        Args:
+            merged_geometry: Dictionary containing merged geometry data with 'vertices' and 'faces'
+            title: Title for the plot
+        """
+        try:
+            import plotly.graph_objects as go
+            import numpy as np
+        except ImportError:
+            print("Please install plotly and numpy to use this function:")
+            print("pip install plotly numpy")
+            return
+
+        if not merged_geometry or 'vertices' not in merged_geometry or 'faces' not in merged_geometry:
+            print("Invalid geometry data. Must contain 'vertices' and 'faces'.")
+            return
+
+        # Extract vertices and faces
+        vertices = np.array(merged_geometry['vertices'])
+        faces = np.array(merged_geometry['faces'])
+
+        # Create mesh3d object
+        mesh = go.Mesh3d(
+            x=vertices[:, 0],
+            y=vertices[:, 1],
+            z=vertices[:, 2],
+            i=faces[:, 0],
+            j=faces[:, 1],
+            k=faces[:, 2],
+            opacity=0.8,
+            color='lightblue',
+            flatshading=True
+        )
+
+        # Create figure
+        fig = go.Figure(data=[mesh])
+
+        # Update layout
+        fig.update_layout(
+            title=title,
+            scene=dict(
+                aspectmode='data',
+                xaxis_title='X',
+                yaxis_title='Y',
+                zaxis_title='Z'
+            ),
+            showlegend=False
+        )
+
+        # Show the plot
+        fig.show()

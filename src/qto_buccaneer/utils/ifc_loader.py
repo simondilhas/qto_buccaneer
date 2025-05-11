@@ -392,4 +392,35 @@ class IfcLoader:
             df = IfcFilter.filter_elements(df, filters, logic)
         return df
 
+    def get_all_elements(self) -> List[Dict[str, Any]]:
+        """
+        Get all elements from the IFC model with their basic metadata.
+        
+        Returns:
+            List[Dict[str, Any]]: List of dictionaries containing element metadata including:
+                - GlobalId
+                - Name
+                - LongName
+                - Description
+                - ObjectType
+                - IFC_ENTITY_TYPE
+                - Property sets and quantities
+        """
+        all_elements = []
+        
+        # Get all entity types in the model
+        entity_types = set()
+        for entity in self.model:
+            entity_types.add(entity.is_a())
+        
+        # Process each entity type
+        for entity_type in entity_types:
+            # Use the existing get_entity_metadata_df method
+            df = self.get_entity_metadata_df(entity_type)
+            # Convert DataFrame rows to dictionaries
+            elements = df.to_dict('records')
+            all_elements.extend(elements)
+        
+        return all_elements
+
    
