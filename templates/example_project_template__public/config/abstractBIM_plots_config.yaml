@@ -14,6 +14,10 @@ plot_settings:
       right: 50
       top: 50
       bottom: 50
+    # A4 paper size in pixels (at 96 DPI)
+    width: 794  # 210mm at 96 DPI
+    height: 1123  # 297mm at 96 DPI
+    autosize: false
   
   # Predefined visualization modes that can be referenced in plots
   modes:

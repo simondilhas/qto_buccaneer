@@ -126,12 +126,15 @@ def create_floorplan_per_storey(
         height = y_max - y_min
         aspect_ratio = width / height
         
+        # A4 aspect ratio is 1:√2 (approximately 1:1.4142)
+        a4_ratio = 1.4142
+        
         # Create consistent layout settings
         consistent_layout = {
             'xaxis': {
                 'range': [x_min, x_max],
                 'scaleanchor': 'y',
-                'scaleratio': 1,
+                'scaleratio': a4_ratio,  # Force A4 aspect ratio
                 'showgrid': False,
                 'showticklabels': False,
                 'showline': False
@@ -147,15 +150,15 @@ def create_floorplan_per_storey(
             'paper_bgcolor': 'white'
         }
         
-        # Set consistent figure size based on aspect ratio
-        if aspect_ratio > 1:
-            # Wider than tall
-            consistent_layout['width'] = 1000
-            consistent_layout['height'] = int(1000 / aspect_ratio)
+        # Set consistent figure size based on A4 aspect ratio
+        if aspect_ratio > a4_ratio:
+            # Wider than A4
+            consistent_layout['width'] = 794  # A4 width in pixels
+            consistent_layout['height'] = int(794 / aspect_ratio)
         else:
-            # Taller than wide
-            consistent_layout['height'] = 1000
-            consistent_layout['width'] = int(1000 * aspect_ratio)
+            # Taller than A4
+            consistent_layout['height'] = 1123  # A4 height in pixels
+            consistent_layout['width'] = int(1123 * aspect_ratio)
     else:
         consistent_layout = {}
     
@@ -189,7 +192,7 @@ def create_floorplan_per_storey(
         
         # Update layout with consistent bounds and title
         fig.update_layout(
-            title=f"{plot_config.get('title', 'Floorplan')} - {storey_name}",
+            title=f"{storey_name}",
             **consistent_layout
         )
         
