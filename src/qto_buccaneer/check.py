@@ -14,6 +14,9 @@ from qto_buccaneer._utils._result_bundle import BaseResultBundle
 import logging
 from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 
+from qto_buccaneer._utils.checks.check_dimensions import process_check_dimensions
+from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
+
 logger = logging.getLogger(__name__)
 
 def compare_target_actual(
@@ -108,3 +111,39 @@ def compare_target_actual(
     logger.info(f"Finished Compare Target Actual")
     return result_bundle
 
+
+
+
+
+def check_dimensions(
+    data_dir: Path,
+    check_config: dict,
+) -> Dict[str, Any]:
+    """
+    Check room dimensions against specified criteria.
+    
+    Args:
+        data_dir: Path to the directory containing metadata.json and geometry files
+        check_config: Configuration dictionary for dimension checks
+        
+    Returns:
+        Dictionary containing check results
+    """
+    logger.info("Starting check_dimensions")
+    
+    ifc = IfcJsonLoader(
+    json_paths=str(data_dir),
+    properties_json=str(data_dir / "ifc_model_metadata.json")
+    )
+
+    check_filter = check_config["config"]["filter"]
+    filtered_elements = ifc.get_elements_by_filter(check_filter)
+    
+    # Process the dimension checks
+    result = process_check_dimensions(
+        input_dict=filtered_elements,
+        config=check_config
+    )
+    
+    
+    return result

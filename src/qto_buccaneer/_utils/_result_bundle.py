@@ -10,6 +10,7 @@ import io
 from openpyxl.styles import Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 from qto_buccaneer._utils.report.excel_styling import ExcelLayoutConfig
+import tempfile
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder that can handle entity_instance objects and special characters."""
@@ -34,6 +35,27 @@ class BaseResultBundle:
         """Convert the result bundle to a pandas DataFrame.
         Must be implemented by subclasses."""
         raise NotImplementedError("Subclasses must implement to_df()")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the result bundle to a dictionary format.
+        
+        Returns:
+            Dict[str, Any]: Dictionary containing the data in a format suitable for processing
+        """
+        if self.json is not None:
+            # If we have metadata in the json, use that
+            if "metadata" in self.json:
+                return self.json["metadata"]
+            return self.json
+        elif self.dataframe is not None:
+            # Convert DataFrame to dictionary format
+            elements = {}
+            for idx, row in self.dataframe.iterrows():
+                element_id = str(idx)
+                elements[element_id] = row.to_dict()
+            return {"elements": elements}
+        else:
+            return {}
 
     def save_json(self, path: Union[str, Path]) -> Path:
         """Save the result bundle to a JSON file."""
@@ -179,6 +201,34 @@ class GeometryResultBundle(BaseResultBundle):
         
         return path
 
+    def get_geometry_by_ifc_entity(self, ifc_entity: str) -> Dict[str, Any]:
+        """Get geometry data for a specific IFC entity type.
+        
+        Args:
+            ifc_entity: The IFC entity type (e.g., 'IfcSpace', 'IfcWall')
+            
+        Returns:
+            Dict[str, Any]: Dictionary containing geometry data for the specified entity type,
+                           with element IDs as keys
+            
+        Raises:
+            ValueError: If no geometry data is available or if the entity type is not found
+        """
+        if self.json is None or "zip_content" not in self.json:
+            raise ValueError("No geometry zip content available")
+
+        # Create a BytesIO object from the zip content
+        zip_buffer = io.BytesIO(self.json["zip_content"])
+        
+        # Read the specific JSON file from the zip
+        with zipfile.ZipFile(zip_buffer, 'r') as zip_file:
+            try:
+                with zip_file.open(f"{ifc_entity}.json") as f:
+                    geometry_list = json.loads(f.read().decode('utf-8'))
+                    # Convert list to dictionary using element IDs as keys
+                    return {item.get('id'): item for item in geometry_list}
+            except KeyError:
+                raise ValueError(f"No geometry data found for entity type: {ifc_entity}")
 
 @dataclass
 class IFCResultBundle(BaseResultBundle):
