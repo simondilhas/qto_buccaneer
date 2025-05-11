@@ -55,7 +55,7 @@ class IfcJsonLoader:
         """Build a cache of elements with their properties and geometry."""
         print("\nBuilding element cache...")
         
-        # Only process elements that have geometry
+        # Process all elements
         for elem_id, elem in self.properties.get("elements", {}).items():
             if not isinstance(elem, dict):
                 continue
@@ -65,11 +65,9 @@ class IfcJsonLoader:
             if not ifc_type:
                 continue
                 
-            # Get geometry
+            # Get geometry (but don't skip if not found)
             geometry = self.get_geometry(elem_id)
-            if not geometry:
-                continue
-                
+            
             # Create cache entry
             cache_entry = {
                 "id": elem_id,

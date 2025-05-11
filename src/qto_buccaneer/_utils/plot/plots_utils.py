@@ -5,7 +5,8 @@ def parse_filter(filter_str: str) -> Tuple[Optional[str], List[List[str]]]:
     """Parse filter string into element type and conditions.
     
     Args:
-        filter_str: Filter string in format "type=IfcType AND (condition1 OR condition2)"
+        filter_str: Filter string in format "IfcEntity=IfcType AND (condition1 OR condition2)"
+                   or "type=IfcType AND (condition1 OR condition2)"
         
     Returns:
         Tuple of (element_type, conditions) where conditions is a list of lists of strings.
@@ -13,7 +14,16 @@ def parse_filter(filter_str: str) -> Tuple[Optional[str], List[List[str]]]:
     """
     # First extract the type
     type_part = None
-    if 'type=' in filter_str:
+    if 'IfcEntity=' in filter_str:
+        type_part = filter_str.split('IfcEntity=')[1].split()[0]
+        # Remove the type part from the filter
+        filter_str = filter_str.replace(f"IfcEntity={type_part}", "").strip()
+        # Remove any leading AND/OR
+        if filter_str.startswith("AND "):
+            filter_str = filter_str[4:].strip()
+        elif filter_str.startswith("OR "):
+            filter_str = filter_str[3:].strip()
+    elif 'type=' in filter_str:
         type_part = filter_str.split('type=')[1].split()[0]
         # Remove the type part from the filter
         filter_str = filter_str.replace(f"type={type_part}", "").strip()
