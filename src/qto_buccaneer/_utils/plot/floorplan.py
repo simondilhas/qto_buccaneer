@@ -10,8 +10,7 @@ import pandas as pd
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
 from qto_buccaneer._utils.plot.plots_utils import (
     parse_filter,
-    element_matches_conditions,
-    apply_layout_settings
+    element_matches_conditions
 )
 from qto_buccaneer.utils.metadata_filter import MetadataFilter
 
@@ -45,31 +44,31 @@ def create_floorplan_per_storey(
         config = yaml.safe_load(f)
     
     plot_config = config['plots'][plot_name]
+    plot_settings = config.get('plot_settings', {})
     
     # Initialize IfcJsonLoader
     loader = IfcJsonLoader(properties_path, geometry_dir)
     
-    # Get the filter from the first element config that has spaces
-    filter_str = None
+    # Get all elements matching the filter conditions from the config
+    filtered_elements = {}
     for element_config in plot_config.get('elements', []):
-        if element_config.get('filter', '').startswith('IfcEntity=IfcSpace'):
-            filter_str = element_config['filter']
-            break
+        filter_str = element_config.get('filter', '')
+        if filter_str:
+            elements = loader.get_elements_by_filter(filter_str)
+            filtered_elements[element_config.get('name', 'unnamed')] = elements
+            print(f"\nFound {len(elements)} elements matching filter: {filter_str}")
     
-    if not filter_str:
-        print("No space filter found in config")
+    if not filtered_elements:
+        print("No elements found matching filter conditions")
         return {}
     
-    # Get spaces matching the filter
-    filtered_spaces = loader.get_elements_by_filter(filter_str)
-    print(f"\nFound {len(filtered_spaces)} spaces matching filter: {filter_str}")
-    
-    # Get unique storeys from the filtered spaces
+    # Get unique storeys from all filtered elements
     storey_ids = set()
-    for space in filtered_spaces.values():
-        parent_id = space.get('parent_id')
-        if parent_id:
-            storey_ids.add(parent_id)
+    for elements in filtered_elements.values():
+        for element in elements.values():
+            parent_id = element.get('parent_id')
+            if parent_id:
+                storey_ids.add(parent_id)
     
     # Get storey information
     storeys = []
@@ -78,7 +77,7 @@ def create_floorplan_per_storey(
         if storey and storey.get('IfcEntity') == 'IfcBuildingStorey':
             storeys.append(storey)
     
-    print(f"\nFound {len(storeys)} storeys with matching spaces")
+    print(f"\nFound {len(storeys)} storeys with matching elements")
     
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -91,40 +90,46 @@ def create_floorplan_per_storey(
         storey_name = storey.get('Name', 'Unknown')
         print(f"\nProcessing storey: {storey_name}")
         
-        # Filter spaces for this storey
-        storey_spaces = [
-            space for space in filtered_spaces.values()
-            if space.get('parent_id') == storey['id']
-        ]
-        print(f"Found {len(storey_spaces)} spaces in storey {storey_name}")
+        # Filter elements for this storey
+        storey_elements = {}
+        for element_name, elements in filtered_elements.items():
+            storey_elements[element_name] = {
+                element_id: element for element_id, element in elements.items()
+                if element.get('parent_id') == storey['id']
+            }
+            print(f"Found {len(storey_elements[element_name])} {element_name} elements in storey {storey_name}")
         
         # Create figure
         fig = go.Figure()
         
-        # Process each space
-        for space in storey_spaces:
-            # Get space geometry
-            geometry = loader.get_geometry(str(space['id']))
-            if not geometry or 'vertices' not in geometry:
-                print(f"No valid geometry found for space {space['id']}")
-                continue
-            
-            # Create polygon trace for the space
-            vertices = geometry['vertices']
-            fig.add_trace(go.Scatter(
-                x=[v[0] for v in vertices] + [vertices[0][0]],  # Close the polygon
-                y=[v[1] for v in vertices] + [vertices[0][1]],  # Close the polygon
-                fill='toself',
-                name=space.get('Name', space['id']),
-                showlegend=True
-            ))
+        # Process each element in the plot configuration
+        for element_config in plot_config.get('elements', []):
+            element_name = element_config.get('name', 'unnamed')
+            if element_name in storey_elements:
+                # Pass the pre-filtered elements for this storey
+                element_config['filtered_elements'] = storey_elements[element_name]
+            _process_element(fig, loader, element_config, plot_settings, storey_name, plot_config)
         
-        # Update layout
+        # Get coordinates for current storey
+        current_x_coords = []
+        current_y_coords = []
+        for elements in storey_elements.values():
+            for element in elements.values():
+                geometry = loader.get_geometry(str(element['id']))
+                if geometry and 'vertices' in geometry:
+                    current_x_coords.extend([v[0] for v in geometry['vertices']])
+                    current_y_coords.extend([v[1] for v in geometry['vertices']])
+        
+        # Calculate optimal layout if we have coordinates
+        if current_x_coords and current_y_coords:
+            optimal_layout = _calculate_optimal_layout(current_x_coords, current_y_coords)
+        else:
+            optimal_layout = {}
+        
+        # Update layout with calculated bounds and title
         fig.update_layout(
             title=f"{plot_config.get('title', 'Floorplan')} - {storey_name}",
-            xaxis_title='X',
-            yaxis_title='Y',
-            showlegend=True
+            **optimal_layout
         )
         
         # Save figure
@@ -175,7 +180,7 @@ def create_single_plot(
                 # Create a new figure for this storey
                 fig = go.Figure()
                 _process_plot_creation(
-                    fig, loader, plot_name, plot_config, 
+                    fig, loader, plot_name, plot_config,
                     config['plot_settings'], file_info, storey_name
                 )
                 
@@ -217,51 +222,82 @@ def _process_plot_creation(
     storey_name: Optional[str] = None
 ) -> None:
     """Process plot creation based on configuration."""
-    print(f"\nProcessing plot creation for storey: {storey_name}")
+    # Apply layout settings directly
+    defaults = plot_settings.get('defaults', {})
+    layout_settings = {}
+    
+    # Font settings
+    font_settings = {}
+    if 'font_family' in defaults:
+        font_settings['family'] = defaults['font_family']
+    if 'text_size' in defaults:
+        font_settings['size'] = defaults['text_size']
+    if font_settings:
+        layout_settings['font'] = font_settings
+    
+    # Legend settings
+    if 'show_legend' in defaults:
+        layout_settings['showlegend'] = defaults['show_legend']
+    
+    legend_settings = {}
+    legend_keys = {
+        'legend_x': 'x',
+        'legend_y': 'y',
+        'legend_xanchor': 'xanchor',
+        'legend_yanchor': 'yanchor',
+        'legend_bgcolor': 'bgcolor',
+        'legend_bordercolor': 'bordercolor',
+        'legend_borderwidth': 'borderwidth',
+        'legend_orientation': 'orientation',
+        'legend_traceorder': 'traceorder',
+        'legend_itemwidth': 'itemwidth',
+        'legend_itemsizing': 'itemsizing',
+        'legend_tracegroupgap': 'tracegroupgap'
+    }
+    
+    for config_key, plotly_key in legend_keys.items():
+        if config_key in defaults:
+            legend_settings[plotly_key] = defaults[config_key]
+    
+    if legend_settings:
+        layout_settings['legend'] = legend_settings
+    
+    # Background color
+    if 'background_color' in defaults:
+        layout_settings['paper_bgcolor'] = defaults['background_color']
+        layout_settings['plot_bgcolor'] = defaults['background_color']
+    
+    # Margin settings
+    margin_settings = {}
+    margin_keys = {
+        'margin_left': 'l',
+        'margin_right': 'r',
+        'margin_top': 't',
+        'margin_bottom': 'b',
+        'margin_pad': 'pad'
+    }
+    
+    for config_key, plotly_key in margin_keys.items():
+        if config_key in defaults:
+            margin_settings[plotly_key] = defaults[config_key]
+    
+    if margin_settings:
+        layout_settings['margin'] = margin_settings
+    
+    # Size settings
+    if 'autosize' in defaults:
+        layout_settings['autosize'] = defaults['autosize']
+    if 'width' in defaults:
+        layout_settings['width'] = defaults['width']
+    if 'height' in defaults:
+        layout_settings['height'] = defaults['height']
     
     # Apply layout settings
-    apply_layout_settings(fig, plot_settings)
-    
-    # Get coordinates for current storey
-    current_x_coords, current_y_coords = _get_current_storey_coordinates(loader, storey_name, plot_config)
-    
-    print(f"Found {len(current_x_coords)} coordinates for current storey")
-    
-    # Update layout with calculated bounds
-    if current_x_coords and current_y_coords:
-        optimal_layout = _calculate_optimal_layout(current_x_coords, current_y_coords)
-        fig.update_layout(**optimal_layout)
+    fig.update_layout(**layout_settings)
     
     # Process each element in the plot configuration
     for element_config in plot_config.get('elements', []):
-        print(f"\nProcessing element: {element_config.get('name', 'unnamed')}")
         _process_element(fig, loader, element_config, plot_settings, storey_name, plot_config)
-    
-    # Add scale bar for 2D plots
-    if plot_config.get('mode') == 'floor_plan' and current_x_coords and current_y_coords:
-        _add_scale_bar(fig, [min(current_x_coords), max(current_x_coords)], [min(current_y_coords), max(current_y_coords)])
-
-def _get_current_storey_coordinates(
-    loader: IfcJsonLoader,
-    storey_name: Optional[str],
-    plot_config: Dict
-) -> Tuple[List[float], List[float]]:
-    """Get coordinates from current storey for scale bar."""
-    x_coords = []
-    y_coords = []
-    if plot_config.get('mode') == 'floor_plan':
-        # Get all spaces in the current storey
-        space_ids = loader.get_spaces_in_storey(storey_name) if storey_name else []
-        print(f"Found {len(space_ids)} spaces in storey {storey_name}")
-        
-        for space_id in space_ids:
-            # Ensure space_id is a string
-            space_id_str = str(space_id)
-            geometry = loader.get_geometry(space_id_str)
-            if geometry and 'vertices' in geometry:
-                x_coords.extend([v[0] for v in geometry['vertices']])
-                y_coords.extend([v[1] for v in geometry['vertices']])
-    return x_coords, y_coords
 
 def _process_element(
     fig: go.Figure,
@@ -308,28 +344,32 @@ def _add_spaces_to_plot(
     color_by = element_config.get('color_by')
     fixed_color = element_config.get('color')
     
-    # Build filter string
-    filter_parts = []
-    if element_type:
-        filter_parts.append(f"IfcEntity={element_type}")
-    
-    for or_group in conditions:
-        or_parts = []
-        for condition in or_group:
-            if '=' in condition:
-                key, value = condition.split('=', 1)
-                or_parts.append(f"{key.strip()}={value.strip()}")
-        if or_parts:
-            if len(or_parts) > 1:
-                filter_parts.append(f"({' OR '.join(or_parts)})")
-            else:
-                filter_parts.append(or_parts[0])
-    
-    filter_str = " AND ".join(filter_parts)
-    
-    # Get spaces that match the filter conditions
-    filtered_elements = loader.get_elements_by_filter(filter_str)
-    matching_spaces = list(filtered_elements.values())
+    # Use pre-filtered elements if available
+    if 'filtered_elements' in element_config:
+        matching_spaces = list(element_config['filtered_elements'].values())
+    else:
+        # Build filter string
+        filter_parts = []
+        if element_type:
+            filter_parts.append(f"IfcEntity={element_type}")
+        
+        for or_group in conditions:
+            or_parts = []
+            for condition in or_group:
+                if '=' in condition:
+                    key, value = condition.split('=', 1)
+                    or_parts.append(f"{key.strip()}={value.strip()}")
+            if or_parts:
+                if len(or_parts) > 1:
+                    filter_parts.append(f"({' OR '.join(or_parts)})")
+                else:
+                    filter_parts.append(or_parts[0])
+        
+        filter_str = " AND ".join(filter_parts)
+        
+        # Get spaces that match the filter conditions
+        filtered_elements = loader.get_elements_by_filter(filter_str)
+        matching_spaces = list(filtered_elements.values())
     
     # Group spaces and calculate areas
     grouped_spaces, total_areas = _group_spaces(matching_spaces, color_by, element_config)
@@ -472,81 +512,6 @@ def _add_single_space_to_plot(
             showlegend=show_in_legend,
             legendgroup=legendgroup
         ))
-    
-    if space_name:
-        # Find a suitable position within the space
-        # Create a list of polygon vertices
-        poly = list(zip(x, y))
-        
-        # Find a point that is guaranteed to be inside the space
-        point_inside = _find_point_inside_polygon(poly)
-        text_x, text_y = point_inside
-        
-        # Calculate room dimensions
-        min_x, max_x = min(x), max(x)
-        min_y, max_y = min(y), max(y)
-        room_width = max_x - min_x
-        room_height = max_y - min_y
-        
-        # Build label text with individual space area
-        label_text = [space_name]
-        if space_area:
-            label_text.append(f"{space_area:.1f} m²")
-        
-        # Estimate text dimensions based on character count and font size
-        text = '\n'.join(label_text)
-        char_count = max(len(line) for line in label_text)
-        line_count = len(label_text)
-        font_size = plot_settings['defaults']['text_size']
-        
-        # More realistic text dimension estimation
-        # Assuming each character is ~0.5 units wide and line height is ~1.2 units
-        text_width = char_count * 0.5
-        text_height = line_count * 1.2
-        
-        # First check if room is long enough to consider rotation
-        is_long_room = room_height > room_width * 1.5
-        
-        # Then check if text would fit better rotated
-        fits_horizontally = text_width < room_width * 0.8
-        fits_vertically = text_height < room_width * 0.8
-        
-        # Only rotate if:
-        # 1. Room is long enough AND
-        # 2. Text fits better vertically than horizontally
-        needs_rotation = is_long_room and (not fits_horizontally or fits_vertically)
-        
-        if view == '2d':
-            # For 2D view, position text at the guaranteed inside point
-            rotation = -90 if needs_rotation else 0
-            fig.add_annotation(
-                x=text_x,
-                y=text_y,
-                text=text,
-                showarrow=False,
-                font=dict(
-                    size=plot_settings['defaults']['text_size'],
-                    family=plot_settings['defaults']['font_family']
-                ),
-                textangle=rotation,
-                xanchor='center',
-                yanchor='middle'
-            )
-        else:
-            # For 3D view, use the same x,y coordinates and the average z
-            center_z = sum(z) / len(z)
-            fig.add_trace(go.Scatter3d(
-                x=[text_x],
-                y=[text_y],
-                z=[center_z],
-                text=['\n'.join(label_text)],
-                mode='text',
-                showlegend=False,
-                textfont=dict(
-                    size=plot_settings['defaults']['text_size'],
-                    family=plot_settings['defaults']['font_family']
-                )
-            ))
 
 def _add_geometry_to_plot(
     fig: go.Figure,
@@ -1229,102 +1194,3 @@ def _is_point_inside_polygon(x: float, y: float, polygon: List[Tuple[float, floa
         p1x, p1y = p2x, p2y
     
     return inside
-
-def _add_scale_bar(
-    fig: go.Figure,
-    x_range: List[float],
-    y_range: List[float]
-) -> None:
-    """Add a scale bar to the floor plan visualization.
-    
-    Args:
-        fig: The plotly figure to add the scale bar to
-        x_range: List of [min_x, max_x] coordinates
-        y_range: List of [min_y, max_y] coordinates
-    """
-    # Calculate the size of the plot
-    x_size = x_range[1] - x_range[0]
-    y_size = y_range[1] - y_range[0]
-    
-    # Determine a reasonable scale bar length (10% of the smaller dimension)
-    scale_length = min(x_size, y_size) * 0.1
-    
-    # Round the scale length to a nice number
-    nice_length = _round_to_nice_number(scale_length)
-    
-    # Position the scale bar in the bottom right corner
-    # Leave some margin (5% of the respective dimension)
-    x_margin = x_size * 0.05
-    y_margin = y_size * 0.05
-    
-    # Calculate the position
-    x_start = x_range[1] - x_margin - nice_length
-    x_end = x_range[1] - x_margin
-    y_pos = y_range[0] + y_margin
-    
-    # Add the scale bar line
-    fig.add_trace(go.Scatter(
-        x=[x_start, x_end],
-        y=[y_pos, y_pos],
-        mode='lines',
-        line=dict(color='black', width=2),
-        showlegend=False,
-        hoverinfo='skip'
-    ))
-    
-    # Add tick marks
-    tick_length = y_size * 0.01  # 1% of y dimension
-    fig.add_trace(go.Scatter(
-        x=[x_start, x_start],
-        y=[y_pos - tick_length/2, y_pos + tick_length/2],
-        mode='lines',
-        line=dict(color='black', width=2),
-        showlegend=False,
-        hoverinfo='skip'
-    ))
-    fig.add_trace(go.Scatter(
-        x=[x_end, x_end],
-        y=[y_pos - tick_length/2, y_pos + tick_length/2],
-        mode='lines',
-        line=dict(color='black', width=2),
-        showlegend=False,
-        hoverinfo='skip'
-    ))
-    
-    # Add the scale label
-    fig.add_annotation(
-        x=(x_start + x_end) / 2,
-        y=y_pos + tick_length,
-        text=f"{nice_length:.1f} m",
-        showarrow=False,
-        font=dict(size=12),
-        xanchor='center',
-        yanchor='bottom'
-    )
-
-def _round_to_nice_number(value: float) -> float:
-    """Round a number to a nice, human-readable value.
-    
-    Args:
-        value: The value to round
-        
-    Returns:
-        A rounded value that is a multiple of 1, 2, or 5 times a power of 10
-    """
-    # Find the order of magnitude
-    magnitude = 10 ** math.floor(math.log10(value))
-    
-    # Normalize the value
-    normalized = value / magnitude
-    
-    # Round to the nearest nice number
-    if normalized < 1.5:
-        nice = 1
-    elif normalized < 3:
-        nice = 2
-    elif normalized < 7:
-        nice = 5
-    else:
-        nice = 10
-    
-    return nice * magnitude

@@ -7,7 +7,6 @@ import json
 import os
 
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
-from qto_buccaneer._utils.plot.plots_utils import apply_layout_settings
 
 def create_3d_visualization(
     geometry_dir: Union[str, Path],
@@ -193,8 +192,78 @@ def _process_plot_creation(
     file_info: Optional[Dict] = None
 ) -> None:
     """Process plot creation based on configuration."""
+    # Apply layout settings directly
+    defaults = plot_settings.get('defaults', {})
+    layout_settings = {}
+    
+    # Font settings
+    font_settings = {}
+    if 'font_family' in defaults:
+        font_settings['family'] = defaults['font_family']
+    if 'text_size' in defaults:
+        font_settings['size'] = defaults['text_size']
+    if font_settings:
+        layout_settings['font'] = font_settings
+    
+    # Legend settings
+    if 'show_legend' in defaults:
+        layout_settings['showlegend'] = defaults['show_legend']
+    
+    legend_settings = {}
+    legend_keys = {
+        'legend_x': 'x',
+        'legend_y': 'y',
+        'legend_xanchor': 'xanchor',
+        'legend_yanchor': 'yanchor',
+        'legend_bgcolor': 'bgcolor',
+        'legend_bordercolor': 'bordercolor',
+        'legend_borderwidth': 'borderwidth',
+        'legend_orientation': 'orientation',
+        'legend_traceorder': 'traceorder',
+        'legend_itemwidth': 'itemwidth',
+        'legend_itemsizing': 'itemsizing',
+        'legend_tracegroupgap': 'tracegroupgap'
+    }
+    
+    for config_key, plotly_key in legend_keys.items():
+        if config_key in defaults:
+            legend_settings[plotly_key] = defaults[config_key]
+    
+    if legend_settings:
+        layout_settings['legend'] = legend_settings
+    
+    # Background color
+    if 'background_color' in defaults:
+        layout_settings['paper_bgcolor'] = defaults['background_color']
+        layout_settings['plot_bgcolor'] = defaults['background_color']
+    
+    # Margin settings
+    margin_settings = {}
+    margin_keys = {
+        'margin_left': 'l',
+        'margin_right': 'r',
+        'margin_top': 't',
+        'margin_bottom': 'b',
+        'margin_pad': 'pad'
+    }
+    
+    for config_key, plotly_key in margin_keys.items():
+        if config_key in defaults:
+            margin_settings[plotly_key] = defaults[config_key]
+    
+    if margin_settings:
+        layout_settings['margin'] = margin_settings
+    
+    # Size settings
+    if 'autosize' in defaults:
+        layout_settings['autosize'] = defaults['autosize']
+    if 'width' in defaults:
+        layout_settings['width'] = defaults['width']
+    if 'height' in defaults:
+        layout_settings['height'] = defaults['height']
+    
     # Apply layout settings
-    apply_layout_settings(fig, plot_settings)
+    fig.update_layout(**layout_settings)
     
     # Process each element in the plot configuration
     for element_config in plot_config.get('elements', []):

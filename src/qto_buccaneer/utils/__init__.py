@@ -27,7 +27,6 @@ This package contains helper functions and classes for working with IFC models a
 
 - plots_utils.py: Plotting and visualization
   - Parse filter strings
-  - Apply layout settings
   - Support for element filtering
 
 ### Usage
@@ -54,7 +53,6 @@ from .ifc_json_loader import IfcJsonLoader
 # Internal functions (not exposed)
 from qto_buccaneer._utils.plot.plots_utils import parse_filter as _parse_filter
 from qto_buccaneer._utils.plot.plots_utils import element_matches_conditions as _element_matches_conditions
-from qto_buccaneer._utils.plot.plots_utils import apply_layout_settings as _apply_layout_settings
 
 __all__ = [
     'IfcLoader',

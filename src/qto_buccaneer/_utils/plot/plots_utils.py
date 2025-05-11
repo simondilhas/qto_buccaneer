@@ -90,40 +90,4 @@ def element_matches_conditions(element: Dict, conditions: List[List[str]]) -> bo
             return False
     
     # All conditions passed
-    return True
-
-def apply_layout_settings(fig: go.Figure, plot_settings: Dict) -> None:
-    """Apply general layout settings to the figure."""
-    defaults = plot_settings['defaults']
-    layout_settings = {
-        'font': {
-            'family': defaults.get('font_family', 'Arial'),
-            'size': defaults.get('text_size', 12)
-        },
-        'showlegend': True,
-        'legend': {
-            'x': 0.98,
-            'y': 0.98,
-            'xanchor': 'right',
-            'yanchor': 'top',
-            'bgcolor': 'rgba(255, 255, 255, 0.8)',
-            'bordercolor': 'rgba(0, 0, 0, 0)',
-            'borderwidth': 0,
-            'orientation': 'v',
-            'traceorder': 'normal',
-            'itemwidth': 30,
-            'itemsizing': 'constant',
-            'tracegroupgap': 0
-        },
-        'paper_bgcolor': defaults.get('background_color', 'white'),
-        'plot_bgcolor': defaults.get('background_color', 'white'),
-        'margin': {
-            'l': 5,
-            'r': 5,
-            't': 5,
-            'b': 25,
-            'pad': 0
-        },
-        'autosize': False
-    }
-    fig.update_layout(**layout_settings) 
+    return True 
