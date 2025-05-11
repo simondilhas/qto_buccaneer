@@ -4,9 +4,14 @@ import yaml
 from pathlib import Path
 from datetime import datetime
 import json
-import os
+import math
 
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
+from qto_buccaneer._utils.plot.plots_utils import (
+    parse_filter,
+    element_matches_conditions
+)
+from qto_buccaneer.utils.metadata_filter import MetadataFilter
 
 def create_3d_visualization(
     geometry_dir: Union[str, Path],
@@ -26,9 +31,6 @@ def create_3d_visualization(
         
     Returns:
         Path to the generated HTML file
-
-    Raises:
-        FileNotFoundError: If required geometry files are missing
     """
     # Convert all paths to Path objects
     geometry_dir = Path(geometry_dir)
@@ -36,46 +38,10 @@ def create_3d_visualization(
     config_path = Path(config_path)
     output_dir = Path(output_dir)
     
-    # Load data
-    print(f"Loading geometry data from {geometry_dir}...")
-    geometry_data = []
-    
-    # Check for required geometry files
-    required_files = {
-        'IfcWindow.json': 'window',
-        'IfcCovering.json': 'covering',
-        'IfcSlab.json': 'slab',
-        'IfcDoor.json': 'door'
-    }
-    
-    missing_files = []
-    for file_pattern, element_type in required_files.items():
-        if not list(geometry_dir.glob(file_pattern)):
-            missing_files.append(f"{file_pattern} (required for {element_type} visualization)")
-    
-    if missing_files:
-        raise FileNotFoundError(
-            f"Missing required geometry files in {geometry_dir}:\n" +
-            "\n".join(f"- {file}" for file in missing_files)
-        )
-    
-    # Load all geometry files in the directory
-    for geometry_file in geometry_dir.glob("*.json"):
-        if geometry_file.name in ['metadata.json', 'error.json']:
-            continue
-        print(f"Loading geometry from {geometry_file}")
-        with open(geometry_file, 'r') as f:
-            geometry = json.load(f)
-            geometry_data.extend(geometry)
-    
-    # Load properties
-    with open(properties_path, 'r') as f:
-        properties_data = json.load(f)
-
     # Load plot configuration
     print(f"Loading plot configuration from {config_path}...")
     config = load_plot_config(config_path)
-
+    
     # Create file info
     file_info = {
         "file_name": properties_path.stem,
@@ -121,58 +87,32 @@ def create_single_plot(
         raise ValueError(f"Plot '{plot_name}' not found in configuration")
     
     # Initialize loader with the geometry directory and properties file
-    loader = IfcJsonLoader(json_paths=geometry_dir, properties_json=properties_path)
+    loader = IfcJsonLoader(properties_path, geometry_dir)
+    
+    # Get plot configuration and settings
+    plot_config = config['plots'][plot_name]
+    plot_settings = config.get('plot_settings', {})
+    
+    # Initialize color mapping from config and used colors set
+    color_mapping = plot_settings.get('color_mapping', {})
+    used_colors = set(color_mapping.values())
     
     try:
         # Create single figure for 3D view
         fig = go.Figure()
         _process_plot_creation(
-            fig, loader, plot_name, config['plots'][plot_name],
-            config['plot_settings'], file_info
+            fig, loader, plot_name, plot_config,
+            plot_settings, file_info, color_mapping, used_colors
         )
         
-        # Apply 3D view settings with completely hidden axes
+        # Get 3D view settings from config
+        view_mode = plot_settings.get('modes', {}).get('3d_view', {})
+        scene_settings = view_mode.get('scene', {})
+        
+        # Apply 3D view settings
         fig.update_layout(
-            showlegend=False,  # Disable legend
-            scene=dict(
-                xaxis=dict(
-                    visible=False,
-                    showgrid=False,
-                    zeroline=False,
-                    showticklabels=False,
-                    showline=False,
-                    showbackground=False,
-                    showspikes=False,
-                    showaxeslabels=False,
-                ),
-                yaxis=dict(
-                    visible=False,
-                    showgrid=False,
-                    zeroline=False,
-                    showticklabels=False,
-                    showline=False,
-                    showbackground=False,
-                    showspikes=False,
-                    showaxeslabels=False,
-                ),
-                zaxis=dict(
-                    visible=False,
-                    showgrid=False,
-                    zeroline=False,
-                    showticklabels=False,
-                    showline=False,
-                    showbackground=False,
-                    showspikes=False,
-                    showaxeslabels=False,
-                ),
-                camera=dict(
-                    up=dict(x=0, y=0, z=1),
-                    center=dict(x=0, y=0, z=0),
-                    eye=dict(x=1.5, y=1.5, z=1.5)
-                ),
-                aspectmode='data',
-                bgcolor='rgba(0,0,0,0)'
-            ),
+            showlegend=True,  # Enable legend for 3D view
+            scene=scene_settings,
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             margin=dict(l=0, r=0, t=0, b=0, pad=0)
@@ -189,7 +129,9 @@ def _process_plot_creation(
     plot_name: str,
     plot_config: Dict,
     plot_settings: Dict,
-    file_info: Optional[Dict] = None
+    file_info: Optional[Dict] = None,
+    color_mapping: Dict[str, str] = None,
+    used_colors: set = None
 ) -> None:
     """Process plot creation based on configuration."""
     # Apply layout settings directly
@@ -267,95 +209,95 @@ def _process_plot_creation(
     
     # Process each element in the plot configuration
     for element_config in plot_config.get('elements', []):
-        _process_element(fig, loader, element_config, plot_settings, plot_config)
-
-def parse_filter_string(filter_str: str) -> Tuple[Optional[str], List[List[str]]]:
-    """Parse a filter string into element type and conditions."""
-    if not filter_str:
-        return None, []
-        
-    # First extract the type
-    type_part = None
-    if 'type=' in filter_str:
-        type_part = filter_str.split('type=')[1].split()[0]
-        # Remove the type part from the filter
-        filter_str = filter_str.replace(f"type={type_part}", "").strip()
-        # Remove any leading AND/OR
-        if filter_str.startswith("AND "):
-            filter_str = filter_str[4:].strip()
-        elif filter_str.startswith("OR "):
-            filter_str = filter_str[3:].strip()
-    
-    # Split into individual conditions
-    conditions = []
-    if filter_str:
-        # Split by AND first
-        and_parts = [p.strip() for p in filter_str.split(" AND ")]
-        
-        for part in and_parts:
-            # Handle parentheses for OR conditions
-            if '(' in part and ')' in part:
-                start = part.find('(')
-                end = part.rfind(')')
-                inner = part[start+1:end].strip()
-                # Split by OR
-                or_conditions = [c.strip() for c in inner.split(" OR ")]
-                conditions.append(or_conditions)
-            else:
-                # Single condition
-                conditions.append([part.strip()])
-    
-    return type_part, conditions
+        _process_element(fig, loader, element_config, plot_settings, plot_config, color_mapping, used_colors)
 
 def _process_element(
     fig: go.Figure,
     loader: IfcJsonLoader,
     element_config: Dict,
     plot_settings: Dict,
-    plot_config: Dict
+    plot_config: Dict,
+    color_mapping: Dict[str, str] = None,
+    used_colors: set = None
 ) -> None:
     """Process a single element from the configuration."""
     filter_str = element_config.get('filter', '')
-    element_type, conditions = parse_filter_string(filter_str)
+    element_type, conditions = parse_filter(filter_str)
     
     if not element_type:
         return
         
     print(f"\nProcessing elements of type: {element_type}")
+    print(f"Filter string: {filter_str}")
+    print(f"Conditions: {conditions}")
     
-    # Get all elements of the specified type
-    element_ids = loader.by_type_index.get(element_type, [])
-    print(f"Found {len(element_ids)} elements of type {element_type}")
-    print(f"First few element IDs: {element_ids[:5]}")
+    # Get filtered elements using the loader's filter method
+    filtered_elements = loader.get_elements_by_filter(filter_str)
+    print(f"Found {len(filtered_elements)} elements matching filter")
+    
+    # Group elements by color_by property if specified
+    color_by = element_config.get('color_by')
+    grouped_elements = {}
     
     elements_with_geometry = 0
-    for element_id in element_ids:
-        # Get the element using the numeric ID
-        element = loader.properties['elements'].get(str(element_id))
-        if not element:
-            print(f"Warning: Element {element_id} not found in properties")
-            continue
-            
-        # Check if element matches filter conditions
-        if not _element_matches_conditions(element, conditions):
-            print(f"Element {element_id} does not match filter conditions")
-            continue
-            
+    
+    for element_id, element in filtered_elements.items():
         # Get geometry using the numeric ID
         geometry = loader.get_geometry(str(element_id))
-        if not geometry or 'vertices' not in geometry:
-            # Try getting geometry from element cache
-            cache_entry = loader._element_cache.get(str(element_id))
-            if cache_entry and cache_entry.get("geometry"):
-                geometry = cache_entry["geometry"]
-                print(f"Found geometry for element {element_id} in cache")
-            else:
-                print(f"Warning: No geometry found for element {element_id}")
-                continue
+        if not geometry:
+            print(f"Warning: No geometry found for element {element_id}")
+            continue
+        if 'vertices' not in geometry:
+            print(f"Warning: No vertices found for element {element_id}")
+            continue
+            
+        elements_with_geometry += 1
         
-        if geometry and 'vertices' in geometry:
-            elements_with_geometry += 1
-            # Get vertices and faces
+        # Get the color group value
+        group_value = None
+        if color_by:
+            if color_by in element.get('properties', {}):
+                group_value = element['properties'][color_by]
+            elif color_by in element:
+                group_value = element[color_by]
+        else:
+            group_value = element_config.get('name', 'Unknown')
+        
+        if not group_value:
+            group_value = 'Unknown'
+            
+        if group_value not in grouped_elements:
+            grouped_elements[group_value] = []
+            
+        grouped_elements[group_value].append((element, geometry))
+    
+    print(f"Elements with valid geometry: {elements_with_geometry}")
+    print(f"Number of groups: {len(grouped_elements)}")
+    
+    # Check if labels should be shown
+    show_labels = element_config.get('label', True)  # Default to True if not specified
+    
+    # Add each group of elements to the plot
+    for group_value, elements in grouped_elements.items():
+        print(f"Processing group: {group_value} with {len(elements)} elements")
+        # Get color for this group
+        color = element_config.get('color_map', {}).get(group_value) or \
+                element_config.get('color') or \
+                _get_color_for_group(group_value, color_mapping, used_colors)
+        
+        # Only add dummy trace for legend if labels are enabled
+        if show_labels:
+            fig.add_trace(go.Mesh3d(
+                x=[None], y=[None], z=[None],
+                i=[None], j=[None], k=[None],
+                name=group_value,
+                color=color,
+                showlegend=True,
+                legendgroup=group_value
+            ))
+        
+        # Add each element as a separate trace but with the same legend name
+        for element, geometry in elements:
             vertices = geometry['vertices']
             faces = geometry['faces']
             
@@ -367,17 +309,15 @@ def _process_element(
             j = [f[1] for f in faces]
             k = [f[2] for f in faces]
             
-            # Get color from config or use default
-            color = element_config.get('color', 'lightgray')
-            
             # Add mesh to plot with improved visibility settings
             fig.add_trace(go.Mesh3d(
                 x=x, y=y, z=z,
                 i=i, j=j, k=k,
-                name=element_config.get('name', element_type),
+                name=None,  # No name for actual elements
                 color=color,
                 opacity=1.0,  # Full opacity
-                showlegend=False,  # Disable legend for each element
+                showlegend=False,  # Don't show in legend
+                legendgroup=group_value if show_labels else None,  # Only group if labels are enabled
                 lighting=dict(
                     ambient=0.6,  # Increase ambient light
                     diffuse=0.8,  # Increase diffuse light
@@ -385,32 +325,43 @@ def _process_element(
                     roughness=0.5  # Medium roughness
                 ),
                 flatshading=True,  # Enable flat shading for better visibility
-                hoverinfo='name'
+                hoverinfo='name' if show_labels else 'none'  # Only show hover info if labels are enabled
             ))
-    
-    print(f"Added {elements_with_geometry} elements with geometry to the plot")
 
-def _element_matches_conditions(element: Dict, conditions: List[List[str]]) -> bool:
-    """Check if an element matches all filter conditions."""
-    for or_group in conditions:
-        # At least one condition in the OR group must be true
-        or_group_matched = False
-        for condition in or_group:
-            # Split condition into key and value
-            if '=' in condition:
-                key, value = condition.split('=', 1)
-                key = key.strip()
-                value = value.strip()
-                
-                # Check if the condition is met
-                if key in element:
-                    if str(element[key]).lower() == value.lower():
-                        or_group_matched = True
-                        break
-        
-        # If no condition in the OR group matched, the whole AND fails
-        if not or_group_matched:
-            return False
+def _get_color_for_group(group_value: str, color_mapping: Dict[str, str], used_colors: set) -> str:
+    """Get a color for a group value, using config mapping or generating a new color.
     
-    # All conditions passed
-    return True 
+    Args:
+        group_value: The value to get a color for
+        color_mapping: Dictionary mapping group values to colors
+        used_colors: Set of colors already in use
+        
+    Returns:
+        Color string for the group value
+    """
+    # Try to get color from mapping
+    if group_value in color_mapping:
+        return color_mapping[group_value]
+    
+    # Generate a new color that's not in use
+    available_colors = [
+        'lightblue', 'lightgreen', 'lightcoral', 'lightyellow', 
+        'lightpink', 'lightskyblue', 'lightseagreen', 'lightsteelblue',
+        'lightgoldenrodyellow', 'lightcyan', 'lightgray'
+    ]
+    
+    # Filter out used colors
+    unused_colors = [c for c in available_colors if c not in used_colors]
+    
+    if unused_colors:
+        # Use first unused color
+        color = unused_colors[0]
+    else:
+        # If all colors are used, pick a random one
+        color = available_colors[hash(group_value) % len(available_colors)]
+    
+    # Add to used colors and mapping
+    used_colors.add(color)
+    color_mapping[group_value] = color
+    
+    return color 

@@ -46,6 +46,10 @@ def create_floorplan_per_storey(
     plot_config = config['plots'][plot_name]
     plot_settings = config.get('plot_settings', {})
     
+    # Initialize color mapping from config and used colors set
+    color_mapping = plot_settings.get('color_mapping', {})
+    used_colors = set(color_mapping.values())
+    
     # Initialize IfcJsonLoader
     loader = IfcJsonLoader(properties_path, geometry_dir)
     
@@ -181,7 +185,7 @@ def create_floorplan_per_storey(
             if element_name in storey_elements:
                 # Pass the pre-filtered elements for this storey
                 element_config['filtered_elements'] = storey_elements[element_name]
-            _process_element(fig, loader, element_config, plot_settings, storey_name, plot_config)
+            _process_element(fig, loader, element_config, plot_settings, storey_name, plot_config, color_mapping, used_colors)
         
         # Update layout with consistent bounds and title
         fig.update_layout(
@@ -354,7 +358,7 @@ def _process_plot_creation(
     
     # Process each element in the plot configuration
     for element_config in plot_config.get('elements', []):
-        _process_element(fig, loader, element_config, plot_settings, storey_name, plot_config)
+        _process_element(fig, loader, element_config, plot_settings, storey_name, plot_config, color_mapping, used_colors)
 
 def _process_element(
     fig: go.Figure,
@@ -362,14 +366,16 @@ def _process_element(
     element_config: Dict,
     plot_settings: Dict,
     storey_name: Optional[str],
-    plot_config: Dict
+    plot_config: Dict,
+    color_mapping: Dict[str, str],
+    used_colors: set
 ) -> None:
     """Process a single element from the configuration."""
     filter_str = element_config.get('filter', '')
     element_type, conditions = parse_filter(filter_str)
     
     if element_type == 'IfcSpace':
-        _add_spaces_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
+        _add_spaces_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config, color_mapping, used_colors)
     elif element_type == 'IfcDoor':
         _add_door_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
     elif element_type == 'IfcWindow':
@@ -378,12 +384,12 @@ def _process_element(
         pass  # Storey visualization not implemented
     elif element_type == 'IfcWallStandardCase':
         print("Starting wall visualization")  # Debug log
-        _add_wall_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
+        _add_wall_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config, color_mapping, used_colors)
         print("Wall visualization completed")  # Debug log
     else:
         _add_geometry_to_plot(
             fig, loader, element_config, element_type, conditions, plot_settings,
-            storey_name, plot_config, element_type == 'IfcSpace'
+            storey_name, plot_config, element_type == 'IfcSpace', color_mapping, used_colors
         )
 
 def _add_spaces_to_plot(
@@ -394,12 +400,15 @@ def _add_spaces_to_plot(
     conditions: List[List[str]],
     plot_settings: Dict,
     storey_name: Optional[str] = None,
-    plot_config: Optional[Dict] = None
+    plot_config: Optional[Dict] = None,
+    color_mapping: Dict[str, str] = None,
+    used_colors: set = None
 ) -> None:
     """Add spaces to the plot with consistent coloring."""
     # Get color settings
     color_by = element_config.get('color_by')
     fixed_color = element_config.get('color')
+    color_map = element_config.get('color_map', {})
     
     # Use pre-filtered elements if available
     if 'filtered_elements' in element_config:
@@ -433,7 +442,8 @@ def _add_spaces_to_plot(
     
     # Add each group to the plot
     for group_value, space_group in grouped_spaces.items():
-        color = fixed_color or _get_color_for_group(group_value)
+        # Use color from color_map if available, otherwise use fixed_color or generate new color
+        color = color_map.get(group_value, fixed_color) or _get_color_for_group(group_value, color_mapping, used_colors)
         total_area = total_areas.get(group_value, 0.0)
         legend_name = f"{group_value} ({total_area:.1f} m²)"
         
@@ -485,14 +495,43 @@ def _group_spaces(
     
     return grouped_spaces, total_areas
 
-def _get_color_for_group(group_value: str) -> str:
-    """Get a consistent color for a group value."""
-    colors = [
+def _get_color_for_group(group_value: str, color_mapping: Dict[str, str], used_colors: set) -> str:
+    """Get a color for a group value, using config mapping or generating a new color.
+    
+    Args:
+        group_value: The value to get a color for
+        color_mapping: Dictionary mapping group values to colors
+        used_colors: Set of colors already in use
+        
+    Returns:
+        Color string for the group value
+    """
+    # Try to get color from mapping
+    if group_value in color_mapping:
+        return color_mapping[group_value]
+    
+    # Generate a new color that's not in use
+    available_colors = [
         'lightblue', 'lightgreen', 'lightcoral', 'lightyellow', 
         'lightpink', 'lightskyblue', 'lightseagreen', 'lightsteelblue',
         'lightgoldenrodyellow', 'lightcyan', 'lightgray'
     ]
-    return colors[hash(group_value) % len(colors)]
+    
+    # Filter out used colors
+    unused_colors = [c for c in available_colors if c not in used_colors]
+    
+    if unused_colors:
+        # Use first unused color
+        color = unused_colors[0]
+    else:
+        # If all colors are used, pick a random one
+        color = available_colors[hash(group_value) % len(available_colors)]
+    
+    # Add to used colors and mapping
+    used_colors.add(color)
+    color_mapping[group_value] = color
+    
+    return color
 
 def _add_single_space_to_plot(
     fig: go.Figure,
@@ -579,7 +618,9 @@ def _add_geometry_to_plot(
     plot_settings: Dict,
     storey_name: Optional[str] = None,
     plot_config: Optional[Dict] = None,
-    is_space: bool = False
+    is_space: bool = False,
+    color_mapping: Dict[str, str] = None,
+    used_colors: set = None
 ) -> None:
     """Add doors and windows to the plot with special visualization."""
     # Get filter and color settings
@@ -607,7 +648,7 @@ def _add_geometry_to_plot(
             print("Window visualization completed")  # Debug log
         elif element_type == 'IfcWallStandardCase':
             print("Starting wall visualization")  # Debug log
-            _add_wall_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config)
+            _add_wall_to_plot(fig, loader, element_config, element_type, conditions, plot_settings, storey_name, plot_config, color_mapping, used_colors)
             print("Wall visualization completed")  # Debug log
 
 def _create_oriented_symbol(
@@ -1010,7 +1051,9 @@ def _add_wall_to_plot(
     conditions: List[List[str]],
     plot_settings: Dict,
     storey_name: Optional[str] = None,
-    plot_config: Optional[Dict] = None
+    plot_config: Optional[Dict] = None,
+    color_mapping: Dict[str, str] = None,
+    used_colors: set = None
 ) -> None:
     """Add walls to the plot as filled rectangles."""
     # Get all wall elements
@@ -1081,7 +1124,7 @@ def _add_wall_to_plot(
         total_area = group_data['total_area']
         
         # Get color for this group
-        color = _get_color_for_group(group_value)
+        color = _get_color_for_group(group_value, color_mapping, used_colors)
         
         # Create legend name with total area
         legend_name = f"{group_value} ({total_area:.1f} m²)"
