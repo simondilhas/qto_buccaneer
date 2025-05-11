@@ -47,7 +47,7 @@ def create_floorplan_per_storey(
     plot_settings = config.get('plot_settings', {})
     
     # Initialize color mapping from config and used colors set
-    color_mapping = plot_settings.get('color_mapping', {})
+    color_mapping = plot_settings.get('color_mappings', {}).get('space_types', {})
     used_colors = set(color_mapping.values())
     
     # Initialize IfcJsonLoader
@@ -61,6 +61,11 @@ def create_floorplan_per_storey(
             elements = loader.get_elements_by_filter(filter_str)
             filtered_elements[element_config.get('name', 'unnamed')] = elements
             print(f"\nFound {len(elements)} elements matching filter: {filter_str}")
+            
+            # Update color mapping with element-specific color map if available
+            if 'color_map' in element_config:
+                color_mapping.update(element_config['color_map'])
+                used_colors.update(element_config['color_map'].values())
     
     if not filtered_elements:
         print("No elements found matching filter conditions")
@@ -126,31 +131,50 @@ def create_floorplan_per_storey(
         height = y_max - y_min
         aspect_ratio = width / height
         
-        # A4 aspect ratio is 1:√2 (approximately 1:1.4142)
-        a4_ratio = 1.4142
+        # A4 landscape dimensions in pixels (at 96 DPI)
+        # 297mm × 210mm = 1123 × 794 pixels
+        a4_width = 1123  # Landscape width
+        a4_height = 794  # Landscape height
         
         # Create consistent layout settings
         consistent_layout = {
             'xaxis': {
                 'range': [x_min, x_max],
                 'scaleanchor': 'y',
-                'scaleratio': a4_ratio,  # Force A4 aspect ratio
+                'scaleratio': 1,  # Keep aspect ratio of content
                 'showgrid': False,
                 'showticklabels': False,
-                'showline': False
+                'showline': False,
+                'domain': [0, 0.75]  # Use 75% of width for plot
             },
             'yaxis': {
                 'range': [y_min, y_max],
                 'showgrid': False,
                 'showticklabels': False,
-                'showline': False
+                'showline': False,
+                'domain': [0, 1]  # Full height
             },
             'showlegend': True,
             'plot_bgcolor': 'white',
             'paper_bgcolor': 'white',
-            'width': 794,  # Fixed A4 width in pixels
-            'height': 1123,  # Fixed A4 height in pixels
-            'autosize': False  # Prevent automatic resizing
+            'width': a4_width,  # Landscape A4 width in pixels
+            'height': a4_height,  # Landscape A4 height in pixels
+            'autosize': False,  # Prevent automatic resizing
+            'legend': {
+                'orientation': 'v',  # Vertical legend
+                'yanchor': 'top',  # Anchor to top
+                'y': 1,  # Position at top
+                'xanchor': 'left',  # Anchor to left
+                'x': 0.8,  # Position in right quarter
+                'bgcolor': 'white'
+            },
+            'margin': {
+                'l': 50,  # Left margin
+                'r': 50,  # Right margin
+                't': 50,  # Top margin
+                'b': 50,  # Bottom margin
+                'pad': 0
+            }
         }
     else:
         consistent_layout = {}
@@ -185,7 +209,7 @@ def create_floorplan_per_storey(
         
         # Update layout with consistent bounds and title
         fig.update_layout(
-            title=f"{storey_name}",
+            title=f"{plot_config.get('title', 'Floorplan')} - {storey_name}",
             **consistent_layout
         )
         
@@ -440,8 +464,34 @@ def _add_spaces_to_plot(
     
     # Add each group to the plot
     for group_value, space_group in grouped_spaces.items():
-        # Use color from color_map if available, otherwise use fixed_color or generate new color
-        color = color_map.get(group_value, fixed_color) or _get_color_for_group(group_value, color_mapping, used_colors)
+        # First try to find color in element-specific color_map
+        color = None
+        if color_map:
+            # Try to find an exact match first
+            if group_value in color_map:
+                color = color_map[group_value]
+            else:
+                # Try to find a partial match (for cases where the key includes additional text)
+                for key, value in color_map.items():
+                    if key in group_value or group_value in key:
+                        color = value
+                        break
+        
+        # If no color found in element-specific color_map, try global color_mapping
+        if not color and color_mapping:
+            if group_value in color_mapping:
+                color = color_mapping[group_value]
+            else:
+                # Try to find a partial match in global color_mapping
+                for key, value in color_mapping.items():
+                    if key in group_value or group_value in key:
+                        color = value
+                        break
+        
+        # If still no color found, use fixed_color or generate new color
+        if not color:
+            color = fixed_color or _get_color_for_group(group_value, color_mapping, used_colors)
+            
         total_area = total_areas.get(group_value, 0.0)
         legend_name = f"{group_value} ({total_area:.1f} m²)"
         
