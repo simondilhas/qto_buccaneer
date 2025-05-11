@@ -147,18 +147,11 @@ def create_floorplan_per_storey(
             },
             'showlegend': True,
             'plot_bgcolor': 'white',
-            'paper_bgcolor': 'white'
+            'paper_bgcolor': 'white',
+            'width': 794,  # Fixed A4 width in pixels
+            'height': 1123,  # Fixed A4 height in pixels
+            'autosize': False  # Prevent automatic resizing
         }
-        
-        # Set consistent figure size based on A4 aspect ratio
-        if aspect_ratio > a4_ratio:
-            # Wider than A4
-            consistent_layout['width'] = 794  # A4 width in pixels
-            consistent_layout['height'] = int(794 / aspect_ratio)
-        else:
-            # Taller than A4
-            consistent_layout['height'] = 1123  # A4 height in pixels
-            consistent_layout['width'] = int(1123 * aspect_ratio)
     else:
         consistent_layout = {}
     
