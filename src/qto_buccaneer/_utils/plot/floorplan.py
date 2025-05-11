@@ -82,10 +82,83 @@ def create_floorplan_per_storey(
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
     
+    # First pass: Calculate global bounds across all floors
+    global_x_coords = []
+    global_y_coords = []
+    for storey in storeys:
+        storey_name = storey.get('Name', 'Unknown')
+        print(f"\nCollecting coordinates for storey: {storey_name}")
+        
+        # Filter elements for this storey
+        storey_elements = {}
+        for element_name, elements in filtered_elements.items():
+            storey_elements[element_name] = {
+                element_id: element for element_id, element in elements.items()
+                if element.get('parent_id') == storey['id']
+            }
+        
+        # Collect coordinates for current storey
+        for elements in storey_elements.values():
+            for element in elements.values():
+                geometry = loader.get_geometry(str(element['id']))
+                if geometry and 'vertices' in geometry:
+                    global_x_coords.extend([v[0] for v in geometry['vertices']])
+                    global_y_coords.extend([v[1] for v in geometry['vertices']])
+    
+    # Calculate global bounds with margin
+    if global_x_coords and global_y_coords:
+        x_min, x_max = min(global_x_coords), max(global_x_coords)
+        y_min, y_max = min(global_y_coords), max(global_y_coords)
+        
+        # Add margin (5% of the larger dimension)
+        margin = max(x_max - x_min, y_max - y_min) * 0.05
+        x_min -= margin
+        x_max += margin
+        y_min -= margin
+        y_max += margin
+        
+        # Calculate aspect ratio
+        width = x_max - x_min
+        height = y_max - y_min
+        aspect_ratio = width / height
+        
+        # Create consistent layout settings
+        consistent_layout = {
+            'xaxis': {
+                'range': [x_min, x_max],
+                'scaleanchor': 'y',
+                'scaleratio': 1,
+                'showgrid': False,
+                'showticklabels': False,
+                'showline': False
+            },
+            'yaxis': {
+                'range': [y_min, y_max],
+                'showgrid': False,
+                'showticklabels': False,
+                'showline': False
+            },
+            'showlegend': True,
+            'plot_bgcolor': 'white',
+            'paper_bgcolor': 'white'
+        }
+        
+        # Set consistent figure size based on aspect ratio
+        if aspect_ratio > 1:
+            # Wider than tall
+            consistent_layout['width'] = 1000
+            consistent_layout['height'] = int(1000 / aspect_ratio)
+        else:
+            # Taller than wide
+            consistent_layout['height'] = 1000
+            consistent_layout['width'] = int(1000 * aspect_ratio)
+    else:
+        consistent_layout = {}
+    
     # Dictionary to store output paths
     storey_paths = {}
     
-    # Create a figure for each storey
+    # Second pass: Create figures with consistent layout
     for storey in storeys:
         storey_name = storey.get('Name', 'Unknown')
         print(f"\nProcessing storey: {storey_name}")
@@ -110,26 +183,10 @@ def create_floorplan_per_storey(
                 element_config['filtered_elements'] = storey_elements[element_name]
             _process_element(fig, loader, element_config, plot_settings, storey_name, plot_config)
         
-        # Get coordinates for current storey
-        current_x_coords = []
-        current_y_coords = []
-        for elements in storey_elements.values():
-            for element in elements.values():
-                geometry = loader.get_geometry(str(element['id']))
-                if geometry and 'vertices' in geometry:
-                    current_x_coords.extend([v[0] for v in geometry['vertices']])
-                    current_y_coords.extend([v[1] for v in geometry['vertices']])
-        
-        # Calculate optimal layout if we have coordinates
-        if current_x_coords and current_y_coords:
-            optimal_layout = _calculate_optimal_layout(current_x_coords, current_y_coords)
-        else:
-            optimal_layout = {}
-        
-        # Update layout with calculated bounds and title
+        # Update layout with consistent bounds and title
         fig.update_layout(
             title=f"{plot_config.get('title', 'Floorplan')} - {storey_name}",
-            **optimal_layout
+            **consistent_layout
         )
         
         # Save figure
