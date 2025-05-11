@@ -196,6 +196,8 @@ def create_floorplan_per_storey(
         # Save figure
         output_path = output_dir / f"{plot_name}_{storey_name}.html"
         fig.write_html(str(output_path))
+        fig.write_image(str(output_path.with_suffix('.png')))
+        fig.write_json(str(output_path.with_suffix('.json')))
         storey_paths[storey_name] = str(output_path)
         print(f"Saved figure to: {output_path}")
     

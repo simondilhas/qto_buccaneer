@@ -211,8 +211,6 @@ def room_program_comparison(
 
 
 
-
-
 # TODO: adapt to new report style with class ReportResults
 def generate_metrics_report(
     metrics_df: pd.DataFrame,
