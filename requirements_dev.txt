@@ -102,3 +102,10 @@ zopfli==0.2.3.post1
 
 # For the viewer
 flask==3.1.0
+
+# For the API
+fastapi==0.115.1
+uvicorn==0.31.0
+
+# For the async processing
+aiohttp==3.11.18

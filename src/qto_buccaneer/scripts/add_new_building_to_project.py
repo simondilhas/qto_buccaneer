@@ -203,13 +203,13 @@ def add_building_to_project(project_name: str, building_name: str, source_files_
         
         # Create building summary in the building folder
         summary_path = building_path / f"{building_name}_summary.yaml"
-        
+
         # Only create summary if it doesn't exist
         if not summary_path.exists():
             # Create and update building summary using template
-            summary = BuildingSummary(summary_path)
+            summary = BuildingSummary(summary_path, building_name=building_name)
             summary.set_name(building_name)  # Set the actual building name
-            summary.add_metric("description", f"This is {building_name}")
+            summary.add(data={"description": f"This is {building_name}"}, group="metrics")
             summary.save()
             print(f"Created building summary for '{building_name}'")
         else:
@@ -320,7 +320,10 @@ def main():
     args = parser.parse_args()
     
     try:
-        add_building_to_project(args.project_name, args.building_name)
+        add_building_to_project(
+            project_name=args.project_name,
+            building_name=args.building_name,
+        )
     except Exception as e:
         return 1
     
