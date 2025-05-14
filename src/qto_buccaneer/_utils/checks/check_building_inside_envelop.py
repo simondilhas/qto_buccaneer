@@ -8,6 +8,9 @@ import requests
 import shutil
 from dotenv import load_dotenv
 import os
+import plotly.graph_objects as go
+
+
 load_dotenv()
 
 API_URL = os.getenv("BUILDING_ENVELOP_CHECK_API_URL")
@@ -292,11 +295,14 @@ def check_building_inside_envelop(
             volume_check = None
         
         # Process the file for visualization
-        html_path, json_path = __visualize_geometry(
+        html_path, json_path = _visualize_geometry(
             target_file=target_file,
             reference_file=reference_file,
             api_url=api_url
         )
+
+        building_name = target_file.stem
+        building_name = building_name.replace("_abstractBIM", "")
         
         # Move files to the correct output directory
         new_html_path = file_output_dir / f"{target_file.stem}_visualization.html"
@@ -316,6 +322,7 @@ def check_building_inside_envelop(
         # Extract relevant information
         result = {
             'filename': target_file.name,
+            'building_name': building_name,
             'timestamp': timestamp,
             'html_path': str(new_html_path),
             'json_path': str(new_json_path),
@@ -329,6 +336,7 @@ def check_building_inside_envelop(
     except requests.exceptions.ConnectionError as e:
         return {
             'filename': target_file.name,
+            'building_name': building_name,
             'timestamp': datetime.now().strftime("%Y%m%d_%H%M%S"),
             'html_path': None,
             'json_path': None,
@@ -421,13 +429,13 @@ def _write_results_to_excel(results: list, output_dir: Path, excel_filename: str
                 # Use relative path from Excel file to HTML file
                 rel_path = Path(html_path).relative_to(output_dir)
                 # Convert to forward slashes and add file:// protocol
-                file_url = f"file://{str(rel_path).replace('\\', '/')}"
+                file_url = 'file://' + str(rel_path).replace('\\', '/')
                 worksheet.write_url(row_num, html_col, file_url, link_format, 'Open Visualization')
     
     _print_with_flush(f"✅ Excel report saved to: {excel_path}")
     return excel_path
 
-def batch_process(ifc_dir: Path, reference_file: Path, output_dir: Path, api_url: str = API_URL):
+def process_check_building_inside_envelop(ifc_dir: Path, reference_file: Path, output_dir: Path, api_url: str = API_URL):
     """Process all IFC files in the specified directory"""
     start_time = datetime.now()
     results = []
@@ -483,6 +491,9 @@ def batch_process(ifc_dir: Path, reference_file: Path, output_dir: Path, api_url
     _print_with_flush(f"Excel report: {excel_path}")
     _print_with_flush("="*50 + "\n")
 
+    df = pd.DataFrame(results)
+    return df
+
 if __name__ == "__main__":
     # Configuration
     IFC_DIR = Path("ifc_files")
@@ -503,7 +514,7 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # Run batch processing
-    batch_process(
+    process_check_building_inside_envelop(
         ifc_dir=IFC_DIR,
         reference_file=REFERENCE_FILE,
         output_dir=OUTPUT_DIR

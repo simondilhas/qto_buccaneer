@@ -16,8 +16,11 @@ from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_
 
 from qto_buccaneer._utils.checks.check_dimensions import process_check_dimensions
 from qto_buccaneer.utils.ifc_json_loader import IfcJsonLoader
-
+from qto_buccaneer._utils.checks.check_building_inside_envelop import process_check_building_inside_envelop
+from dotenv import load_dotenv
 logger = logging.getLogger(__name__)
+
+load_dotenv()
 
 def compare_target_actual(
     target_df: Union[pd.DataFrame, BaseResultBundle],
@@ -113,8 +116,6 @@ def compare_target_actual(
 
 
 
-
-
 def check_dimensions(
     data_dir: Path,
     check_config: dict,
@@ -147,3 +148,26 @@ def check_dimensions(
     
     
     return result
+
+
+def check_building_inside_envelop(
+    ifc_dir: Path,
+    reference_file: Path,
+    output_dir: Path,
+) -> Dict[str, Any]:
+    """
+    Check if the building is inside the envelop.
+    """
+    logger.info("Starting check_building_inside_envelop")
+
+    load_dotenv()
+
+    API_URL = os.getenv("BUILDING_ENVELOP_CHECK_API_URL")
+
+    df_result = process_check_building_inside_envelop(
+    ifc_dir=ifc_dir,
+    reference_file=reference_file,
+    output_dir=output_dir
+    )
+
+    return df_result

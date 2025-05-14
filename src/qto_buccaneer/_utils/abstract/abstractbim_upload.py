@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 dotenv.load_dotenv()
+abstract_bim_api_url = os.getenv("ABSTRACTBIM_API_URL")
 
 def _upload_blob(sas_url: str, data: bytes) -> bool:
     headers = {"x-ms-blob-type": "BlockBlob"}
@@ -29,7 +30,7 @@ def process_ifc_file_with_abstractbim_api(input_file: str, output_file: str) -> 
         response = requests.get(
             "https://devabstractbim.azurewebsites.net/generic/upload_url",
             headers=headers,
-            timeout=600
+            timeout=1000
         )
         response.raise_for_status()
         url = response.text
@@ -48,10 +49,10 @@ def process_ifc_file_with_abstractbim_api(input_file: str, output_file: str) -> 
         # Process IFC file
         data = {"url": url}
         response = requests.post(
-            "https://devabstractbim.azurewebsites.net/generic/normalize_ifc",
+            f"{abstract_bim_api_url}/generic/normalize_ifc",
             json=data,
             headers=headers,
-            timeout=600
+            timeout=1000
         )
         response.raise_for_status()
         result = response.json()
