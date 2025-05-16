@@ -3,6 +3,8 @@ from pathlib import Path
 import ifcopenshell
 from qto_buccaneer.utils.ifc_loader import IfcLoader
 from qto_buccaneer._utils.repair.apply_repair import _apply_repair
+from qto_buccaneer._utils.repair.repair_ifc_metadata_global import repair_ifc_metadata_global_logic
+
 
 
 def repair_ifc_metadata_global(ifc_path_or_model: Union[str, ifcopenshell.file], config: Dict[str, Any], output_dir: Optional[Union[str, Path]] = None) -> str:
@@ -48,9 +50,16 @@ def repair_ifc_metadata_global(ifc_path_or_model: Union[str, ifcopenshell.file],
             print(f"✗ Error: Invalid config format for rule '{rule_name}'")
             continue
             
+        # Convert repair format to match what repair_ifc_metadata_global_logic expects
+        repair = {
+            'name': rule_name,
+            'filter': repair_config['filter'],
+            'actions': repair_config['actions']  # Pass actions directly
+        }
+        
         # Apply the repair
         try:
-            _apply_repair(loader.model, repair_config)
+            repair_ifc_metadata_global_logic(loader.model, repair)
             print(f"✓ Successfully applied rule: {rule_name}")
         except Exception as e:
             print(f"✗ Error applying rule '{rule_name}': {str(e)}")
@@ -66,17 +75,16 @@ def repair_ifc_metadata_global(ifc_path_or_model: Union[str, ifcopenshell.file],
     else:
         output_path = ifc_path_or_model if isinstance(ifc_path_or_model, str) else None
     
-    # Save changes
+    # Save the modified model
     if output_path:
         try:
             loader.model.write(str(output_path))
-            print(f"\n✓ Successfully saved repaired model to: {output_path}")
-            return str(output_path)
+            print(f"✓ Successfully saved repaired model to: {output_path}")
         except Exception as e:
-            print(f"\n✗ Error saving repaired model: {str(e)}")
-            return ""
-    else:
-        return ""
+            print(f"✗ Error saving repaired model: {str(e)}")
+            return str(ifc_path_or_model) if isinstance(ifc_path_or_model, str) else ""
+    
+    return str(output_path) if output_path else ""
 
 def repair_ifc_metadata_per_building(ifc_path_or_model: Union[str, ifcopenshell.file], config: Dict[str, Any], building_name: str, output_dir: Optional[Union[str, Path]] = None) -> str:
     """

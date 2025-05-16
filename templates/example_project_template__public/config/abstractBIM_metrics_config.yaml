@@ -25,7 +25,7 @@
 #    - include_filter: PredefinedType: "INTERNAL"
 
 # 2. Filter with multiple values:
-#    - subtract_filter: Name: ["LUF", "Void"]
+#    - subtract_filter: Name: ["LUF", "void"]
 
 # 3. Filter with boolean value:
 #    - subtract_filter: Pset_CoveringCommon.IsExternal: true
@@ -100,7 +100,7 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
     include_filter:
       Name: "GrossArea"
     subtract_filter:
-      Name: ["LUF", "Void", "Luftraum"]
+      Name: ["LUF", "void", "Luftraum"]
 
   gross_floor_area_above_ground:
     description: "The gross floor area above ground level from the outside of the exterior walls, including all interior spaces, the area of spaces with Name = LUF is subtracted. This formula works for flat terrain, with groundfloor +/- 0"
@@ -113,7 +113,7 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
       Pset_SpatialData.ElevationOfStory: [">=", -0.5]
     include_filter_logic: "AND"
     subtract_filter:
-      Name: ["LUF", "Void", "Luftraum"]
+      Name: ["LUF", "void", "Luftraum"]
       Pset_SpatialData.ElevationOfStory: [">=", -0.5]
     subtract_filter_logic: "AND"
 
@@ -128,7 +128,7 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
       Pset_SpatialData.ElevationOfStory: ["<", -0.5]
     include_filter_logic: "AND"
     subtract_filter:
-      Name: ["LUF", "Void", "Luftraum"]
+      Name: ["LUF", "void", "Luftraum"]
       Pset_SpatialData.ElevationOfStory: ["<", -0.5]
     subtract_filter_logic: "AND"
 
@@ -180,7 +180,7 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
     # Space metrics
 
   space_interior_floor_area:
-    description: "The total floor area of net interior spaces (between the walls and slabs), the area of spaces with Name = LUF or Void or Luftraum is subtracted"
+    description: "The total floor area of net interior spaces (between the walls and slabs), the area of spaces with Name = LUF or void or Luftraum is subtracted"
     quantity_type: "area"
     ifc_entity: "IfcSpace"
     pset_name: "Qto_SpaceBaseQuantities"
@@ -189,11 +189,11 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
       PredefinedType: "INTERNAL"
     include_filter_logic: "AND"
     subtract_filter:
-      Name: ["LUF", "Void", "Luftraum"]
+      Name: ["LUF", "void", "Luftraum"]
     subtract_filter_logic: "OR"
 
   space_interior_floor_area_above_ground:
-    description: "The total floor area of net interior spaces (between the walls and slabs), the area of spaces with Name = LUF or Void or Luftraum is subtracted. This formula works for flat terrain, with groundfloor +/- 0"
+    description: "The total floor area of net interior spaces (between the walls and slabs), the area of spaces with Name = LUF or void or Luftraum is subtracted. This formula works for flat terrain, with groundfloor +/- 0"
     quantity_type: "area"
     ifc_entity: "IfcSpace"
     pset_name: "Qto_SpaceBaseQuantities"
@@ -203,12 +203,12 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
       Pset_SpatialData.ElevationOfStory: [">=", -0.5]
     include_filter_logic: "AND"
     subtract_filter:
-      Name: ["LUF", "Void", "Luftraum"]
+      Name: ["LUF", "void", "Luftraum"]
       Pset_SpatialData.ElevationOfStory: [">=", -0.5]
     subtract_filter_logic: "AND"
     
   space_interior_floor_area_below_ground:
-    description: "The total floor area of net interior spaces (between the walls and slabs), the area of spaces with Name = LUF or Void or Luftraum is subtracted. This formula works for flat terrain, with groundfloor +/- 0"
+    description: "The total floor area of net interior spaces (between the walls and slabs), the area of spaces with Name = LUF or void or Luftraum is subtracted. This formula works for flat terrain, with groundfloor +/- 0"
     quantity_type: "area"
     ifc_entity: "IfcSpace"
     pset_name: "Qto_SpaceBaseQuantities"
@@ -218,7 +218,7 @@ metrics: #Dont delete the name "metrics". List all the standard metrics that ret
       Pset_SpatialData.ElevationOfStory: ["<", -0.5]
     include_filter_logic: "AND"
     subtract_filter:
-      Name: ["LUF", "Void", "Luftraum"]
+      Name: ["LUF", "void", "Luftraum"]
       Pset_SpatialData.ElevationOfStory: ["<", -0.5]
     subtract_filter_logic: "AND"
   

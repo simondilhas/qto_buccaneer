@@ -28,7 +28,7 @@ def process_ifc_file_with_abstractbim_api(input_file: str, output_file: str) -> 
     try:
         # Get upload URL
         response = requests.get(
-            "https://devabstractbim.azurewebsites.net/generic/upload_url",
+            f"{abstract_bim_api_url}/generic/upload_url",
             headers=headers,
             timeout=1000
         )
