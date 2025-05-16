@@ -1,0 +1,57 @@
+{
+  "buildings": [
+    {
+      "name": "main_building",
+      "repairs": [
+        {
+          "name": "Standardize Space Names",
+          "filter": "type=IfcSpace AND LongName=TRH",
+          "actions": [
+            {
+              "change_value": {
+                "field": "LongName",
+                "value": "Technical Room"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Door Properties",
+          "filter": "type=IfcDoor",
+          "actions": [
+            {
+              "change_value": {
+                "field": "Name",
+                "value": "Standard Door"
+              }
+            },
+            {
+              "change_value": {
+                "field": "ePset_DoorCommon.IsExternal",
+                "value": true
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fix Window Properties",
+          "filter": "type=IfcWindow",
+          "actions": [
+            {
+              "change_value": {
+                "field": "ePset_WindowCommon.IsExternal",
+                "value": true
+              }
+            },
+            {
+              "change_value": {
+                "field": "ePset_abstractBIM.Normal",
+                "value": "90"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+} 

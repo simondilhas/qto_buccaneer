@@ -1,4 +1,5 @@
 import math
+import numpy as np
 from typing import Dict, List, Tuple, Any
 
 def get_bounding_box(vertices: List[List[float]]) -> Tuple[float, float, float, float, float, float]:
@@ -17,6 +18,37 @@ def bounding_boxes_xy_overlap(bbox1: Tuple[float, float, float, float, float, fl
     overlap_y = (y1_min - tolerance <= y2_max) and (y2_min - tolerance <= y1_max)
     
     return overlap_x and overlap_y
+
+def get_oriented_bounding_box(vertices: List[List[float]]) -> Tuple[float, float, float, np.ndarray]:
+    # Convert vertices to numpy array
+    points = np.array(vertices)
+    
+    # Center the points
+    centroid = np.mean(points, axis=0)
+    centered_points = points - centroid
+    
+    # Calculate covariance matrix
+    cov_matrix = np.cov(centered_points.T)
+    
+    # Get eigenvalues and eigenvectors
+    eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
+    
+    # Sort eigenvalues and eigenvectors in descending order
+    idx = eigenvalues.argsort()[::-1]
+    eigenvalues = eigenvalues[idx]
+    eigenvectors = eigenvectors[:, idx]
+    
+    # Project points onto the principal axes
+    projected_points = np.dot(centered_points, eigenvectors)
+    
+    # Calculate min and max along each principal axis
+    min_coords = np.min(projected_points, axis=0)
+    max_coords = np.max(projected_points, axis=0)
+    
+    # Calculate dimensions
+    dimensions = max_coords - min_coords
+    
+    return dimensions[0], dimensions[1], dimensions[2], eigenvectors
 
 def process_check_dimensions(input_dict: Dict[str, Dict[str, Any]], 
                            config: Dict[str, Any], 
@@ -52,17 +84,8 @@ def process_check_dimensions(input_dict: Dict[str, Dict[str, Any]],
             print(f"Warning: No vertices found for space {spa_id}")
             continue
 
-        spa_bbox = get_bounding_box(vertices)
-
-        # Always calculate dimensions based on SPA for now
-        spa_xs = [v[0] for v in vertices]
-        spa_ys = [v[1] for v in vertices]
-        spa_zs = [v[2] for v in vertices]
-
-        # Calculate all possible dimensions
-        dim_x = max(spa_xs) - min(spa_xs)
-        dim_y = max(spa_ys) - min(spa_ys)
-        dim_z = max(spa_zs) - min(spa_zs)
+        # Get oriented bounding box dimensions
+        dim_x, dim_y, dim_z, _ = get_oriented_bounding_box(vertices)
 
         # Check all possible combinations of dimensions
         valid = False

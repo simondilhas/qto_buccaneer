@@ -554,31 +554,29 @@ def _get_color_for_group(group_value: str, color_mapping: Dict[str, str], used_c
     Returns:
         Color string for the group value
     """
-    # Try to get color from mapping
-    if group_value in color_mapping:
-        return color_mapping[group_value]
-    
-    # Generate a new color that's not in use
+    # Normalize group_value for lookup
+    norm_group_value = group_value.strip() if isinstance(group_value, str) else group_value
+    # Build a normalized mapping for lookup
+    norm_color_mapping = {k.strip() if isinstance(k, str) else k: v for k, v in (color_mapping or {}).items()}
+    print(f"[DEBUG] group_value: '{group_value}' (normalized: '{norm_group_value}') | color_mapping keys: {list(norm_color_mapping.keys()) if norm_color_mapping else 'None'}")
+    if norm_color_mapping and norm_group_value in norm_color_mapping:
+        print(f"[DEBUG] Using config color for '{norm_group_value}': {norm_color_mapping[norm_group_value]}")
+        return norm_color_mapping[norm_group_value]
+    # Fallback
     available_colors = [
         'lightblue', 'lightgreen', 'lightcoral', 'lightyellow', 
         'lightpink', 'lightskyblue', 'lightseagreen', 'lightsteelblue',
         'lightgoldenrodyellow', 'lightcyan', 'lightgray'
     ]
-    
-    # Filter out used colors
     unused_colors = [c for c in available_colors if c not in used_colors]
-    
     if unused_colors:
-        # Use first unused color
         color = unused_colors[0]
     else:
-        # If all colors are used, pick a random one
-        color = available_colors[hash(group_value) % len(available_colors)]
-    
-    # Add to used colors and mapping
+        color = available_colors[hash(norm_group_value) % len(available_colors)]
     used_colors.add(color)
-    color_mapping[group_value] = color
-    
+    if color_mapping is not None:
+        color_mapping[group_value] = color
+    print(f"[DEBUG] Fallback color for '{group_value}': {color}")
     return color
 
 def _add_single_space_to_plot(
@@ -1104,23 +1102,16 @@ def _add_wall_to_plot(
     used_colors: set = None
 ) -> None:
     """Add walls to the plot as filled rectangles."""
-    # Get all wall elements
     wall_ids = loader.by_type_index.get('IfcWallStandardCase', [])
     print(f"Found {len(wall_ids)} walls in by_type_index")
-    
-    # Group walls by color_by property if specified
     color_by = element_config.get('color_by')
     grouped_walls = {}
-    
     for wall_id in wall_ids:
         print(f"Processing wall with ID {wall_id}")
-        # Get the wall element using the numeric ID
         wall = loader.properties['elements'].get(str(wall_id))
         if not wall:
             print(f"No wall properties found for ID {wall_id}")
             continue
-            
-        # Get geometry using the numeric ID
         geometry = loader.get_geometry(str(wall_id))
         if not geometry:
             print(f"No geometry found for wall {wall_id}")
@@ -1128,107 +1119,75 @@ def _add_wall_to_plot(
         if 'vertices' not in geometry:
             print(f"No vertices found for wall {wall_id}")
             continue
-            
-        # Get the wall's storey using the numeric ID
         if storey_name:
             wall_storey = loader.get_storey_for_element(str(wall_id))
             if wall_storey and wall_storey != storey_name:
                 print(f"Wall {wall_id} not in storey {storey_name}")
                 continue
-        
-        # Get the color group value
         group_value = None
         if color_by:
+            print(f"\nProcessing wall {wall_id} with color_by: {color_by}")
             if color_by in wall.get('properties', {}):
                 group_value = wall['properties'][color_by]
+                print(f"Found {color_by} in properties: {group_value}")
             elif color_by in wall:
                 group_value = wall[color_by]
+                print(f"Found {color_by} in wall object: {group_value}")
+            else:
+                print(f"Could not find {color_by} in wall properties or object")
         else:
             group_value = element_config.get('name', 'Unknown')
-        
+            print(f"No color_by specified, using element name: {group_value}")
         if not group_value:
             group_value = 'Unknown'
-            
-        if group_value not in grouped_walls:
-            grouped_walls[group_value] = {
+            print(f"Using fallback group_value: {group_value}")
+        # Normalize group_value for grouping
+        norm_group_value = group_value.strip() if isinstance(group_value, str) else group_value
+        if norm_group_value not in grouped_walls:
+            grouped_walls[norm_group_value] = {
                 'walls': [],
-                'total_area': 0.0
+                'total_area': 0.0,
+                'display_name': group_value  # Keep original for legend
             }
-            
-        # Calculate wall area
         area = 0.0
         if 'properties' in wall and 'Qto_WallBaseQuantities.NetSideArea' in wall['properties']:
             try:
                 area = float(wall['properties']['Qto_WallBaseQuantities.NetSideArea'])
             except (ValueError, TypeError):
                 pass
-                
-        grouped_walls[group_value]['walls'].append((wall, geometry))
-        grouped_walls[group_value]['total_area'] += area
-    
-    # Add each group of walls to the plot
-    for group_value, group_data in grouped_walls.items():
+        grouped_walls[norm_group_value]['walls'].append((wall, geometry))
+        grouped_walls[norm_group_value]['total_area'] += area
+    for norm_group_value, group_data in grouped_walls.items():
         walls = group_data['walls']
         total_area = group_data['total_area']
-        
-        # Get color for this group
-        color = _get_color_for_group(group_value, color_mapping, used_colors)
-        
-        # Create legend name with total area
-        legend_name = f"{group_value} ({total_area:.1f} m²)"
-        
-        # First add a dummy trace for the legend with no line
-        fig.add_trace(go.Scatter(
-            x=[None],
-            y=[None],
-            mode='markers',
-            marker=dict(
-                color=color,
-                size=10,
-                symbol='square'
-            ),
-            name=legend_name,
-            showlegend=True,
-            legendgroup=group_value
-        ))
-        
-        # Add each wall as a separate trace but with the same legend name
+        display_name = group_data['display_name']
+        color = _get_color_for_group(norm_group_value, color_mapping, used_colors)
+        legend_name = f"{display_name} ({total_area:.1f} m²)"
         for i, (wall, geometry) in enumerate(walls):
-            # Get wall vertices and calculate dimensions
             vertices = geometry['vertices']
-            
-            # For 2D view, we'll use all vertices and project them to 2D
-            # We'll use the vertices with the most common z-coordinate
             z_coords = [v[2] for v in vertices]
             most_common_z = max(set(z_coords), key=z_coords.count)
-            
-            # Filter vertices to those with the most common z-coordinate
             x_coords = []
             y_coords = []
             for v in vertices:
-                if abs(v[2] - most_common_z) < 0.1:  # Allow small tolerance
+                if abs(v[2] - most_common_z) < 0.1:
                     x_coords.append(v[0])
                     y_coords.append(v[1])
-            
             if not x_coords or not y_coords:
                 print(f"No valid 2D vertices found for wall {wall.get('id')}")
                 continue
-                
-            # Calculate wall bounds
             min_x, max_x = min(x_coords), max(x_coords)
             min_y, max_y = min(y_coords), max(y_coords)
-            
-            # Add the wall rectangle
             fig.add_trace(go.Scatter(
-                x=[min_x, max_x, max_x, min_x, min_x],  # Close the rectangle
-                y=[min_y, min_y, max_y, max_y, min_y],  # Close the rectangle
+                x=[min_x, max_x, max_x, min_x, min_x],
+                y=[min_y, min_y, max_y, max_y, min_y],
                 fill='toself',
                 fillcolor=color,
                 line=dict(color='black', width=1),
                 mode='lines',
-                name=None,  # No name for actual walls
-                showlegend=False,  # Don't show in legend
-                legendgroup=group_value,  # Group with the dummy trace
+                name=legend_name if i == 0 else None,
+                showlegend=i == 0,
+                legendgroup=norm_group_value,
                 zorder=1
             ))
 
