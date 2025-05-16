@@ -101,56 +101,19 @@ def repair_ifc_metadata_global_logic(ifc_path_or_model: Union[str, ifcopenshell.
     loader = IfcLoader(ifc_path_or_model)
     model = loader.model
     
-    # Get elements using IfcLoader's get_elements method
-    elements = loader.get_elements(ifc_entity="IfcProduct")
-    print(f"Total elements found: {len(elements)}")
-    
     # Parse filter using MetadataFilter
     filters = MetadataFilter._parse_filter_expression(repair['filter'])
     print(f"Parsed filters: {filters}")
     
-    # Filter elements
-    filtered_elements = []
-    for element in elements:
-        element_data = {
-            'IfcEntity': element.is_a(),
-            'GlobalId': getattr(element, 'GlobalId', ''),
-            'LongName': getattr(element, 'LongName', '')
-        }
-        
-        # Check if element matches all filter conditions
-        matches = True
-        for key, value in filters.items():
-            if key not in element_data:
-                matches = False
-                break
-                
-            if isinstance(value, list):
-                if value and isinstance(value[0], tuple):
-                    # Handle comparison conditions
-                    element_matches = False
-                    for op, val in value:
-                        if MetadataFilter._compare_values(element_data[key], op, val):
-                            element_matches = True
-                            break
-                    if not element_matches:
-                        matches = False
-                        break
-                else:
-                    # Handle list of values (OR condition)
-                    if element_data[key] not in value:
-                        matches = False
-                        break
-            else:
-                # Handle single value
-                if element_data[key] != value:
-                    matches = False
-                    break
-        
-        if matches:
-            filtered_elements.append(element)
-            print(f"Found matching element: {element.is_a()} (GlobalId: {element_data['GlobalId']}, LongName: {element_data['LongName']})")
+    # Get filtered elements using IfcLoader's get_filtered_elements method
+    filtered_df = loader.get_filtered_elements(
+        ifc_entity="IfcSpace",  # We know we're looking for IfcSpace from the filter
+        filters=filters,
+        logic="AND"
+    )
     
+    # Convert DataFrame back to IFC elements
+    filtered_elements = [model.by_guid(row['GlobalId']) for row in filtered_df.to_dict('records')]
     print(f"Found {len(filtered_elements)} matching elements")
     
     if not filtered_elements:

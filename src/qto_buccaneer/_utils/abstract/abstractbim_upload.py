@@ -6,6 +6,7 @@ from typing import Optional
 
 dotenv.load_dotenv()
 abstract_bim_api_url = os.getenv("ABSTRACTBIM_API_URL")
+print(f"Loaded ABSTRACTBIM_API_URL: {abstract_bim_api_url}")  # Debug print
 
 def _upload_blob(sas_url: str, data: bytes) -> bool:
     headers = {"x-ms-blob-type": "BlockBlob"}

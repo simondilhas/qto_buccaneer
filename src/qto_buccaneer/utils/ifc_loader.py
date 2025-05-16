@@ -7,7 +7,7 @@ import time
 from functools import lru_cache
 import numpy as np
 from pathlib import Path
-
+from qto_buccaneer.utils.metadata_filter import MetadataFilter
 IfcElement = Any
 
 class IfcError(Exception):

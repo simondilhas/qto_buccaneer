@@ -75,8 +75,8 @@ class MetadataFilter:
     token_re = re.compile(r'''
         ^\s*
         (?P<key>.*?)                      # any chars, as few as possible
-        (?=\s*(?:!=|>=|<=|=|>|<)\s*)      # assert that an operator follows
-        \s*(?P<op>!=|>=|<=|=|>|<)\s*      # capture the operator (multi-char first)
+        (?=\s*(?:!=|>=|<=|=|>|<|~=)\s*)   # assert that an operator follows
+        \s*(?P<op>!=|>=|<=|=|>|<|~=)\s*   # capture the operator (multi-char first)
         (?P<val>.+?)                      # capture the rest as the value
         \s*$
     ''', re.VERBOSE)
@@ -200,6 +200,17 @@ class MetadataFilter:
     @staticmethod
     def _compare_values(x: Any, op: str, val: Any) -> bool:
         """Compare values based on operator."""
+        # Handle regex matching
+        if op == "~=":
+            if isinstance(x, str):
+                try:
+                    # Remove leading/trailing slashes if present
+                    pattern = val.strip('/')
+                    return bool(re.search(pattern, x))
+                except re.error:
+                    raise ValueError(f"Invalid regex pattern: {pattern}")
+            return False
+
         # Try to convert both values to float if they're strings
         try:
             if isinstance(x, str):
