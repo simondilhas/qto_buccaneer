@@ -4,9 +4,48 @@ import os
 from pathlib import Path
 from typing import Optional
 
-dotenv.load_dotenv()
+def find_env_file():
+    # Try current working directory first
+    cwd_env = Path.cwd() / ".env"
+    if cwd_env.exists():
+        return cwd_env
+    
+    # Try project root (where the package is installed)
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+    project_env = project_root / ".env"
+    if project_env.exists():
+        return project_env
+    
+    # Try going up from current working directory
+    current = Path.cwd()
+    while current != current.parent:  # Stop at root directory
+        env_file = current / ".env"
+        if env_file.exists():
+            return env_file
+        current = current.parent
+    
+    return None
+
+# Find and load .env file
+env_path = find_env_file()
+if env_path:
+    print(f"Found .env file at: {env_path}")
+    # Print contents of .env file for debugging
+    with open(env_path, 'r') as f:
+        print("Contents of .env file:")
+        for line in f:
+            if 'ABSTRACTBIM_API_URL' in line:
+                print(line.strip())
+    
+    # Force reload of environment variables
+    dotenv.load_dotenv(env_path, override=True)
+else:
+    print("Warning: No .env file found in any parent directory")
+
+# Get the API URL and print debug info
 abstract_bim_api_url = os.getenv("ABSTRACTBIM_API_URL")
-print(f"Loaded ABSTRACTBIM_API_URL: {abstract_bim_api_url}")  # Debug print
+print(f"Loaded ABSTRACTBIM_API_URL: {abstract_bim_api_url}")
+print(f"Environment variables after loading: {dict(os.environ)}")
 
 def _upload_blob(sas_url: str, data: bytes) -> bool:
     headers = {"x-ms-blob-type": "BlockBlob"}
