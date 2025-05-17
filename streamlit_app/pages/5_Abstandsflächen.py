@@ -146,13 +146,15 @@ def display_abstandsflächen_data(graph_path, building):
             st.write("Debug - Reading from Azure")
             json_data = read_file(get_base_project_path(), json_path)
             st.write("Debug - JSON data read successfully")
-            # Handle double encoded JSON
-            plotly_data = json.loads(json_data.decode('utf-8'))
+            # First decode the bytes to string
+            json_str = json_data.decode('utf-8')
+            st.write("Debug - Decoded JSON string:", json_str[:200])  # Show first 200 chars
+            # Then parse the JSON string
+            plotly_data = json.loads(json_str)
             st.write("Debug - JSON parsed successfully")
         else:
             st.write("Debug - Reading from local file")
             with open(json_path, 'r') as f:
-                # Handle double encoded JSON
                 plotly_data = json.load(f)
             st.write("Debug - JSON parsed successfully")
         
