@@ -35,7 +35,7 @@ def get_project_paths(building_name):
 
 def display_metrics(metrics_path):
     """Display metrics from Excel files"""
-    st.write("Debug - Metrics path:", metrics_path)
+    #st.write("Debug - Metrics path:", metrics_path)
     
     if is_azure_environment():
         if not is_dir(BASE_PROJECT_FOLDER, metrics_path):

@@ -165,17 +165,17 @@ def display_check_tab(check_path):
 
 def display_sia416_tab(graph_path):
     """Display SIA416 related content"""
-    st.header("SIA416 Floor Layouts")
+    #st.header("SIA416 Floor Layouts")
     display_floor_layouts(graph_path, "sia", "SIA416 Floor Layouts")
 
 def display_zones_tab(graph_path):
     """Display zones related content"""
-    st.header("Zone Floor Layouts")
+    #st.header("Zone Floor Layouts")
     display_floor_layouts(graph_path, "zone", "Zone Floor Layouts")
 
 def display_room_types_tab(graph_path):
     """Display room types related content"""
-    st.header("Room Type Floor Layouts")
+    #st.header("Room Type Floor Layouts")
     display_floor_layouts(graph_path, "name", "Room Type Floor Layouts")
 
 def display_sidebar():
@@ -225,20 +225,20 @@ def display_project_page(building_name):
         display_check_tab(paths['check'])
 
 def display_index():
-    st.title("Building Viewer")
+    st.title("Projektübersicht")
     
     # Get list of buildings
     buildings_with_images = []
     if is_azure_environment():
         # Debug: Print Azure environment info
-        st.write("Running in Azure environment")
-        st.write("Container name:", st.secrets.get('AZURE_CONTAINER_NAME'))
+        #st.write("Running in Azure environment")
+        #st.write("Container name:", st.secrets.get('AZURE_CONTAINER_NAME'))
         
         try:
             # List all blobs to see the actual structure
             all_blobs = list_files(BASE_PROJECT_FOLDER, '')
-            st.write("Number of blobs found:", len(all_blobs))
-            st.write("First few blobs:", all_blobs[:5])  # Show first 5 blobs
+            #st.write("Number of blobs found:", len(all_blobs))
+            #st.write("First few blobs:", all_blobs[:5])  # Show first 5 blobs
             
             # Extract building names from the paths
             building_names = set()
@@ -251,16 +251,16 @@ def display_index():
                         building_name = parts[1]  # Second part is the building name
                         if building_name:
                             building_names.add(building_name)
-                            st.write(f"Found building: {building_name} from path: {blob}")
+                            #st.write(f"Found building: {building_name} from path: {blob}")
             
-            st.write("Building names found:", sorted(building_names))
+            #st.write("Building names found:", sorted(building_names))
             
             for building in sorted(building_names):
                 # Check if the building has a titel_picture.png
                 title_picture_path = f"buildings/{building}/11_abstractbim_plots/titel_picture.png"
                 if any(blob == title_picture_path for blob in all_blobs):
                     buildings_with_images.append(building)
-                    st.write(f"Added building {building} to list")
+                    #st.write(f"Added building {building} to list")
                 else:
                     st.write(f"Building {building} does not have a title picture at {title_picture_path}")
         except Exception as e:
