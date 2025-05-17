@@ -3,7 +3,9 @@ import os
 from pathlib import Path
 import json
 import plotly.graph_objects as go
-from azure_config import get_base_project_path
+from azure_config import get_base_project_path, is_azure_environment
+from file_utils import list_files, read_file, exists, join_paths
+from utils.path_utils import get_project_paths
 
 st.set_page_config(
     page_title="3D View",
@@ -11,64 +13,62 @@ st.set_page_config(
     layout="wide"
 )
 
-def get_project_paths(building_name):
-    """Get the paths for a specific building"""
-    return {
-        'project': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name),
-        'graph': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "11_abstractbim_plots"),
-        'check': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "09_building_inside_envelope")
-    }
-
 def display_3d_visualization(graph_path):
     """Display 3D visualization from image and Plotly JSON file"""
-    # Create a unique key for the button state
     button_key = "show_3d_plotly"
-    
-    # Initialize button state if not exists
     if button_key not in st.session_state:
         st.session_state[button_key] = False
-    
-    if not os.path.exists(graph_path):
-        st.warning("Graph directory not found")
-        return
 
-    # First look for image file
+    if is_azure_environment():
+        if not exists(get_base_project_path(), graph_path):
+            st.warning("Graph directory not found")
+            return
+        files = list_files(get_base_project_path(), graph_path)
+    else:
+        if not os.path.exists(graph_path):
+            st.warning("Graph directory not found")
+            return
+        files = os.listdir(graph_path)
+
     image_file = None
     json_file = None
-    
-    for file in os.listdir(graph_path):
-        if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-            image_file = os.path.join(graph_path, file)
-            break
+    for file in files:
+        if file.lower().endswith(('.png', '.jpg', '.jpeg')) and image_file is None:
+            image_file = file
         elif file.endswith('.json'):
-            json_file = os.path.join(graph_path, file)
-    
-    # Show button if JSON file exists
+            json_file = file
+
     if json_file:
         if st.button("Näher anschauen", key="btn_3d"):
             st.session_state[button_key] = True
             st.experimental_rerun()
-    
-    # Show image if not showing plotly
+
     if not st.session_state[button_key] and image_file:
-        st.image(image_file, caption=None)
-    # Show plotly if button was pressed
+        try:
+            if is_azure_environment():
+                image_data = read_file(get_base_project_path(), join_paths(graph_path, image_file))
+                st.image(image_data, caption=None)
+            else:
+                st.image(os.path.join(graph_path, image_file), caption=None)
+        except Exception as e:
+            st.error(f"Error loading image: {str(e)}")
     elif st.session_state[button_key] and json_file:
         try:
-            with open(json_file, 'r') as f:
-                plotly_data = json.load(f)
-                if isinstance(plotly_data, dict) and 'data' in plotly_data:
-                    fig = go.Figure(data=plotly_data['data'])
-                    if 'layout' in plotly_data:
-                        fig.update_layout(plotly_data['layout'])
-                    st.plotly_chart(fig, use_container_width=True)
-        except json.JSONDecodeError:
-            st.warning("Could not load JSON data for 3D visualization")
+            if is_azure_environment():
+                json_data = read_file(get_base_project_path(), join_paths(graph_path, json_file))
+                plotly_data = json.loads(json_data.decode('utf-8'))
+            else:
+                with open(os.path.join(graph_path, json_file), 'r') as f:
+                    plotly_data = json.load(f)
+            if isinstance(plotly_data, dict) and 'data' in plotly_data:
+                fig = go.Figure(data=plotly_data['data'])
+                if 'layout' in plotly_data:
+                    fig.update_layout(plotly_data['layout'])
+                st.plotly_chart(fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error loading JSON data: {str(e)}")
             st.session_state[button_key] = False
             st.experimental_rerun()
-
-# Configure base path using environment-aware configuration
-BASE_PROJECT_FOLDER = get_base_project_path()
 
 if 'selected_building' in st.session_state:
     building = st.session_state['selected_building']

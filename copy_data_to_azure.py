@@ -10,6 +10,7 @@ load_dotenv()
 # Azure Blob Storage configuration
 AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
 AZURE_CONTAINER_NAME = os.getenv('AZURE_CONTAINER_NAME', 'projects')
+AZURE_ENVIRONMENT = os.getenv('AZURE_ENVIRONMENT', 'false').lower() == 'true'
 
 # Source base where all building folders are
 SRC_BASE = "projects/Seefeld__private/buildings"
@@ -28,10 +29,14 @@ def upload_to_blob_storage(blob_service_client, container_name, local_file_path,
         print(f"Error uploading {local_file_path}: {str(e)}")
 
 def main():
+    if not AZURE_ENVIRONMENT:
+        print("Not in Azure environment, skipping data upload")
+        return
+
     # Validate Azure configuration
     if not AZURE_STORAGE_CONNECTION_STRING:
         raise ValueError("AZURE_STORAGE_CONNECTION_STRING environment variable is not set")
-
+    
     # Initialize BlobServiceClient
     blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
 

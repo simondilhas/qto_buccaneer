@@ -2,6 +2,7 @@
 Azure deployment configuration
 """
 import os
+from azure.storage.blob import BlobServiceClient
 
 # Azure specific settings
 AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING', '')
@@ -15,9 +16,19 @@ def is_azure_environment():
     """Check if running in Azure environment"""
     return os.getenv('AZURE_ENVIRONMENT', 'false').lower() == 'true'
 
-# Get the appropriate base path based on environment
+def get_blob_service_client():
+    """Get Azure Blob Service Client"""
+    if not AZURE_STORAGE_CONNECTION_STRING:
+        raise ValueError("AZURE_STORAGE_CONNECTION_STRING environment variable is not set")
+    return BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+
+def get_container_client():
+    """Get Azure Container Client"""
+    blob_service_client = get_blob_service_client()
+    return blob_service_client.get_container_client(AZURE_CONTAINER_NAME)
+
 def get_base_project_path():
-    """Get the base project path based on the environment"""
+    """Get the appropriate base path based on the environment"""
     if is_azure_environment():
-        return AZURE_PROJECT_BASE_PATH
+        return get_container_client()
     return os.getenv('PROJECT_BASE_PATH', '/home/simondilhas/Programmierung/qto_buccaneer/projects/Seefeld__private') 

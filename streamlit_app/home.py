@@ -4,7 +4,9 @@ from pathlib import Path
 import base64
 from PIL import Image
 import io
-from azure_config import get_base_project_path
+from azure_config import get_base_project_path, is_azure_environment
+from file_utils import list_files, read_file, join_paths, exists
+from utils.path_utils import get_project_paths, get_floor_layouts, load_image, load_json, display_floor_layouts, load_title_picture
 import plotly.graph_objects as go
 import json
 import re
@@ -21,66 +23,142 @@ BASE_PROJECT_FOLDER = get_base_project_path()
 
 def get_project_paths(building_name):
     """Get the paths for a specific building"""
-    return {
-        'project': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name),
-        'graph': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "11_abstractbim_plots"),
-        'check': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "09_building_inside_envelope")
-    }
+    if is_azure_environment():
+        # For Azure, we just need the relative paths
+        return {
+            'project': join_paths('buildings', building_name),
+            'graph': join_paths('buildings', building_name, "11_abstractbim_plots"),
+            'check': join_paths('buildings', building_name, "09_building_inside_envelope")
+        }
+    else:
+        # For local environment, we need full paths
+        return {
+            'project': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name),
+            'graph': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "11_abstractbim_plots"),
+            'check': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "09_building_inside_envelope")
+        }
 
 def get_floor_layouts(graph_path, pattern):
-    """Get floor layout images matching the pattern"""
-    layouts = {}
-    if os.path.exists(graph_path):
-        for file in os.listdir(graph_path):
-            if file.startswith(f"floor_layout_by_{pattern}_") and file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                # Extract storey from filename
-                match = re.search(r'_(\d+)(?:\.\w+)?$', file)
-                if match:
-                    storey = match.group(1)
-                    layouts[storey] = os.path.join(graph_path, file)
-    return dict(sorted(layouts.items(), key=lambda x: int(x[0])))
+    """Get floor layouts from the graph path"""
+    if is_azure_environment():
+        files = list_files(BASE_PROJECT_FOLDER, graph_path)
+        return [f for f in files if re.search(pattern, f)]
+    else:
+        if not os.path.exists(graph_path):
+            return []
+        return [f for f in os.listdir(graph_path) if re.search(pattern, f)]
+
+def load_image(image_path):
+    """Load an image from either filesystem or Azure Blob Storage"""
+    if is_azure_environment():
+        image_data = read_file(BASE_PROJECT_FOLDER, image_path)
+        return Image.open(io.BytesIO(image_data))
+    else:
+        return Image.open(image_path)
+
+def load_json(json_path):
+    """Load a JSON file from either filesystem or Azure Blob Storage"""
+    if is_azure_environment():
+        json_data = read_file(BASE_PROJECT_FOLDER, json_path)
+        return json.loads(json_data.decode('utf-8'))
+    else:
+        with open(json_path, 'r') as f:
+            return json.load(f)
 
 def display_floor_layouts(graph_path, pattern, title):
-    """Display floor layouts for a specific pattern"""
+    """Display floor layouts in a grid"""
     layouts = get_floor_layouts(graph_path, pattern)
-    
-    if layouts:
-        st.header(title)
-        # Create tabs for each storey
-        storey_tabs = st.tabs([f"Storey {storey}" for storey in layouts.keys()])
-        
-        for tab, (storey, image_path) in zip(storey_tabs, layouts.items()):
-            with tab:
-                st.image(image_path, caption=None)
-    else:
-        st.warning(f"No floor layouts found for {title}")
+    if not layouts:
+        st.warning(f"No {pattern} layouts found")
+        return
+
+    st.subheader(title)
+    cols = st.columns(3)
+    for i, layout in enumerate(layouts):
+        col = cols[i % 3]
+        with col:
+            try:
+                image = load_image(join_paths(graph_path, layout))
+                st.image(image, use_column_width=True)
+            except Exception as e:
+                st.error(f"Error loading image {layout}: {str(e)}")
 
 def create_3d_view(graph_path):
-    """Create a 3D visualization using Plotly"""
+    """Create a 3D view of the building"""
     try:
-        # Look for 3D visualization files in the graph folder
-        if os.path.exists(graph_path):
-            for file in os.listdir(graph_path):
-                if file.startswith("3d_visualization_") and file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    image_path = os.path.join(graph_path, file)
-                    return st.image(image_path, caption=None)
-        return None
+        # Load the 3D view data
+        json_path = join_paths(graph_path, "3d_view.json")
+        if not exists(BASE_PROJECT_FOLDER, json_path):
+            st.warning("No 3D view data found")
+            return
+
+        data = load_json(json_path)
+        
+        # Create the 3D plot
+        fig = go.Figure()
+        
+        # Add the building geometry
+        for geometry in data.get('geometries', []):
+            fig.add_trace(go.Mesh3d(
+                x=geometry['x'],
+                y=geometry['y'],
+                z=geometry['z'],
+                i=geometry['i'],
+                j=geometry['j'],
+                k=geometry['k'],
+                color=geometry.get('color', 'lightblue'),
+                opacity=0.8
+            ))
+        
+        # Update layout
+        fig.update_layout(
+            title="3D Building View",
+            scene=dict(
+                aspectmode='data',
+                camera=dict(
+                    up=dict(x=0, y=0, z=1),
+                    center=dict(x=0, y=0, z=0),
+                    eye=dict(x=1.5, y=1.5, z=1.5)
+                )
+            ),
+            showlegend=False
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
     except Exception as e:
         st.error(f"Error creating 3D view: {str(e)}")
-        return None
 
 def display_check_tab(check_path):
-    """Display check files"""
-    st.header("Check Files")
-    if os.path.exists(check_path):
-        for file in os.listdir(check_path):
-            if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                image_path = os.path.join(check_path, file)
-                st.image(image_path, caption=None)
-            else:
-                st.write(f"- {file}")
-    else:
-        st.warning("No check files found")
+    """Display check results"""
+    try:
+        # Load check results
+        json_path = join_paths(check_path, "check_results.json")
+        if not exists(BASE_PROJECT_FOLDER, json_path):
+            st.warning("No check results found")
+            return
+
+        data = load_json(json_path)
+        
+        # Display check results
+        st.subheader("Check Results")
+        
+        # Create a table for the results
+        results = []
+        for check in data.get('checks', []):
+            results.append({
+                'Check': check['name'],
+                'Status': check['status'],
+                'Message': check.get('message', '')
+            })
+        
+        if results:
+            st.table(results)
+        else:
+            st.info("No check results available")
+            
+    except Exception as e:
+        st.error(f"Error displaying check results: {str(e)}")
 
 def display_sia416_tab(graph_path):
     """Display SIA416 related content"""
@@ -147,22 +225,37 @@ def display_index():
     st.title("Building Viewer")
     
     # Get list of buildings
-    buildings_path = os.path.join(BASE_PROJECT_FOLDER, "buildings")
-    if not os.path.exists(buildings_path):
-        st.error(f"Buildings directory not found at: {buildings_path}")
-        return
-        
-    # Get all buildings and filter those with images
     buildings_with_images = []
-    for building in os.listdir(buildings_path):
-        if os.path.isdir(os.path.join(buildings_path, building)):
+    if is_azure_environment():
+        # List all blobs under 'buildings/' and extract unique building names
+        all_blobs = list_files(get_base_project_path(), 'buildings')
+        building_names = set()
+        for blob in all_blobs:
+            parts = blob.split('/')
+            if len(parts) > 1:
+                building_names.add(parts[1])
+        for building in sorted(building_names):
             paths = get_project_paths(building)
-            if os.path.exists(paths['graph']):
-                # Check if there are any images in the graph folder
-                has_images = any(file.lower().endswith(('.png', '.jpg', '.jpeg')) 
-                               for file in os.listdir(paths['graph']))
-                if has_images:
-                    buildings_with_images.append(building)
+            # Check if there are any images in the graph folder
+            graph_files = list_files(get_base_project_path(), paths['graph'])
+            has_images = any(f.lower().endswith(('.png', '.jpg', '.jpeg')) and f.lower() != 'titel_picture.png' for f in graph_files)
+            if has_images:
+                buildings_with_images.append(building)
+    else:
+        buildings_path = os.path.join(get_base_project_path(), "buildings")
+        if not os.path.exists(buildings_path):
+            st.error(f"Buildings directory not found at: {buildings_path}")
+            return
+        for building in os.listdir(buildings_path):
+            if os.path.isdir(os.path.join(buildings_path, building)):
+                paths = get_project_paths(building)
+                if os.path.exists(paths['graph']):
+                    # Check if there are any images in the graph folder
+                    has_images = any(file.lower().endswith(('.png', '.jpg', '.jpeg')) 
+                                   and file.lower() != 'titel_picture.png'
+                                   for file in os.listdir(paths['graph']))
+                    if has_images:
+                        buildings_with_images.append(building)
     
     if not buildings_with_images:
         st.warning("No buildings with images found")
@@ -175,22 +268,36 @@ def display_index():
             st.subheader(building)
             # Look for a preview image in the graph folder
             paths = get_project_paths(building)
-            if os.path.exists(paths['graph']):
-                for file in os.listdir(paths['graph']):
-                    if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        image_path = os.path.join(paths['graph'], file)
-                        # Convert image to base64 for embedding in HTML
-                        image_base64 = get_image_base64(image_path)
-                        # Create clickable image using HTML
+            if is_azure_environment():
+                try:
+                    # Directly try to load titel_picture.png
+                    title_picture = f"{paths['graph']}/titel_picture.png"
+                    image_data = read_file(get_base_project_path(), title_picture)
+                    image_base64 = base64.b64encode(image_data).decode()
+                    html = f"""
+                    <div style=\"position: relative;\">
+                        <img src=\"data:image/png;base64,{image_base64}\" style=\"width:100%; cursor:pointer;\" 
+                             onclick=\"document.querySelector('button[key=\\'btn_{building}\\']').click();\">
+                    </div>
+                    """
+                    st.markdown(html, unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"Error loading title picture for {building}: {str(e)}")
+            else:
+                if os.path.exists(paths['graph']):
+                    try:
+                        # Directly try to load titel_picture.png
+                        title_picture = os.path.join(paths['graph'], 'titel_picture.png')
+                        image_base64 = get_image_base64(title_picture)
                         html = f"""
-                        <div style="position: relative;">
-                            <img src="data:image/png;base64,{image_base64}" style="width:100%; cursor:pointer;" 
-                                 onclick="document.querySelector('button[key=\\'btn_{building}\\']').click();">
+                        <div style=\"position: relative;\">
+                            <img src=\"data:image/png;base64,{image_base64}\" style=\"width:100%; cursor:pointer;\" 
+                                 onclick=\"document.querySelector('button[key=\\'btn_{building}\\']').click();\">
                         </div>
                         """
                         st.markdown(html, unsafe_allow_html=True)
-                        break
-            
+                    except Exception as e:
+                        st.error(f"Error loading title picture for {building}: {str(e)}")
             # Create a button that will be triggered by the image click
             if st.button(f"View {building}", key=f"btn_{building}", type="primary", use_container_width=True):
                 st.session_state['selected_building'] = building
@@ -202,7 +309,8 @@ def check_password():
 
     def password_entered():
         """Checks whether a password entered by the user is correct."""
-        if st.session_state["password"] == st.secrets["password"]:
+        # Strip whitespace from both entered and secret password
+        if st.session_state["password"].strip() == st.secrets["password"].strip():
             st.session_state["password_correct"] = True
             del st.session_state["password"]  # Don't store the password.
         else:

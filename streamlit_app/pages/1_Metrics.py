@@ -2,7 +2,8 @@ import streamlit as st
 import os
 from pathlib import Path
 import pandas as pd
-from azure_config import get_base_project_path
+from azure_config import get_base_project_path, is_azure_environment
+from file_utils import list_files, read_file, exists, join_paths
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -13,20 +14,39 @@ st.set_page_config(
 )
 
 
-
 def get_project_paths(building_name):
     """Get the paths for a specific building"""
-    return {
-        'project': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name),
-        'graph': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "11_abstractbim_plots"),
-        'check': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "09_check_building_inside_envelop"),
-        'metrics': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "07_metrics")
-    }
+    if is_azure_environment():
+        # In Azure, we just need the relative paths since we're using ContainerClient
+        return {
+            'project': join_paths('buildings', building_name),
+            'graph': join_paths('buildings', building_name, "11_abstractbim_plots"),
+            'check': join_paths('buildings', building_name, "09_building_inside_envelope")
+        }
+    else:
+        # In local environment, we need full paths
+        return {
+            'project': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name),
+            'graph': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "11_abstractbim_plots"),
+            'check': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "09_building_inside_envelope")
+        }
 
 def display_metrics(metrics_path):
     """Display metrics from Excel files"""
-    if not os.path.exists(metrics_path):
-        st.warning("Metrics directory not found")
+    if is_azure_environment():
+        if not exists(BASE_PROJECT_FOLDER, metrics_path):
+            st.warning("Metrics directory not found")
+            return
+        # Get all Excel files
+        excel_files = [f for f in list_files(BASE_PROJECT_FOLDER, metrics_path) if f.endswith(('.xlsx', '.xls'))]
+    else:
+        if not os.path.exists(metrics_path):
+            st.warning("Metrics directory not found")
+            return
+        excel_files = [f for f in os.listdir(metrics_path) if f.endswith(('.xlsx', '.xls'))]
+    
+    if not excel_files:
+        st.warning("No Excel files found in metrics directory")
         return
 
     # Metric name mapping for standardization
@@ -64,21 +84,19 @@ def display_metrics(metrics_path):
         'gv_oi': 'GV oi'
     }
 
-    # Get all Excel files
-    excel_files = [f for f in os.listdir(metrics_path) if f.endswith(('.xlsx', '.xls'))]
-    
-    if not excel_files:
-        st.warning("No Excel files found in metrics directory")
-        return
-
     # Create tabs for each section
     tab1, tab2, tab3 = st.tabs(["Gebäudekennzahlen", "Bauteilkennzahlen", "Daten"])
     
     with tab1:
         try:
             # Read the Excel file
-            file_path = os.path.join(metrics_path, excel_files[0])  # Use first Excel file for Gebäudekennzahlen
-            df = pd.read_excel(file_path)
+            if is_azure_environment():
+                file_path = excel_files[0]
+                file_bytes = read_file(BASE_PROJECT_FOLDER, file_path)
+                df = pd.read_excel(file_bytes)
+            else:
+                file_path = os.path.join(metrics_path, excel_files[0])
+                df = pd.read_excel(file_path)
             
             # Convert to dictionary with standardized names
             metrics_dict = {}
@@ -156,7 +174,8 @@ def display_metrics(metrics_path):
             with cols_vol[4]:
                 st.metric(label="", value="", delta=None)  # Empty column
             
-            
+            # Save df for tab3
+            st.session_state['metrics_df'] = df
         except Exception as e:
             st.error(f"Error loading metrics: {str(e)}")
             st.write("Debug - Error details:", str(e))
@@ -168,16 +187,17 @@ def display_metrics(metrics_path):
         try:
             # Display raw data
             st.subheader("Rohdaten")
-            st.dataframe(df, use_container_width=True)
-            
-            # Add download button
-            csv = df.to_csv(index=False)
-            st.download_button(
-                label="Download CSV",
-                data=csv,
-                file_name=f"{os.path.splitext(excel_files[0])[0]}.csv",
-                mime="text/csv"
-            )
+            df = st.session_state.get('metrics_df', None)
+            if df is not None:
+                st.dataframe(df, use_container_width=True)
+                # Add download button
+                csv = df.to_csv(index=False)
+                st.download_button(
+                    label="Download CSV",
+                    data=csv,
+                    file_name=f"{os.path.splitext(excel_files[0])[0]}.csv",
+                    mime="text/csv"
+                )
         except Exception as e:
             st.error(f"Error loading data: {str(e)}")
             st.write("Debug - Error details:", str(e))
