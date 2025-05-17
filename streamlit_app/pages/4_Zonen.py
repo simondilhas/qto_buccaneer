@@ -40,14 +40,33 @@ def display_storey_content(storey, files, graph_path):
         try:
             if is_azure_environment():
                 json_data = read_file(get_base_project_path(), files['json'])
-                plotly_data = json.loads(json.loads(json_data.decode('utf-8')))
+                plotly_data = json.loads(json_data.decode('utf-8'))
             else:
                 with open(files['json'], 'r') as f:
-                    plotly_data = json.loads(json.load(f))
+                    plotly_data = json.load(f)
+            
             if isinstance(plotly_data, dict) and 'data' in plotly_data:
-                fig = go.Figure(data=plotly_data['data'])
+                # Clean the data by converting scattermap to scatter
+                cleaned_data = []
+                for trace in plotly_data['data']:
+                    if isinstance(trace, dict):
+                        if 'type' in trace and trace['type'] == 'scattermap':
+                            trace['type'] = 'scatter'  # Convert to regular scatter
+                        cleaned_data.append(trace)
+                
+                fig = go.Figure(data=cleaned_data)
                 if 'layout' in plotly_data:
-                    fig.update_layout(plotly_data['layout'])
+                    # Clean layout properties
+                    layout = plotly_data['layout'].copy()
+                    if 'template' in layout:
+                        template = layout['template'].copy()
+                        if 'data' in template:
+                            template_data = template['data'].copy()
+                            if 'scattermap' in template_data:
+                                del template_data['scattermap']
+                            template['data'] = template_data
+                        layout['template'] = template
+                    fig.update_layout(layout)
                 st.plotly_chart(fig, use_container_width=True)
                 if st.button("Zurück zur Übersicht", key=f"btn_back_{storey}"):
                     st.session_state[button_key] = False
