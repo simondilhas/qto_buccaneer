@@ -20,12 +20,16 @@ def get_storey_files(graph_path, prefix):
     
     if is_azure_environment():
         if not is_dir(get_base_project_path(), graph_path):
+            st.write(f"Debug - Directory not found: {graph_path}")
             return storey_files
         files = list_files(get_base_project_path(), graph_path)
+        st.write(f"Debug - Files found in Azure: {files}")
     else:
         if not os.path.exists(graph_path):
+            st.write(f"Debug - Directory not found: {graph_path}")
             return storey_files
-        files = os.listdir(graph_path)
+        files = [os.path.join(graph_path, f) for f in os.listdir(graph_path)]
+        st.write(f"Debug - Files found locally: {files}")
     
     for file in files:
         # Get just the filename from the full path
@@ -57,7 +61,9 @@ def get_storey_files(graph_path, prefix):
         except ValueError:
             return float('inf')  # Put other text storeys at the end
     
-    return dict(sorted(storey_files.items(), key=lambda x: storey_sort_key(x[0])))
+    sorted_files = dict(sorted(storey_files.items(), key=lambda x: storey_sort_key(x[0])))
+    st.write(f"Debug - Sorted storey files: {sorted_files}")
+    return sorted_files
 
 def display_storey_content(storey, files, graph_path):
     """Display content for a specific storey"""
