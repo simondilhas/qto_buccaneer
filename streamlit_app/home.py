@@ -233,40 +233,36 @@ def display_index():
         # Debug: Print Azure environment info
         st.write("Running in Azure environment")
         st.write("Container name:", st.secrets.get('AZURE_CONTAINER_NAME'))
-        st.write("Base project folder type:", type(BASE_PROJECT_FOLDER))
         
         # List all blobs under 'buildings/' and extract unique building names
         try:
             all_blobs = list_files(BASE_PROJECT_FOLDER, 'buildings')
-            st.write("All blobs found:", all_blobs)  # Debug: Show all blobs
+            st.write("All blobs found:", all_blobs)
             
+            # Extract building names from paths
             building_names = set()
             for blob in all_blobs:
                 # Split the path and get the building name
                 parts = blob.split('/')
-                st.write(f"Processing blob: {blob}, parts: {parts}")  # Debug: Show blob processing
                 if len(parts) > 1:
-                    building_names.add(parts[0])
+                    building_name = parts[0]  # First part after 'buildings/'
+                    if building_name.startswith(('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')):
+                        building_names.add(building_name)
             
-            st.write("Building names found:", sorted(building_names))  # Debug: Show building names
+            st.write("Building names found:", sorted(building_names))
             
             for building in sorted(building_names):
-                paths = get_project_paths(building)
-                st.write(f"Checking paths for building {building}:", paths)  # Debug: Show paths
+                # Check for floor layout images in the building's graph folder
+                graph_path = f"buildings/{building}/11_abstractbim_plots"
+                graph_files = list_files(BASE_PROJECT_FOLDER, graph_path)
+                st.write(f"Graph files for {building}:", graph_files)
                 
-                # Check if there are any images in the graph folder
-                try:
-                    graph_files = list_files(BASE_PROJECT_FOLDER, paths['graph'])
-                    st.write(f"Graph files for {building}:", graph_files)  # Debug: Show graph files
-                    
-                    has_images = any(f.lower().endswith(('.png', '.jpg', '.jpeg')) and f.lower() != 'titel_picture.png' for f in graph_files)
-                    if has_images:
-                        buildings_with_images.append(building)
-                        st.write(f"Added building {building} to list")  # Debug: Show when building is added
-                except Exception as e:
-                    st.error(f"Error processing graph files for {building}: {str(e)}")
+                has_images = any(f.lower().endswith(('.png', '.jpg', '.jpeg')) and f.lower() != 'titel_picture.png' for f in graph_files)
+                if has_images:
+                    buildings_with_images.append(building)
+                    st.write(f"Added building {building} to list")
         except Exception as e:
-            st.error(f"Error listing blobs: {str(e)}")
+            st.error(f"Error processing files: {str(e)}")
     else:
         buildings_path = os.path.join(get_base_project_path(), "buildings")
         if not os.path.exists(buildings_path):
@@ -276,7 +272,6 @@ def display_index():
             if os.path.isdir(os.path.join(buildings_path, building)):
                 paths = get_project_paths(building)
                 if os.path.exists(paths['graph']):
-                    # Check if there are any images in the graph folder
                     has_images = any(file.lower().endswith(('.png', '.jpg', '.jpeg')) 
                                    and file.lower() != 'titel_picture.png'
                                    for file in os.listdir(paths['graph']))
@@ -292,12 +287,10 @@ def display_index():
     for idx, building in enumerate(buildings_with_images):
         with cols[idx % 3]:
             st.subheader(building)
-            # Look for a preview image in the graph folder
-            paths = get_project_paths(building)
             if is_azure_environment():
                 try:
-                    # Directly try to load titel_picture.png
-                    title_picture = f"{paths['graph']}/titel_picture.png"
+                    # Try to load titel_picture.png from the building's graph folder
+                    title_picture = f"buildings/{building}/11_abstractbim_plots/titel_picture.png"
                     image_data = read_file(BASE_PROJECT_FOLDER, title_picture)
                     image_base64 = base64.b64encode(image_data).decode()
                     html = f"""
@@ -312,7 +305,6 @@ def display_index():
             else:
                 if os.path.exists(paths['graph']):
                     try:
-                        # Directly try to load titel_picture.png
                         title_picture = os.path.join(paths['graph'], 'titel_picture.png')
                         image_base64 = get_image_base64(title_picture)
                         html = f"""
