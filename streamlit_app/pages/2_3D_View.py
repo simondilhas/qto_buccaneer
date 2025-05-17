@@ -46,11 +46,18 @@ def display_3d_visualization(graph_path):
                 json_file = file  # Keep the full path
 
     if not st.session_state[button_key] and image_file:
-        st.image(image_file, use_column_width=True)
-        if json_file:
-            if st.button("Näher anschauen", key="btn_3d"):
-                st.session_state[button_key] = True
-                st.experimental_rerun()
+        try:
+            if is_azure_environment():
+                image_data = read_file(get_base_project_path(), image_file)
+                st.image(image_data, use_container_width=True)
+            else:
+                st.image(image_file, use_container_width=True)
+            if json_file:
+                if st.button("Näher anschauen", key="btn_3d"):
+                    st.session_state[button_key] = True
+                    st.rerun()
+        except Exception as e:
+            st.error(f"Error loading image: {str(e)}")
     elif st.session_state[button_key] and json_file:
         try:
             if is_azure_environment():
@@ -66,11 +73,11 @@ def display_3d_visualization(graph_path):
                 st.plotly_chart(fig, use_container_width=True)
                 if st.button("Zurück zur Übersicht", key="btn_back"):
                     st.session_state[button_key] = False
-                    st.experimental_rerun()
+                    st.rerun()
         except Exception as e:
             st.error(f"Error loading JSON data: {str(e)}")
             st.session_state[button_key] = False
-            st.experimental_rerun()
+            st.rerun()
 
 if 'selected_building' in st.session_state:
     building = st.session_state['selected_building']
