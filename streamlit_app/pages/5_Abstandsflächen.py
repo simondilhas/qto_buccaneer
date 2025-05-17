@@ -153,8 +153,17 @@ def display_abstandsflächen_data(graph_path, building):
             st.write("Debug - Last 500 chars of JSON:", json_str[-500:])
             # Then parse the JSON string
             try:
+                # Try to parse the JSON string
                 plotly_data = json.loads(json_str)
-                st.write("Debug - JSON parsed successfully")
+                st.write("Debug - First JSON parse successful")
+                
+                # Check if the result is a string (indicating double encoding)
+                if isinstance(plotly_data, str):
+                    st.write("Debug - Detected double-encoded JSON, parsing again")
+                    plotly_data = json.loads(plotly_data)
+                
+                st.write("Debug - Final JSON parse successful")
+                st.write("Debug - Plotly data type:", type(plotly_data))
                 st.write("Debug - Plotly data keys:", plotly_data.keys() if isinstance(plotly_data, dict) else "Not a dict")
             except json.JSONDecodeError as e:
                 st.error(f"JSON decode error: {str(e)}")
