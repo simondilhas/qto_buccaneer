@@ -14,57 +14,6 @@ st.set_page_config(
     layout="wide"
 )
 
-def get_storey_files(graph_path, prefix):
-    """Get all files for each storey with a specific prefix"""
-    storey_files = {}
-    
-    if is_azure_environment():
-        if not is_dir(get_base_project_path(), graph_path):
-            st.write(f"Debug - Directory not found: {graph_path}")
-            return storey_files
-        files = list_files(get_base_project_path(), graph_path)
-        st.write(f"Debug - Files found in Azure: {files}")
-    else:
-        if not os.path.exists(graph_path):
-            st.write(f"Debug - Directory not found: {graph_path}")
-            return storey_files
-        files = [os.path.join(graph_path, f) for f in os.listdir(graph_path)]
-        st.write(f"Debug - Files found locally: {files}")
-    
-    for file in files:
-        # Get just the filename from the full path
-        filename = os.path.basename(file)
-        if filename.startswith(f"floor_layout_by_zone_"):
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.json')):
-                # Extract storey from filename
-                match = re.search(r'floor_layout_by_zone_(.+?)(?:\.\w+)?$', filename)
-                if match:
-                    storey = match.group(1)
-                    if storey not in storey_files:
-                        storey_files[storey] = {'png': None, 'json': None}
-                    
-                    if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        storey_files[storey]['png'] = file  # Keep full path
-                    elif filename.endswith('.json'):
-                        storey_files[storey]['json'] = file  # Keep full path
-    
-    # Custom sorting function to handle both numeric and text storeys
-    def storey_sort_key(storey):
-        if storey == 'UG':
-            return -1  # Put UG first
-        if storey == 'EG':
-            return 0   # Put EG second
-        try:
-            # Extract number from O1, O2, etc.
-            num = int(storey[1:]) if storey.startswith('O') else int(storey)
-            return num
-        except ValueError:
-            return float('inf')  # Put other text storeys at the end
-    
-    sorted_files = dict(sorted(storey_files.items(), key=lambda x: storey_sort_key(x[0])))
-    st.write(f"Debug - Sorted storey files: {sorted_files}")
-    return sorted_files
-
 def display_storey_content(storey, files, graph_path):
     """Display content for a specific storey"""
     # Create a unique key for this storey's button state

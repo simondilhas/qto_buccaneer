@@ -28,14 +28,14 @@ def get_storey_files(graph_path, prefix):
         if not os.path.exists(graph_path):
             st.write(f"Debug - Directory not found: {graph_path}")
             return storey_files
-        files = os.listdir(graph_path)
+        files = [os.path.join(graph_path, f) for f in os.listdir(graph_path)]
         st.write("Debug - All files found:", files)
     
     for file in files:
         # Get just the filename from the full path
         filename = os.path.basename(file)
         st.write(f"Debug - Checking file: {filename}")
-        if filename.startswith(f"floor_layout_by_abstandsflächen_"):
+        if filename.startswith("floor_layout_by_abstandsflächen_"):
             st.write(f"Debug - Found abstandsflächen file: {filename}")
             if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.json')):
                 # Extract storey from filename

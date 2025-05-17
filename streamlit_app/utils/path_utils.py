@@ -5,6 +5,7 @@ import io
 from PIL import Image
 from azure_config import get_base_project_path, is_azure_environment
 from file_utils import join_paths, list_files, read_file, exists
+import streamlit as st
 
 def get_project_paths(building_name):
     """Get the paths for a specific building"""
@@ -72,28 +73,34 @@ def get_storey_files(graph_path, prefix):
     storey_files = {}
     
     if is_azure_environment():
-        if not exists(get_base_project_path(), graph_path):
+        if not is_dir(get_base_project_path(), graph_path):
+            st.write(f"Debug - Directory not found: {graph_path}")
             return storey_files
         files = list_files(get_base_project_path(), graph_path)
+        st.write(f"Debug - Files found in Azure: {files}")
     else:
         if not os.path.exists(graph_path):
+            st.write(f"Debug - Directory not found: {graph_path}")
             return storey_files
-        files = os.listdir(graph_path)
+        files = [os.path.join(graph_path, f) for f in os.listdir(graph_path)]
+        st.write(f"Debug - Files found locally: {files}")
     
     for file in files:
-        if file.startswith(f"floor_layout_by_{prefix}_"):
-            if file.lower().endswith(('.png', '.jpg', '.jpeg', '.json')):
+        # Get just the filename from the full path
+        filename = os.path.basename(file)
+        if filename.startswith(f"floor_layout_by_{prefix}_"):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.json')):
                 # Extract storey from filename
-                match = re.search(f'floor_layout_by_{prefix}_(.+?)(?:\.\w+)?$', file)
+                match = re.search(f'floor_layout_by_{prefix}_(.+?)(?:\.\w+)?$', filename)
                 if match:
                     storey = match.group(1)
                     if storey not in storey_files:
                         storey_files[storey] = {'png': None, 'json': None}
                     
-                    if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        storey_files[storey]['png'] = file
-                    elif file.endswith('.json'):
-                        storey_files[storey]['json'] = file
+                    if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                        storey_files[storey]['png'] = file  # Keep full path
+                    elif filename.endswith('.json'):
+                        storey_files[storey]['json'] = file  # Keep full path
     
     # Custom sorting function to handle both numeric and text storeys
     def storey_sort_key(storey):
@@ -108,7 +115,9 @@ def get_storey_files(graph_path, prefix):
         except ValueError:
             return float('inf')  # Put other text storeys at the end
     
-    return dict(sorted(storey_files.items(), key=lambda x: storey_sort_key(x[0])))
+    sorted_files = dict(sorted(storey_files.items(), key=lambda x: storey_sort_key(x[0])))
+    st.write(f"Debug - Sorted storey files: {sorted_files}")
+    return sorted_files
 
 def get_floor_layouts(graph_path, pattern):
     """Get floor layouts from the graph path"""
@@ -139,7 +148,6 @@ def load_json(json_path):
 
 def display_floor_layouts(graph_path, pattern, title):
     """Display floor layouts in a grid"""
-    import streamlit as st
     layouts = get_floor_layouts(graph_path, pattern)
     if not layouts:
         st.warning(f"No {pattern} layouts found")
