@@ -233,33 +233,40 @@ def display_index():
         # Debug: Print Azure environment info
         st.write("Running in Azure environment")
         st.write("Container name:", st.secrets.get('AZURE_CONTAINER_NAME'))
+        st.write("Base project folder type:", type(BASE_PROJECT_FOLDER))
         
         # List all blobs under 'buildings/' and extract unique building names
-        all_blobs = list_files(get_base_project_path(), 'buildings')
-        st.write("All blobs found:", all_blobs)  # Debug: Show all blobs
-        
-        building_names = set()
-        for blob in all_blobs:
-            # Split the path and get the building name
-            parts = blob.split('/')
-            st.write(f"Processing blob: {blob}, parts: {parts}")  # Debug: Show blob processing
-            if len(parts) > 1:
-                building_names.add(parts[0])
-        
-        st.write("Building names found:", sorted(building_names))  # Debug: Show building names
-        
-        for building in sorted(building_names):
-            paths = get_project_paths(building)
-            st.write(f"Checking paths for building {building}:", paths)  # Debug: Show paths
+        try:
+            all_blobs = list_files(BASE_PROJECT_FOLDER, 'buildings')
+            st.write("All blobs found:", all_blobs)  # Debug: Show all blobs
             
-            # Check if there are any images in the graph folder
-            graph_files = list_files(get_base_project_path(), paths['graph'])
-            st.write(f"Graph files for {building}:", graph_files)  # Debug: Show graph files
+            building_names = set()
+            for blob in all_blobs:
+                # Split the path and get the building name
+                parts = blob.split('/')
+                st.write(f"Processing blob: {blob}, parts: {parts}")  # Debug: Show blob processing
+                if len(parts) > 1:
+                    building_names.add(parts[0])
             
-            has_images = any(f.lower().endswith(('.png', '.jpg', '.jpeg')) and f.lower() != 'titel_picture.png' for f in graph_files)
-            if has_images:
-                buildings_with_images.append(building)
-                st.write(f"Added building {building} to list")  # Debug: Show when building is added
+            st.write("Building names found:", sorted(building_names))  # Debug: Show building names
+            
+            for building in sorted(building_names):
+                paths = get_project_paths(building)
+                st.write(f"Checking paths for building {building}:", paths)  # Debug: Show paths
+                
+                # Check if there are any images in the graph folder
+                try:
+                    graph_files = list_files(BASE_PROJECT_FOLDER, paths['graph'])
+                    st.write(f"Graph files for {building}:", graph_files)  # Debug: Show graph files
+                    
+                    has_images = any(f.lower().endswith(('.png', '.jpg', '.jpeg')) and f.lower() != 'titel_picture.png' for f in graph_files)
+                    if has_images:
+                        buildings_with_images.append(building)
+                        st.write(f"Added building {building} to list")  # Debug: Show when building is added
+                except Exception as e:
+                    st.error(f"Error processing graph files for {building}: {str(e)}")
+        except Exception as e:
+            st.error(f"Error listing blobs: {str(e)}")
     else:
         buildings_path = os.path.join(get_base_project_path(), "buildings")
         if not os.path.exists(buildings_path):
@@ -291,7 +298,7 @@ def display_index():
                 try:
                     # Directly try to load titel_picture.png
                     title_picture = f"{paths['graph']}/titel_picture.png"
-                    image_data = read_file(get_base_project_path(), title_picture)
+                    image_data = read_file(BASE_PROJECT_FOLDER, title_picture)
                     image_base64 = base64.b64encode(image_data).decode()
                     html = f"""
                     <div style=\"position: relative;\">
