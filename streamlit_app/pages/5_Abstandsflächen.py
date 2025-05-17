@@ -163,8 +163,15 @@ def display_abstandsflächen_data(graph_path, building):
                     plotly_data = json.loads(plotly_data)
                 
                 st.write("Debug - Final JSON parse successful")
-                st.write("Debug - Plotly data type:", type(plotly_data))
-                st.write("Debug - Plotly data keys:", plotly_data.keys() if isinstance(plotly_data, dict) else "Not a dict")
+                st.write("Debug - Plotly data type:", str(type(plotly_data)))
+                if isinstance(plotly_data, dict):
+                    st.write("Debug - Plotly data keys:", list(plotly_data.keys()))
+                    if 'data' in plotly_data:
+                        st.write("Debug - Number of data traces:", len(plotly_data['data']))
+                        st.write("Debug - First trace type:", plotly_data['data'][0].get('type', 'unknown') if plotly_data['data'] else 'no traces')
+                else:
+                    st.write("Debug - Plotly data is not a dictionary")
+                    return
             except json.JSONDecodeError as e:
                 st.error(f"JSON decode error: {str(e)}")
                 st.write("Debug - Error position:", e.pos)
@@ -179,7 +186,6 @@ def display_abstandsflächen_data(graph_path, building):
         
         if isinstance(plotly_data, dict) and 'data' in plotly_data:
             st.write("Debug - Creating Plotly figure")
-            st.write("Debug - Number of data traces:", len(plotly_data['data']))
             # Remove invalid properties from data
             cleaned_data = []
             for i, trace in enumerate(plotly_data['data']):
@@ -210,7 +216,9 @@ def display_abstandsflächen_data(graph_path, building):
             st.write("Debug - Plotly figure displayed")
         else:
             st.error("Invalid JSON data format")
-            st.write("Debug - Plotly data structure:", plotly_data.keys() if isinstance(plotly_data, dict) else type(plotly_data))
+            st.write("Debug - Plotly data structure:", str(type(plotly_data)))
+            if isinstance(plotly_data, dict):
+                st.write("Debug - Available keys:", list(plotly_data.keys()))
     except Exception as e:
         st.error(f"Error loading JSON data: {str(e)}")
         st.write("Debug - Full error:", str(e))
