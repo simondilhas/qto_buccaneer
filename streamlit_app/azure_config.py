@@ -15,7 +15,10 @@ AZURE_PROJECT_BASE_PATH = st.secrets.get('AZURE_PROJECT_BASE_PATH', '/mnt/data/p
 # Environment detection
 def is_azure_environment():
     """Check if running in Azure environment"""
-    return st.secrets.get('AZURE_ENVIRONMENT', 'false').lower() == 'true'
+    azure_env = st.secrets.get('AZURE_ENVIRONMENT', False)
+    if isinstance(azure_env, str):
+        return azure_env.lower() == 'true'
+    return bool(azure_env)
 
 def get_blob_service_client():
     """Get Azure Blob Service Client"""
