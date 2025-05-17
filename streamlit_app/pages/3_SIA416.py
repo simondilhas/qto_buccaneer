@@ -104,7 +104,6 @@ def display_storey_content(storey, files, graph_path):
 
 def display_sia_layouts(graph_path):
     """Display SIA layouts for all storeys"""
-    st.write("Debug - Graph path:", graph_path)
     storey_files = get_storey_files(graph_path, 'sia')
     
     if storey_files:

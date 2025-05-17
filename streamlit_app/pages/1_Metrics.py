@@ -35,21 +35,17 @@ def get_project_paths(building_name):
 
 def display_metrics(metrics_path):
     """Display metrics from Excel files"""
-    #st.write("Debug - Metrics path:", metrics_path)
-    
     if is_azure_environment():
         if not is_dir(BASE_PROJECT_FOLDER, metrics_path):
             st.warning(f"Metrics directory not found at: {metrics_path}")
             return
         # Get all Excel files
         excel_files = [f for f in list_files(BASE_PROJECT_FOLDER, metrics_path) if f.endswith(('.xlsx', '.xls'))]
-        st.write("Debug - Excel files found:", excel_files)
     else:
         if not os.path.exists(metrics_path):
             st.warning(f"Metrics directory not found at: {metrics_path}")
             return
         excel_files = [f for f in os.listdir(metrics_path) if f.endswith(('.xlsx', '.xls'))]
-        st.write("Debug - Excel files found:", excel_files)
     
     if not excel_files:
         st.warning("No Excel files found in metrics directory")
@@ -117,7 +113,7 @@ def display_metrics(metrics_path):
             
             # Display Geschossfläche metrics horizontally
             st.subheader("Flächenkennwerte [m²]")
-            cols_gf = st.columns(5)  # Changed to 5 columns
+            cols_gf = st.columns(5)
             
             # Function to display metric without unit
             def display_metric_no_unit(col, title, value):
@@ -157,19 +153,19 @@ def display_metrics(metrics_path):
                 nnf_gf = (metrics_dict.get('nnf', 0) / gf_total) * 100
                 vf_gf = (metrics_dict.get('vf', 0) / gf_total) * 100
                 ff_gf = (metrics_dict.get('ff', 0) / gf_total) * 100
-                kf_gf = (metrics_dict.get('kf_total_2', 0) / gf_total) * 100  # Updated to use new key
+                kf_gf = (metrics_dict.get('kf_total_2', 0) / gf_total) * 100
                 
                 # Display metrics with their ratios
                 display_metric_with_ratio(cols_nf[0], metric_mapping['hnf_total'], metrics_dict.get('hnf_total', 0), hnf_gf)
                 display_metric_with_ratio(cols_nf[1], metric_mapping['nnf'], metrics_dict.get('nnf', 0), nnf_gf)
                 display_metric_with_ratio(cols_nf[2], metric_mapping['vf'], metrics_dict.get('vf', 0), vf_gf)
                 display_metric_with_ratio(cols_nf[3], metric_mapping['ff'], metrics_dict.get('ff', 0), ff_gf)
-                display_metric_with_ratio(cols_nf[4], metric_mapping['kf_total_2'], metrics_dict.get('kf_total_2', 0), kf_gf)  # Updated to use new key
+                display_metric_with_ratio(cols_nf[4], metric_mapping['kf_total_2'], metrics_dict.get('kf_total_2', 0), kf_gf)
             
             # Display Volumenkennwerte
             st.subheader("")
             st.subheader("Volumenkennwerte [m³]")
-            cols_vol = st.columns(5)  # Changed to 5 columns
+            cols_vol = st.columns(5)
             
             # Display volume metrics
             display_metric_no_unit(cols_vol[0], "GV Total", metrics_dict.get('gv_total', 0))
@@ -184,7 +180,6 @@ def display_metrics(metrics_path):
             st.session_state['metrics_df'] = df
         except Exception as e:
             st.error(f"Error loading metrics: {str(e)}")
-            st.write("Debug - Error details:", str(e))
     
     with tab2:
         st.write("Bauteilkennzahlen content will be added here")
@@ -206,7 +201,6 @@ def display_metrics(metrics_path):
                 )
         except Exception as e:
             st.error(f"Error loading data: {str(e)}")
-            st.write("Debug - Error details:", str(e))
 
 # Configure base path using environment-aware configuration
 BASE_PROJECT_FOLDER = get_base_project_path()

@@ -15,8 +15,6 @@ st.set_page_config(
 
 def display_3d_visualization(graph_path):
     """Display 3D visualization from image and Plotly JSON file"""
-    st.write("Debug - Graph path:", graph_path)
-    
     button_key = "show_3d_plotly"
     if button_key not in st.session_state:
         st.session_state[button_key] = False
@@ -26,13 +24,11 @@ def display_3d_visualization(graph_path):
             st.warning(f"Graph directory not found at: {graph_path}")
             return
         files = list_files(get_base_project_path(), graph_path)
-        st.write("Debug - Files found:", files)
     else:
         if not os.path.exists(graph_path):
             st.warning(f"Graph directory not found at: {graph_path}")
             return
         files = os.listdir(graph_path)
-        st.write("Debug - Files found:", files)
 
     image_file = None
     json_file = None

@@ -59,7 +59,6 @@ def display_storey_content(storey, files, graph_path):
 
 def display_zone_layouts(graph_path):
     """Display zone layouts for all storeys"""
-    st.write("Debug - Graph path:", graph_path)
     storey_files = get_storey_files(graph_path, 'zone')
     
     if storey_files:
