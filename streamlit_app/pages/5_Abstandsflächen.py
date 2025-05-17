@@ -20,40 +20,29 @@ def get_storey_files(graph_path, prefix):
     
     if is_azure_environment():
         if not is_dir(get_base_project_path(), graph_path):
-            st.write(f"Debug - Directory not found: {graph_path}")
             return storey_files
         files = list_files(get_base_project_path(), graph_path)
-        st.write("Debug - All files found:", files)
     else:
         if not os.path.exists(graph_path):
-            st.write(f"Debug - Directory not found: {graph_path}")
             return storey_files
         files = [os.path.join(graph_path, f) for f in os.listdir(graph_path)]
-        st.write("Debug - All files found:", files)
     
     for file in files:
         # Get just the filename from the full path
         filename = os.path.basename(file)
-        st.write(f"Debug - Checking file: {filename}")
-        if filename.startswith("floor_layout_by_abstandsflächen_"):
-            st.write(f"Debug - Found abstandsflächen file: {filename}")
+        if filename.startswith(f"floor_layout_by_{prefix}_"):
             if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.json')):
                 # Extract storey from filename
-                match = re.search(r'floor_layout_by_abstandsflächen_(.+?)(?:\.\w+)?$', filename)
+                match = re.search(r'floor_layout_by_' + prefix + r'_(.+?)(?:\.\w+)?$', filename)
                 if match:
                     storey = match.group(1)
-                    st.write(f"Debug - Extracted storey: {storey}")
                     if storey not in storey_files:
                         storey_files[storey] = {'png': None, 'json': None}
                     
                     if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
                         storey_files[storey]['png'] = file  # Keep full path
-                        st.write(f"Debug - Added PNG file for {storey}: {file}")
                     elif filename.endswith('.json'):
                         storey_files[storey]['json'] = file  # Keep full path
-                        st.write(f"Debug - Added JSON file for {storey}: {file}")
-    
-    st.write("Debug - Final storey_files:", storey_files)
     
     # Custom sorting function to handle both numeric and text storeys
     def storey_sort_key(storey):
@@ -131,66 +120,36 @@ def display_abstandsflächen_layouts(graph_path):
 
 def display_abstandsflächen_data(graph_path, building):
     """Display Abstandsflächen data"""
-    st.write("Debug - Graph path:", graph_path)
-    
     # Look for the specific JSON file
     json_file = f"{building}_abstractBIM_data.json"
     json_path = join_paths(graph_path, json_file)
     
-    st.write("Debug - Looking for JSON file:", json_path)
-    st.write("Debug - Is Azure environment:", is_azure_environment())
-    
     try:
         if is_azure_environment():
             # In Azure, we need to use the full path
-            st.write("Debug - Reading from Azure")
             json_data = read_file(get_base_project_path(), json_path)
-            st.write("Debug - JSON data read successfully")
             # First decode the bytes to string
             json_str = json_data.decode('utf-8')
-            st.write("Debug - JSON string length:", len(json_str))
-            st.write("Debug - First 500 chars of JSON:", json_str[:500])
-            st.write("Debug - Last 500 chars of JSON:", json_str[-500:])
             # Then parse the JSON string
             try:
                 # Try to parse the JSON string
                 plotly_data = json.loads(json_str)
-                st.write("Debug - First JSON parse successful")
                 
                 # Check if the result is a string (indicating double encoding)
                 if isinstance(plotly_data, str):
-                    st.write("Debug - Detected double-encoded JSON, parsing again")
                     plotly_data = json.loads(plotly_data)
-                
-                st.write("Debug - Final JSON parse successful")
-                st.write("Debug - Plotly data type:", str(type(plotly_data)))
-                if isinstance(plotly_data, dict):
-                    st.write("Debug - Plotly data keys:", list(plotly_data.keys()))
-                    if 'data' in plotly_data:
-                        st.write("Debug - Number of data traces:", len(plotly_data['data']))
-                        st.write("Debug - First trace type:", plotly_data['data'][0].get('type', 'unknown') if plotly_data['data'] else 'no traces')
-                else:
-                    st.write("Debug - Plotly data is not a dictionary")
-                    return
             except json.JSONDecodeError as e:
                 st.error(f"JSON decode error: {str(e)}")
-                st.write("Debug - Error position:", e.pos)
-                st.write("Debug - Error line:", e.lineno)
-                st.write("Debug - Error column:", e.colno)
                 return
         else:
-            st.write("Debug - Reading from local file")
             with open(json_path, 'r') as f:
                 plotly_data = json.load(f)
-            st.write("Debug - JSON parsed successfully")
         
         if isinstance(plotly_data, dict) and 'data' in plotly_data:
-            st.write("Debug - Creating Plotly figure")
             # Remove invalid properties from data
             cleaned_data = []
-            for i, trace in enumerate(plotly_data['data']):
+            for trace in plotly_data['data']:
                 if isinstance(trace, dict):
-                    st.write(f"Debug - Processing trace {i}:", trace.get('type', 'unknown type'))
                     # Remove scattermap if it exists
                     if 'type' in trace and trace['type'] == 'scattermap':
                         trace['type'] = 'scatter'  # Convert to regular scatter
@@ -213,17 +172,10 @@ def display_abstandsflächen_data(graph_path, building):
             # Set the height to 800 pixels
             fig.update_layout(height=800)
             st.plotly_chart(fig, use_container_width=True)
-            st.write("Debug - Plotly figure displayed")
         else:
             st.error("Invalid JSON data format")
-            st.write("Debug - Plotly data structure:", str(type(plotly_data)))
-            if isinstance(plotly_data, dict):
-                st.write("Debug - Available keys:", list(plotly_data.keys()))
     except Exception as e:
         st.error(f"Error loading JSON data: {str(e)}")
-        st.write("Debug - Full error:", str(e))
-        import traceback
-        st.write("Debug - Traceback:", traceback.format_exc())
 
 if 'selected_building' in st.session_state:
     building = st.session_state['selected_building']
