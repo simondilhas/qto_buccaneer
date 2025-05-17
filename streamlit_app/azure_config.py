@@ -2,24 +2,25 @@
 Azure deployment configuration
 """
 import os
+import streamlit as st
 from azure.storage.blob import BlobServiceClient
 
 # Azure specific settings
-AZURE_STORAGE_CONNECTION_STRING = os.getenv('AZURE_STORAGE_CONNECTION_STRING', '')
-AZURE_CONTAINER_NAME = os.getenv('AZURE_CONTAINER_NAME', 'projects')
+AZURE_STORAGE_CONNECTION_STRING = st.secrets.get('AZURE_STORAGE_CONNECTION_STRING', '')
+AZURE_CONTAINER_NAME = st.secrets.get('AZURE_CONTAINER_NAME', 'projects')
 
 # Project paths for Azure
-AZURE_PROJECT_BASE_PATH = os.getenv('AZURE_PROJECT_BASE_PATH', '/mnt/data/projects/Seefeld__private')
+AZURE_PROJECT_BASE_PATH = st.secrets.get('AZURE_PROJECT_BASE_PATH', '/mnt/data/projects/Seefeld__private')
 
 # Environment detection
 def is_azure_environment():
     """Check if running in Azure environment"""
-    return os.getenv('AZURE_ENVIRONMENT', 'false').lower() == 'true'
+    return st.secrets.get('AZURE_ENVIRONMENT', 'false').lower() == 'true'
 
 def get_blob_service_client():
     """Get Azure Blob Service Client"""
     if not AZURE_STORAGE_CONNECTION_STRING:
-        raise ValueError("AZURE_STORAGE_CONNECTION_STRING environment variable is not set")
+        raise ValueError("AZURE_STORAGE_CONNECTION_STRING secret is not set")
     return BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
 
 def get_container_client():
@@ -31,4 +32,4 @@ def get_base_project_path():
     """Get the appropriate base path based on the environment"""
     if is_azure_environment():
         return get_container_client()
-    return os.getenv('PROJECT_BASE_PATH', '/home/simondilhas/Programmierung/qto_buccaneer/projects/Seefeld__private') 
+    return st.secrets.get('PROJECT_BASE_PATH', '/home/simondilhas/Programmierung/qto_buccaneer/projects/Seefeld__private') 

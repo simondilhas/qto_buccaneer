@@ -29,7 +29,7 @@ def get_project_paths(building_name):
 def get_title_picture_path():
     """Get the path to the title picture"""
     if is_azure_environment():
-        return join_paths('assets', 'title_picture.png')
+        return 'assets/title_picture.png'
     else:
         return os.path.join(get_base_project_path(), 'assets', 'title_picture.png')
 

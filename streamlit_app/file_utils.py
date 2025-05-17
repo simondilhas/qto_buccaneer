@@ -12,7 +12,8 @@ def list_files(base_path: Union[str, ContainerClient], path: str) -> List[str]:
         # Azure Blob Storage
         prefix = path.lstrip('/')
         blobs = base_path.list_blobs(name_starts_with=prefix)
-        return [blob.name for blob in blobs]
+        # Return only the file names, not the full paths
+        return [os.path.basename(blob.name) for blob in blobs]
     else:
         # Filesystem
         full_path = os.path.join(base_path, path)
@@ -76,4 +77,7 @@ def is_dir(base_path: Union[str, ContainerClient], path: str) -> bool:
 
 def join_paths(*paths: str) -> str:
     """Join paths, handling both filesystem and Azure Blob Storage"""
-    return '/'.join(p.strip('/') for p in paths if p) 
+    # Remove leading and trailing slashes from all parts
+    cleaned_paths = [p.strip('/') for p in paths if p]
+    # Join with forward slashes
+    return '/'.join(cleaned_paths) 

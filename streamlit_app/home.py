@@ -21,6 +21,9 @@ st.set_page_config(
 # Configure base path using environment-aware configuration
 BASE_PROJECT_FOLDER = get_base_project_path()
 
+# Debug: Print available secrets
+st.write("Available secrets:", list(st.secrets.keys()))
+
 def get_project_paths(building_name):
     """Get the paths for a specific building"""
     if is_azure_environment():
@@ -231,9 +234,10 @@ def display_index():
         all_blobs = list_files(get_base_project_path(), 'buildings')
         building_names = set()
         for blob in all_blobs:
+            # Split the path and get the building name
             parts = blob.split('/')
             if len(parts) > 1:
-                building_names.add(parts[1])
+                building_names.add(parts[0])  # Changed from parts[1] to parts[0]
         for building in sorted(building_names):
             paths = get_project_paths(building)
             # Check if there are any images in the graph folder
