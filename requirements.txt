@@ -2,10 +2,12 @@
 ifcopenshell>=0.8.1
 pandas>=2.2.3
 pyyaml>=6.0.2
-numpy>=2.2.4
+numpy>=1.19.3,<2.0.0
 python-dotenv>=1.1.0
 openpyxl>=3.1.5
 shapely>=2.0.7
+azure-storage-blob>=12.19.0
+streamlit>=1.32.0
 
 # Documentation dependencies
 pdoc3>=0.11.6
@@ -23,7 +25,7 @@ sphinxcontrib-serializinghtml>=2.0.0
 plotly>=6.0.1
 weasyprint>=65.0
 pdfkit>=1.0.0
-pillow>=11.1.0
+pillow>=7.1.0,<11.0.0
 kaleido>=0.2.1
 
 # Required for PDF generation

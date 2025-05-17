@@ -13,3 +13,6 @@ projects/*__private/
 .env
 .vscode/
 .pytest_cache/
+
+streamlit_app/.streamlit/secrets.toml
+streamlit_app/buildings/
