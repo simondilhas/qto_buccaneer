@@ -131,28 +131,41 @@ def display_abstandsflächen_data(graph_path, building):
     json_path = join_paths(graph_path, json_file)
     
     st.write("Debug - Looking for JSON file:", json_path)
+    st.write("Debug - Is Azure environment:", is_azure_environment())
     
     try:
         if is_azure_environment():
+            # In Azure, we need to use the full path
+            st.write("Debug - Reading from Azure")
             json_data = read_file(get_base_project_path(), json_path)
+            st.write("Debug - JSON data read successfully")
             # Handle double encoded JSON
             plotly_data = json.loads(json.loads(json_data.decode('utf-8')))
+            st.write("Debug - JSON parsed successfully")
         else:
+            st.write("Debug - Reading from local file")
             with open(json_path, 'r') as f:
                 # Handle double encoded JSON
                 plotly_data = json.loads(json.load(f))
+            st.write("Debug - JSON parsed successfully")
         
         if isinstance(plotly_data, dict) and 'data' in plotly_data:
+            st.write("Debug - Creating Plotly figure")
             fig = go.Figure(data=plotly_data['data'])
             if 'layout' in plotly_data:
                 fig.update_layout(plotly_data['layout'])
             # Set the height to 800 pixels
             fig.update_layout(height=800)
             st.plotly_chart(fig, use_container_width=True)
+            st.write("Debug - Plotly figure displayed")
         else:
             st.error("Invalid JSON data format")
+            st.write("Debug - Plotly data structure:", plotly_data.keys() if isinstance(plotly_data, dict) else type(plotly_data))
     except Exception as e:
         st.error(f"Error loading JSON data: {str(e)}")
+        st.write("Debug - Full error:", str(e))
+        import traceback
+        st.write("Debug - Traceback:", traceback.format_exc())
 
 if 'selected_building' in st.session_state:
     building = st.session_state['selected_building']
