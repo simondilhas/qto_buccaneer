@@ -234,35 +234,40 @@ def display_index():
         st.write("Running in Azure environment")
         st.write("Container name:", st.secrets.get('AZURE_CONTAINER_NAME'))
         
-        # List all blobs under 'buildings/' and extract unique building names
         try:
-            all_blobs = list_files(BASE_PROJECT_FOLDER, 'buildings')
-            st.write("All blobs found:", all_blobs)
+            # List all blobs to see the actual structure
+            all_blobs = list_files(BASE_PROJECT_FOLDER, '')
+            st.write("Number of blobs found:", len(all_blobs))
+            st.write("First few blobs:", all_blobs[:5])  # Show first 5 blobs
             
-            # Extract building names from paths
+            # Extract building names from the paths
             building_names = set()
             for blob in all_blobs:
-                # Split the path and get the building name
-                parts = blob.split('/')
-                if len(parts) > 1:
-                    building_name = parts[0]  # First part after 'buildings/'
-                    if building_name.startswith(('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')):
-                        building_names.add(building_name)
+                # Look for paths that match the pattern: buildings/{building_name}/11_abstractbim_plots/titel_picture.png
+                if blob.startswith('buildings/') and '/11_abstractbim_plots/titel_picture.png' in blob:
+                    # Extract building name from the path
+                    parts = blob.split('/')
+                    if len(parts) >= 4:  # buildings/building_name/11_abstractbim_plots/titel_picture.png
+                        building_name = parts[1]  # Second part is the building name
+                        if building_name:
+                            building_names.add(building_name)
+                            st.write(f"Found building: {building_name} from path: {blob}")
             
             st.write("Building names found:", sorted(building_names))
             
             for building in sorted(building_names):
-                # Check for floor layout images in the building's graph folder
-                graph_path = f"buildings/{building}/11_abstractbim_plots"
-                graph_files = list_files(BASE_PROJECT_FOLDER, graph_path)
-                st.write(f"Graph files for {building}:", graph_files)
-                
-                has_images = any(f.lower().endswith(('.png', '.jpg', '.jpeg')) and f.lower() != 'titel_picture.png' for f in graph_files)
-                if has_images:
+                # Check if the building has a titel_picture.png
+                title_picture_path = f"buildings/{building}/11_abstractbim_plots/titel_picture.png"
+                if any(blob == title_picture_path for blob in all_blobs):
                     buildings_with_images.append(building)
                     st.write(f"Added building {building} to list")
+                else:
+                    st.write(f"Building {building} does not have a title picture at {title_picture_path}")
         except Exception as e:
             st.error(f"Error processing files: {str(e)}")
+            st.error(f"Error details: {str(e.__class__.__name__)}")
+            import traceback
+            st.error(f"Traceback: {traceback.format_exc()}")
     else:
         buildings_path = os.path.join(get_base_project_path(), "buildings")
         if not os.path.exists(buildings_path):
@@ -272,10 +277,8 @@ def display_index():
             if os.path.isdir(os.path.join(buildings_path, building)):
                 paths = get_project_paths(building)
                 if os.path.exists(paths['graph']):
-                    has_images = any(file.lower().endswith(('.png', '.jpg', '.jpeg')) 
-                                   and file.lower() != 'titel_picture.png'
-                                   for file in os.listdir(paths['graph']))
-                    if has_images:
+                    has_title_picture = os.path.exists(os.path.join(paths['graph'], 'titel_picture.png'))
+                    if has_title_picture:
                         buildings_with_images.append(building)
     
     if not buildings_with_images:
@@ -289,7 +292,7 @@ def display_index():
             st.subheader(building)
             if is_azure_environment():
                 try:
-                    # Try to load titel_picture.png from the building's graph folder
+                    # Load titel_picture.png from the building's graph folder
                     title_picture = f"buildings/{building}/11_abstractbim_plots/titel_picture.png"
                     image_data = read_file(BASE_PROJECT_FOLDER, title_picture)
                     image_base64 = base64.b64encode(image_data).decode()

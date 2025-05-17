@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import pandas as pd
 from azure_config import get_base_project_path, is_azure_environment
-from file_utils import list_files, read_file, exists, join_paths
+from file_utils import list_files, read_file, exists, join_paths, is_dir
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -21,29 +21,35 @@ def get_project_paths(building_name):
         return {
             'project': join_paths('buildings', building_name),
             'graph': join_paths('buildings', building_name, "11_abstractbim_plots"),
-            'check': join_paths('buildings', building_name, "09_building_inside_envelope")
+            'check': join_paths('buildings', building_name, "09_building_inside_envelope"),
+            'metrics': join_paths('buildings', building_name, "07_metrics")
         }
     else:
         # In local environment, we need full paths
         return {
             'project': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name),
             'graph': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "11_abstractbim_plots"),
-            'check': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "09_building_inside_envelope")
+            'check': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "09_building_inside_envelope"),
+            'metrics': os.path.join(BASE_PROJECT_FOLDER, "buildings", building_name, "07_metrics")
         }
 
 def display_metrics(metrics_path):
     """Display metrics from Excel files"""
+    st.write("Debug - Metrics path:", metrics_path)
+    
     if is_azure_environment():
-        if not exists(BASE_PROJECT_FOLDER, metrics_path):
-            st.warning("Metrics directory not found")
+        if not is_dir(BASE_PROJECT_FOLDER, metrics_path):
+            st.warning(f"Metrics directory not found at: {metrics_path}")
             return
         # Get all Excel files
         excel_files = [f for f in list_files(BASE_PROJECT_FOLDER, metrics_path) if f.endswith(('.xlsx', '.xls'))]
+        st.write("Debug - Excel files found:", excel_files)
     else:
         if not os.path.exists(metrics_path):
-            st.warning("Metrics directory not found")
+            st.warning(f"Metrics directory not found at: {metrics_path}")
             return
         excel_files = [f for f in os.listdir(metrics_path) if f.endswith(('.xlsx', '.xls'))]
+        st.write("Debug - Excel files found:", excel_files)
     
     if not excel_files:
         st.warning("No Excel files found in metrics directory")
