@@ -148,10 +148,20 @@ def display_abstandsflächen_data(graph_path, building):
             st.write("Debug - JSON data read successfully")
             # First decode the bytes to string
             json_str = json_data.decode('utf-8')
-            st.write("Debug - Decoded JSON string:", json_str[:200])  # Show first 200 chars
+            st.write("Debug - JSON string length:", len(json_str))
+            st.write("Debug - First 500 chars of JSON:", json_str[:500])
+            st.write("Debug - Last 500 chars of JSON:", json_str[-500:])
             # Then parse the JSON string
-            plotly_data = json.loads(json_str)
-            st.write("Debug - JSON parsed successfully")
+            try:
+                plotly_data = json.loads(json_str)
+                st.write("Debug - JSON parsed successfully")
+                st.write("Debug - Plotly data keys:", plotly_data.keys() if isinstance(plotly_data, dict) else "Not a dict")
+            except json.JSONDecodeError as e:
+                st.error(f"JSON decode error: {str(e)}")
+                st.write("Debug - Error position:", e.pos)
+                st.write("Debug - Error line:", e.lineno)
+                st.write("Debug - Error column:", e.colno)
+                return
         else:
             st.write("Debug - Reading from local file")
             with open(json_path, 'r') as f:
@@ -160,10 +170,12 @@ def display_abstandsflächen_data(graph_path, building):
         
         if isinstance(plotly_data, dict) and 'data' in plotly_data:
             st.write("Debug - Creating Plotly figure")
+            st.write("Debug - Number of data traces:", len(plotly_data['data']))
             # Remove invalid properties from data
             cleaned_data = []
-            for trace in plotly_data['data']:
+            for i, trace in enumerate(plotly_data['data']):
                 if isinstance(trace, dict):
+                    st.write(f"Debug - Processing trace {i}:", trace.get('type', 'unknown type'))
                     # Remove scattermap if it exists
                     if 'type' in trace and trace['type'] == 'scattermap':
                         trace['type'] = 'scatter'  # Convert to regular scatter
