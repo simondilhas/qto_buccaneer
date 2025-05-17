@@ -43,9 +43,27 @@ def display_3d_visualization(graph_path):
                 with open(json_file, 'r') as f:
                     plotly_data = json.load(f)
             if isinstance(plotly_data, dict) and 'data' in plotly_data:
-                fig = go.Figure(data=plotly_data['data'])
+                # Clean the data by converting scattermap to scatter
+                cleaned_data = []
+                for trace in plotly_data['data']:
+                    if isinstance(trace, dict):
+                        if 'type' in trace and trace['type'] == 'scattermap':
+                            trace['type'] = 'scatter'  # Convert to regular scatter
+                        cleaned_data.append(trace)
+                
+                fig = go.Figure(data=cleaned_data)
                 if 'layout' in plotly_data:
-                    fig.update_layout(plotly_data['layout'])
+                    # Clean layout properties
+                    layout = plotly_data['layout'].copy()
+                    if 'template' in layout:
+                        template = layout['template'].copy()
+                        if 'data' in template:
+                            template_data = template['data'].copy()
+                            if 'scattermap' in template_data:
+                                del template_data['scattermap']
+                            template['data'] = template_data
+                        layout['template'] = template
+                    fig.update_layout(layout)
                 st.plotly_chart(fig, use_container_width=True)
         except Exception as e:
             st.error(f"Error loading JSON data: {str(e)}")
