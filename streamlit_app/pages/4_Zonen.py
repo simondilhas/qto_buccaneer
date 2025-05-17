@@ -69,19 +69,26 @@ def display_storey_content(storey, files, graph_path):
         st.session_state[button_key] = False
     
     if not st.session_state[button_key] and files['png']:
-        st.image(files['png'], use_column_width=True)
-        if files['json']:
-            if st.button("Näher anschauen", key=f"btn_{storey}"):
-                st.session_state[button_key] = True
-                st.rerun()
+        try:
+            if is_azure_environment():
+                image_data = read_file(get_base_project_path(), files['png'])
+                st.image(image_data, use_container_width=True)
+            else:
+                st.image(files['png'], use_container_width=True)
+            if files['json']:
+                if st.button("Näher anschauen", key=f"btn_{storey}"):
+                    st.session_state[button_key] = True
+                    st.rerun()
+        except Exception as e:
+            st.error(f"Error loading image: {str(e)}")
     elif st.session_state[button_key] and files['json']:
         try:
             if is_azure_environment():
                 json_data = read_file(get_base_project_path(), files['json'])
-                plotly_data = json.loads(json_data.decode('utf-8'))
+                plotly_data = json.loads(json.loads(json_data.decode('utf-8')))
             else:
                 with open(files['json'], 'r') as f:
-                    plotly_data = json.load(f)
+                    plotly_data = json.loads(json.load(f))
             if isinstance(plotly_data, dict) and 'data' in plotly_data:
                 fig = go.Figure(data=plotly_data['data'])
                 if 'layout' in plotly_data:
