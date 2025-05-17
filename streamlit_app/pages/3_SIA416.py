@@ -118,53 +118,6 @@ def display_sia_layouts(graph_path):
     else:
         st.warning("No SIA floor layouts found")
 
-def display_sia416_data(graph_path):
-    """Display SIA416 data"""
-    try:
-        if is_azure_environment():
-            files = list_files(get_base_project_path(), graph_path)
-        else:
-            if not os.path.exists(graph_path):
-                st.warning("No SIA416 data found")
-                return
-            files = [os.path.join(graph_path, f) for f in os.listdir(graph_path)]
-        
-        # Look for the specific files
-        image_file = None
-        json_file = None
-        
-        for file in files:
-            if file.endswith('.png'):
-                image_file = file
-            elif file.endswith('_data.json'):
-                json_file = file
-        
-        if image_file and json_file:
-            # Display the image
-            if is_azure_environment():
-                image_data = read_file(get_base_project_path(), image_file)
-                st.image(image_data, use_container_width=True)
-            else:
-                st.image(image_file, use_container_width=True)
-            
-            # Load and display the JSON data
-            if is_azure_environment():
-                json_data = read_file(get_base_project_path(), json_file)
-                plotly_data = json.loads(json_data.decode('utf-8'))
-            else:
-                with open(json_file, 'r') as f:
-                    plotly_data = json.load(f)
-            
-            if isinstance(plotly_data, dict) and 'data' in plotly_data:
-                fig = go.Figure(data=plotly_data['data'])
-                if 'layout' in plotly_data:
-                    fig.update_layout(plotly_data['layout'])
-                st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("No SIA416 data found")
-    except Exception as e:
-        st.error(f"Error loading SIA416 data: {str(e)}")
-
 if 'selected_building' in st.session_state:
     building = st.session_state['selected_building']
     st.title(f"SIA416 - {building}")

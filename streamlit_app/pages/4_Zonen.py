@@ -58,51 +58,20 @@ def display_storey_content(storey, files, graph_path):
             st.rerun()
 
 def display_zone_layouts(graph_path):
-    """Display zone layouts"""
-    try:
-        if is_azure_environment():
-            files = list_files(get_base_project_path(), graph_path)
-        else:
-            if not os.path.exists(graph_path):
-                st.warning("No zone layouts found")
-                return
-            files = [os.path.join(graph_path, f) for f in os.listdir(graph_path)]
+    """Display zone layouts for all storeys"""
+    st.write("Debug - Graph path:", graph_path)
+    storey_files = get_storey_files(graph_path, 'zone')
+    
+    if storey_files:
+        st.header("Zone Floor Layouts")
+        # Create tabs for each storey
+        storey_tabs = st.tabs([storey for storey in storey_files.keys()])
         
-        # Look for the specific files
-        image_file = None
-        json_file = None
-        
-        for file in files:
-            if file.endswith('.png'):
-                image_file = file
-            elif file.endswith('_data.json'):
-                json_file = file
-        
-        if image_file and json_file:
-            # Display the image
-            if is_azure_environment():
-                image_data = read_file(get_base_project_path(), image_file)
-                st.image(image_data, use_container_width=True)
-            else:
-                st.image(image_file, use_container_width=True)
-            
-            # Load and display the JSON data
-            if is_azure_environment():
-                json_data = read_file(get_base_project_path(), json_file)
-                plotly_data = json.loads(json_data.decode('utf-8'))
-            else:
-                with open(json_file, 'r') as f:
-                    plotly_data = json.load(f)
-            
-            if isinstance(plotly_data, dict) and 'data' in plotly_data:
-                fig = go.Figure(data=plotly_data['data'])
-                if 'layout' in plotly_data:
-                    fig.update_layout(plotly_data['layout'])
-                st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("No zone layouts found")
-    except Exception as e:
-        st.error(f"Error loading zone layouts: {str(e)}")
+        for tab, (storey, files) in zip(storey_tabs, storey_files.items()):
+            with tab:
+                display_storey_content(storey, files, graph_path)
+    else:
+        st.warning("No zone floor layouts found")
 
 if 'selected_building' in st.session_state:
     building = st.session_state['selected_building']

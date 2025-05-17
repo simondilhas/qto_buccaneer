@@ -97,11 +97,8 @@ def is_dir(base_path: Union[str, ContainerClient], path: str) -> bool:
         prefix = path.lstrip('/')
         if not prefix.endswith('/'):
             prefix += '/'
-        # Check if there are any blobs with this prefix
         blobs = list(base_path.list_blobs(name_starts_with=prefix))
-        # Also check if there are any blobs that start with this prefix
-        # This handles the case where the directory exists but is empty
-        return len(blobs) > 0 or any(blob.name.startswith(prefix) for blob in base_path.list_blobs())
+        return len(blobs) > 0
     else:
         # Filesystem
         full_path = os.path.join(base_path, path)
