@@ -22,7 +22,7 @@ st.set_page_config(
 BASE_PROJECT_FOLDER = get_base_project_path()
 
 # Debug: Print available secrets
-st.write("Available secrets:", list(st.secrets.keys()))
+#st.write("Available secrets:", list(st.secrets.keys()))
 
 def get_project_paths(building_name):
     """Get the paths for a specific building"""
