@@ -4,28 +4,22 @@ import json
 import io
 from PIL import Image
 from azure_config import get_base_project_path, is_azure_environment
-from file_utils import join_paths, list_files, read_file, exists
+from file_utils import join_paths, list_files, read_file, exists, is_dir
 import streamlit as st
+from pathlib import Path
 
-def get_project_paths(building_name):
-    """Get the paths for a specific building"""
-    if is_azure_environment():
-        # In Azure, we just need the relative paths since we're using ContainerClient
-        return {
-            'project': f'buildings/{building_name}',
-            'graph': f'buildings/{building_name}/11_abstractbim_plots',
-            'check': f'buildings/{building_name}/09_building_inside_envelope',
-            'metrics': f'buildings/{building_name}/metrics'
-        }
-    else:
-        # In local environment, we need full paths
-        base_path = get_base_project_path()
-        return {
-            'project': os.path.join(base_path, "buildings", building_name),
-            'graph': os.path.join(base_path, "buildings", building_name, "11_abstractbim_plots"),
-            'check': os.path.join(base_path, "buildings", building_name, "09_building_inside_envelope"),
-            'metrics': os.path.join(base_path, "buildings", building_name, "metrics")
-        }
+def get_project_paths(building):
+    """Get all relevant paths for a building"""
+    paths = {}
+    
+    # Base paths
+    paths['building'] = f"buildings/{building}"
+    paths['graph'] = f"{paths['building']}/11_abstractbim_plots"
+    paths['visualizations'] = f"{paths['building']}/09_check_building_inside_envelop/visualizations"
+    paths['check'] = f"{paths['building']}/09_building_inside_envelope"
+    paths['metrics'] = f"{paths['building']}/metrics"
+    
+    return paths
 
 def get_title_picture_path():
     """Get the path to the title picture"""
@@ -74,16 +68,12 @@ def get_storey_files(graph_path, prefix):
     
     if is_azure_environment():
         if not is_dir(get_base_project_path(), graph_path):
-            st.write(f"Debug - Directory not found: {graph_path}")
             return storey_files
         files = list_files(get_base_project_path(), graph_path)
-        st.write(f"Debug - Files found in Azure: {files}")
     else:
         if not os.path.exists(graph_path):
-            st.write(f"Debug - Directory not found: {graph_path}")
             return storey_files
         files = [os.path.join(graph_path, f) for f in os.listdir(graph_path)]
-        st.write(f"Debug - Files found locally: {files}")
     
     for file in files:
         # Get just the filename from the full path
@@ -91,7 +81,7 @@ def get_storey_files(graph_path, prefix):
         if filename.startswith(f"floor_layout_by_{prefix}_"):
             if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.json')):
                 # Extract storey from filename
-                match = re.search(f'floor_layout_by_{prefix}_(.+?)(?:\.\w+)?$', filename)
+                match = re.search(r'floor_layout_by_' + prefix + r'_(.+?)(?:\.\w+)?$', filename)
                 if match:
                     storey = match.group(1)
                     if storey not in storey_files:
@@ -115,9 +105,7 @@ def get_storey_files(graph_path, prefix):
         except ValueError:
             return float('inf')  # Put other text storeys at the end
     
-    sorted_files = dict(sorted(storey_files.items(), key=lambda x: storey_sort_key(x[0])))
-    st.write(f"Debug - Sorted storey files: {sorted_files}")
-    return sorted_files
+    return dict(sorted(storey_files.items(), key=lambda x: storey_sort_key(x[0])))
 
 def get_floor_layouts(graph_path, pattern):
     """Get floor layouts from the graph path"""
