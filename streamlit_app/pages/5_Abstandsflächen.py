@@ -170,11 +170,16 @@ def display_abstandsflächen_data(graph_path, building):
             fig = go.Figure(data=cleaned_data)
             if 'layout' in plotly_data:
                 # Clean layout properties
-                layout = plotly_data['layout']
-                if 'template' in layout and 'data' in layout['template']:
-                    template_data = layout['template']['data']
-                    if 'scattermap' in template_data:
-                        del template_data['scattermap']
+                layout = plotly_data['layout'].copy()  # Create a copy to avoid modifying the original
+                if 'template' in layout:
+                    template = layout['template'].copy()  # Create a copy of the template
+                    if 'data' in template:
+                        template_data = template['data'].copy()  # Create a copy of the template data
+                        # Remove scattermap from template data
+                        if 'scattermap' in template_data:
+                            del template_data['scattermap']
+                        template['data'] = template_data
+                    layout['template'] = template
                 fig.update_layout(layout)
             # Set the height to 800 pixels
             fig.update_layout(height=800)
