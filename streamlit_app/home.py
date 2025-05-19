@@ -225,51 +225,46 @@ def display_project_page(building_name):
         display_check_tab(paths['check'])
 
 def load_title_picture(graph_path):
-    """Load the title picture closest to level 0"""
+    """Load the title picture with height closest to zero, only if -1 <= height <= 1."""
+    def extract_height(filename):
+        try:
+            base = os.path.basename(filename)
+            if base.startswith('titel_picture_') and base.endswith('.png'):
+                height_str = base[len('titel_picture_'):-len('.png')]
+                return float(height_str)
+        except Exception:
+            return None
+        return None
+
+    images = {}
     if is_azure_environment():
         files = list_files(BASE_PROJECT_FOLDER, graph_path)
-        title_images = {}
         for file in files:
-            if file.startswith('titel_picture_') and file.endswith('.png'):
-                try:
-                    # Extract the level number from the end of the filename
-                    level_str = file.replace('titel_picture_', '').replace('.png', '')
-                    level = float(level_str)
-                    title_images[level] = file
-                except ValueError:
-                    continue
-        
-        if title_images:
-            # Find the level closest to 0
-            closest_level = min(title_images.keys(), key=lambda x: abs(x))
-            return title_images[closest_level]
+            base = os.path.basename(file)
+            height = extract_height(base)
+            if height is not None and -1 <= height <= 1:
+                images[file] = height
+        if images:
+            best = min(images.items(), key=lambda x: abs(x[1]))
+            return best[0]
         return None
     else:
         if not os.path.exists(graph_path):
             return None
-            
-        title_images = {}
         for file in os.listdir(graph_path):
-            if file.startswith('titel_picture_') and file.endswith('.png'):
-                try:
-                    # Extract the level number from the end of the filename
-                    level_str = file.replace('titel_picture_', '').replace('.png', '')
-                    level = float(level_str)
-                    title_images[level] = file
-                except ValueError:
-                    continue
-        
-        if title_images:
-            # Find the level closest to 0
-            closest_level = min(title_images.keys(), key=lambda x: abs(x))
-            return os.path.join(graph_path, title_images[closest_level])
+            height = extract_height(file)
+            if height is not None and -1 <= height <= 1:
+                images[file] = height
+        if images:
+            best = min(images.items(), key=lambda x: abs(x[1]))
+            return os.path.join(graph_path, best[0])
         return None
 
 def display_index():
     st.title("Projektübersicht")
     
     # Get list of buildings
-    buildings_with_images = []
+    buildings_with_content = []
     if is_azure_environment():
         try:
             # List all blobs to see the actual structure
@@ -278,25 +273,19 @@ def display_index():
             # Extract building names from the paths
             building_names = set()
             for blob in all_blobs:
-                # Look for paths that match the pattern: buildings/{building_name}/11_abstractbim_plots/titel_picture_*.png
-                if blob.startswith('buildings/') and '/11_abstractbim_plots/titel_picture_' in blob:
+                # Look for any content in 11_abstractbim_plots
+                if blob.startswith('buildings/') and '/11_abstractbim_plots/' in blob:
                     # Extract building name from the path
                     parts = blob.split('/')
-                    if len(parts) >= 4:  # buildings/building_name/11_abstractbim_plots/titel_picture_*.png
+                    if len(parts) >= 4:  # buildings/building_name/11_abstractbim_plots/...
                         building_name = parts[1]  # Second part is the building name
                         if building_name:
                             building_names.add(building_name)
             
-            for building in sorted(building_names):
-                # Check if the building has any title pictures
-                graph_path = f"buildings/{building}/11_abstractbim_plots"
-                if load_title_picture(graph_path):
-                    buildings_with_images.append(building)
+            buildings_with_content = sorted(building_names)
+            
         except Exception as e:
             st.error(f"Error processing files: {str(e)}")
-            st.error(f"Error details: {str(e.__class__.__name__)}")
-            import traceback
-            st.error(f"Traceback: {traceback.format_exc()}")
     else:
         buildings_path = os.path.join(get_base_project_path(), "buildings")
         if not os.path.exists(buildings_path):
@@ -305,53 +294,26 @@ def display_index():
         for building in os.listdir(buildings_path):
             if os.path.isdir(os.path.join(buildings_path, building)):
                 paths = get_project_paths(building)
-                if os.path.exists(paths['graph']):
-                    if load_title_picture(paths['graph']):
-                        buildings_with_images.append(building)
+                if os.path.exists(paths['graph']) and os.listdir(paths['graph']):
+                    buildings_with_content.append(building)
     
-    if not buildings_with_images:
-        st.warning("No buildings with images found")
+    if not buildings_with_content:
+        st.warning("No buildings with content found")
         return
     
     # Display buildings in a grid
     cols = st.columns(3)
-    for idx, building in enumerate(buildings_with_images):
+    for idx, building in enumerate(buildings_with_content):
         with cols[idx % 3]:
             st.subheader(building)
-            if is_azure_environment():
-                try:
-                    # Load title picture from the building's graph folder
-                    graph_path = f"buildings/{building}/11_abstractbim_plots"
-                    title_picture = load_title_picture(graph_path)
-                    if title_picture:
-                        image_data = read_file(BASE_PROJECT_FOLDER, title_picture)
-                        image_base64 = base64.b64encode(image_data).decode()
-                        html = f"""
-                        <div style=\"position: relative;\">
-                            <img src=\"data:image/png;base64,{image_base64}\" style=\"width:100%; cursor:pointer;\" 
-                                 onclick=\"document.querySelector('button[key=\\'btn_{building}\\']').click();\">
-                        </div>
-                        """
-                        st.markdown(html, unsafe_allow_html=True)
-                except Exception as e:
-                    st.error(f"Error loading title picture for {building}: {str(e)}")
-            else:
-                paths = get_project_paths(building)
-                if os.path.exists(paths['graph']):
-                    try:
-                        title_picture = load_title_picture(paths['graph'])
-                        if title_picture:
-                            image_base64 = get_image_base64(title_picture)
-                            html = f"""
-                            <div style=\"position: relative;\">
-                                <img src=\"data:image/png;base64,{image_base64}\" style=\"width:100%; cursor:pointer;\" 
-                                     onclick=\"document.querySelector('button[key=\\'btn_{building}\\']').click();\">
-                            </div>
-                            """
-                            st.markdown(html, unsafe_allow_html=True)
-                    except Exception as e:
-                        st.error(f"Error loading title picture for {building}: {str(e)}")
-            # Create a button that will be triggered by the image click
+            paths = get_project_paths(building)
+            title_picture = load_title_picture(paths['graph'])
+            if title_picture:
+                if is_azure_environment():
+                    image_data = read_file(BASE_PROJECT_FOLDER, title_picture)
+                    st.image(image_data, use_column_width=True)
+                else:
+                    st.image(title_picture, use_column_width=True)
             if st.button(f"View {building}", key=f"btn_{building}", type="primary", use_container_width=True):
                 st.session_state['selected_building'] = building
                 st.switch_page("pages/1_Metrics.py")
@@ -394,6 +356,8 @@ def get_image_base64(image_path):
 def main():
     if not check_password():
         return
+
+    #st.write("Streamlit debug output is working!")
 
     display_index()
 
