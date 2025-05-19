@@ -136,14 +136,15 @@ def process_project_files(blob_service_client, container_name, project_path):
         reports_prefix = "buildings/reports"
         delete_blob_directory(blob_service_client, container_name, reports_prefix)
         
-        for root, _, files in os.walk(reports_path):
-            for file in files:
-                local_file_path = os.path.join(root, file)
-                # Get the relative path from the reports directory
-                rel_path = os.path.relpath(local_file_path, reports_path)
-                # Upload directly to buildings/reports/...
-                blob_name = f"buildings/reports/{rel_path}"
-                files_to_upload.append((local_file_path, blob_name))
+        for item in os.listdir(reports_path):
+            source = os.path.join(reports_path, item)
+            destination = os.path.join(reports_path, item)
+
+            # Check if source and destination are the same
+            if os.path.abspath(source) != os.path.abspath(destination):
+                shutil.copy2(source, destination)
+            else:
+                print(f"Skipping copy for {source} as source and destination are the same.")
     
     # Upload files in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:

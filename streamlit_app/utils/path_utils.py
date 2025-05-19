@@ -148,6 +148,6 @@ def display_floor_layouts(graph_path, pattern, title):
         with col:
             try:
                 image = load_image(join_paths(graph_path, layout))
-                st.image(image, use_column_width=True)
+                st.image(image, use_container_width=True)
             except Exception as e:
                 st.error(f"Error loading image {layout}: {str(e)}") 
