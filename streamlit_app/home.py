@@ -10,6 +10,7 @@ from utils.path_utils import get_project_paths, get_floor_layouts, load_image, l
 import plotly.graph_objects as go
 import json
 import re
+import pandas as pd
 
 # Page config
 st.set_page_config(
