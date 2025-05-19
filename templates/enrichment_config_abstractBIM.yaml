@@ -1,0 +1,57 @@
+# enrichment:
+#   rule:
+#     description: "Description of the metric"
+#     ifc_entity: "IfcSpace"
+#     pset_name: "Pset_Name" (leave blank for attributes)
+#     key: "Attribute Name or Property Name"
+#     include_filter:
+#       "Key": "Value"
+#       "Key": ["Value1", "Value2"]
+#       ...
+#     include_filter_logic: "AND" or "OR"
+#     subtract_filter:
+#       "Key": ["<"", Number]
+#       "Key": ["Value1", "Value2"]
+#       ...
+#     subtract_filter_logic: "OR"
+# 
+
+
+
+# TODO: 
+# -to make the rules work, split up the commaseperated values in the ifc into two properties (spaces, walls, doors, windows)
+# and when use the or logic to filter the elements
+
+
+
+enrichment:
+  - rule:
+    description: "Enrichment rule for walls"
+    include_filter:
+      IfcEntity: [IfcWall, IfcDoor]
+      DirectionHint: [North, East]
+    include_filter_logic: AND
+    subtract_filter:
+      IsTemporary: ["true"]  # string, not boolean
+    subtract_filter_logic: OR 
+    properties:
+      Pset_AbstractBIM_Custom:
+        BelongsToSpace: Space_GUID_ABC
+        Direction: North
+        FireRating: EI60
+      Pset_XY:
+
+
+enrichment:
+  - include_filter:
+      IfcEntity: [IfcWall, IfcDoor]
+      DirectionHint: [North, East]
+    include_filter_logic: AND
+    subtract_filter:
+      IsTemporary: ["true"]  # string, not boolean
+    properties:
+      Pset_AbstractBIM_Custom:
+        BelongsToSpace: Space_GUID_ABC
+        Direction: North
+        FireRating: EI60
+      Pset_XY:

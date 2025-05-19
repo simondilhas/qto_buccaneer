@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Exit on error
+set -e
+
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+# Check if Python is available
+if ! command -v python3 &> /dev/null; then
+    echo "Error: python3 is not installed or not in PATH"
+    exit 1
+fi
+
+# Try to find and activate virtual environment
+VENV_DIRS=(
+    "$SCRIPT_DIR/.venv"
+    "$SCRIPT_DIR/venv"
+    "$SCRIPT_DIR/env"
+)
+
+for venv_dir in "${VENV_DIRS[@]}"; do
+    if [ -d "$venv_dir" ]; then
+        source "$venv_dir/bin/activate"
+        break
+    fi
+done
+
+# Check if the Python script exists
+PYTHON_SCRIPT="$SCRIPT_DIR/scripts/create_new_project.py"
+if [ ! -f "$PYTHON_SCRIPT" ]; then
+    echo "Error: Could not find create_new_project.py script"
+    echo "Please run ./setup_scripts.sh first to set up the project creation scripts"
+    exit 1
+fi
+
+# Run the Python script with all arguments
+python3 "$PYTHON_SCRIPT" "$@" 

@@ -1,0 +1,21 @@
+# define the project structure and workflow steps, based on this the folder structure will be created
+
+project_name: "002_example_project__public"
+project_description: "This is a test project to test the workflow"
+
+buildings:
+  - name: "001_test_building"
+  - name: "002_test_building"
+
+building_folder:
+  - "00_original_input_data"
+  - "01_abstractbim_model"
+
+
+
+
+
+
+
+
+

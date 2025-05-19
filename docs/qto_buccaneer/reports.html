@@ -1,0 +1,2234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>qto_buccaneer.reports API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>qto_buccaneer.reports</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="qto_buccaneer.reports.build_metrics_table"><code class="name flex">
+<span>def <span class="ident">build_metrics_table</span></span>(<span>metrics_df: pandas.core.frame.DataFrame,<br>base_metrics: dict = None,<br>include_metrics: list = None,<br>language: str = None) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_metrics_table(
+    metrics_df: pd.DataFrame, 
+    base_metrics: dict = None,
+    include_metrics: list = None,
+    language: str = None
+) -&gt; dict:
+    &#34;&#34;&#34;
+    Build a formatted metrics table from a DataFrame of metrics.
+    
+    Args:
+        metrics_df (pd.DataFrame): DataFrame containing metrics with columns:
+            - metric_name: Name of the metric
+            - value: Numeric value
+            - unit: Unit of measurement
+        base_metrics (dict): Dictionary mapping metric names to their base metrics for percentages.
+            If None, will use base_metrics from config.
+        include_metrics (list): List of metric names to include in the table.
+            If None, will use metrics defined in sections from config.
+        language (str): Language code to use for display names (e.g., &#39;en&#39;, &#39;de&#39;).
+            If None, will use default_language from config.
+            
+    Returns:
+        dict: Dictionary containing sections with their metrics
+    &#34;&#34;&#34;
+    print(f&#34;Input metrics_df shape: {metrics_df.shape}&#34;)  # Debug print
+    print(f&#34;Input metrics_df columns: {metrics_df.columns.tolist()}&#34;)  # Debug print
+    
+    # Load configuration
+    config = load_metrics_config()
+    
+    # Use default language if none specified
+    if language is None:
+        language = config.get(&#39;default_language&#39;, &#39;en&#39;)
+    print(f&#34;Using language: {language}&#34;)  # Debug print
+    
+    # Get all defined metrics from the configuration
+    defined_metrics = set()
+    for section in config.get(&#39;sections&#39;, []):
+        if &#39;metrics&#39; in section:
+            defined_metrics.update(section.get(&#39;metrics&#39;, []))
+    
+    print(f&#34;Defined metrics in config: {defined_metrics}&#34;)  # Debug print
+    
+    # First filter to only include metrics that exist in the DataFrame
+    available_metrics = set(metrics_df[&#39;metric_name&#39;].unique())
+    print(f&#34;Available metrics in DataFrame: {available_metrics}&#34;)  # Debug print
+    
+    # Determine which metrics to include
+    if include_metrics and len(include_metrics) &gt; 0:
+        print(f&#34;Using provided include_metrics: {include_metrics}&#34;)  # Debug print
+        # Convert include_metrics to set for faster lookups
+        include_metrics_set = set(include_metrics)
+        # Only keep metrics that are both in include_metrics and available_metrics
+        filtered_metrics = include_metrics_set.intersection(available_metrics)
+        print(f&#34;Metrics after include_metrics filter: {filtered_metrics}&#34;)  # Debug print
+    else:
+        # If no include_metrics provided or empty list, use defined metrics that are available
+        filtered_metrics = defined_metrics.intersection(available_metrics)
+        print(f&#34;No include_metrics provided, using defined metrics: {filtered_metrics}&#34;)  # Debug print
+    
+    # Filter the DataFrame to only include the filtered metrics
+    metrics_df = metrics_df[metrics_df[&#39;metric_name&#39;].isin(filtered_metrics)].copy()
+    print(f&#34;Final DataFrame shape after filtering: {metrics_df.shape}&#34;)  # Debug print
+    
+    # Use provided base_metrics or load from config
+    if base_metrics is None:
+        base_metrics = {}
+        for metric_id, metric_config in config.get(&#39;metrics&#39;, {}).items():
+            if metric_config.get(&#39;base_metric&#39;):
+                base_metrics[metric_id] = metric_config[&#39;base_metric&#39;]
+    
+    # Get base metric values
+    base_values = {}
+    for base_metric in set(base_metrics.values()):
+        try:
+            base_values[base_metric] = metrics_df[metrics_df[&#39;metric_name&#39;] == base_metric][&#39;value&#39;].iloc[0]
+        except IndexError:
+            base_values[base_metric] = 0
+    
+    # Build metrics table by sections
+    result = {}
+    for section in config.get(&#39;sections&#39;, []):
+        section_id = section[&#39;id&#39;]
+        section_title = section[&#39;title&#39;].get(language, section[&#39;title&#39;][&#39;en&#39;])
+        
+        # Handle special sections
+        if section_id == &#39;title_page&#39;:
+            result[section_id] = {
+                &#39;title&#39;: section_title,
+                &#39;metrics&#39;: []  # No metrics for title page
+            }
+            continue
+            
+        if section_id == &#39;table_of_contents&#39;:
+            result[section_id] = {
+                &#39;title&#39;: section_title,
+                &#39;metrics&#39;: []  # No metrics for table of contents
+            }
+            continue
+            
+        # Handle metrics sections
+        section_metrics = []
+        for metric_id in section.get(&#39;metrics&#39;, []):
+            if metric_id not in filtered_metrics:
+                continue
+                
+            metric_config = config[&#39;metrics&#39;].get(metric_id, {})
+            metric_row = metrics_df[metrics_df[&#39;metric_name&#39;] == metric_id].iloc[0]
+            
+            # Get display name in selected language
+            display_name = metric_config[&#39;name&#39;].get(language, metric_config[&#39;name&#39;][&#39;en&#39;])
+            
+            # Format the value with unit - show just the number for count metrics
+            value = metric_row[&#39;value&#39;]
+            unit = metric_row[&#39;unit&#39;]
+            if unit == &#39;count&#39;:
+                formatted_value = f&#34;{value}&#34;
+            else:
+                formatted_value = f&#34;{value:.2f} {unit}&#34;
+            
+            # Calculate and format percentage if applicable
+            percentage = &#39;&#39;
+            base_metric = metric_config.get(&#39;base_metric&#39;)
+            if base_metric:
+                base_value = base_values.get(base_metric, 0)
+                if base_value &gt; 0:
+                    pct = (value / base_value) * 100
+                    base_name = config[&#39;metrics&#39;][base_metric][&#39;name&#39;].get(language, config[&#39;metrics&#39;][base_metric][&#39;name&#39;][&#39;en&#39;])
+                    percentage = config[&#39;formatting&#39;][&#39;percentage&#39;][&#39;format&#39;].format(
+                        value=pct,
+                        base_name=base_name.split(&#39;(&#39;)[0].strip(),
+                        of_word=config[&#39;formatting&#39;][&#39;percentage&#39;][&#39;languages&#39;].get(language, &#39;of&#39;)
+                    )
+            
+            section_metrics.append({
+                &#39;name&#39;: display_name,
+                &#39;value1&#39;: formatted_value,
+                &#39;value2&#39;: percentage
+            })
+        
+        if section_metrics:  # Only add section if it has metrics
+            result[section_id] = {
+                &#39;title&#39;: section_title,
+                &#39;metrics&#39;: section_metrics
+            }
+    
+    print(f&#34;Final sections: {list(result.keys())}&#34;)  # Debug print
+    return result</code></pre>
+</details>
+<div class="desc"><p>Build a formatted metrics table from a DataFrame of metrics.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>metrics_df</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
+<dd>DataFrame containing metrics with columns:
+- metric_name: Name of the metric
+- value: Numeric value
+- unit: Unit of measurement</dd>
+<dt><strong><code>base_metrics</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary mapping metric names to their base metrics for percentages.
+If None, will use base_metrics from config.</dd>
+<dt><strong><code>include_metrics</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of metric names to include in the table.
+If None, will use metrics defined in sections from config.</dd>
+<dt><strong><code>language</code></strong> :&ensp;<code>str</code></dt>
+<dd>Language code to use for display names (e.g., 'en', 'de').
+If None, will use default_language from config.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Dictionary containing sections with their metrics</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.compare_room_names"><code class="name flex">
+<span>def <span class="ident">compare_room_names</span></span>(<span>metadata_actual_df: pandas.core.frame.DataFrame,<br>target_program_df: pandas.core.frame.DataFrame,<br>target_room_name_column: str = 'Raumtypenname',<br>actual_room_name_column: str = 'Name',<br>output_dir: str | None = None,<br>building_name: str | None = None,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compare_room_names(
+    metadata_actual_df: pd.DataFrame,
+    target_program_df: pd.DataFrame,
+    target_room_name_column: str = &#34;Raumtypenname&#34;,
+    actual_room_name_column: str = &#34;Name&#34;,
+    output_dir: Optional[str] = None,
+    building_name: Optional[str] = None,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -&gt; dict:
+    &#34;&#34;&#34;
+    Compare room names between IFC spaces and a room program.
+    
+    Args:
+        metadata_actual_df: DataFrame containing IFC metadata including spaces (actual state)
+        target_program_df: DataFrame containing room program information (target state)
+        target_room_name_column: Column name in Excel containing target room names
+        actual_room_name_column: Column name in IFC containing actual room names
+        output_dir: Directory where Excel files should be saved
+        building_name: Name of the building (used in output filenames)
+        layout_config: Optional ExcelLayoutConfig for custom formatting
+        
+    Returns:
+        dict: Dictionary containing the comparison results in a format suitable for the building summary
+    &#34;&#34;&#34;
+    try:
+        # Filter for IFC spaces
+        ifc_spaces_df = metadata_actual_df[metadata_actual_df[&#39;IfcEntity&#39;] == &#39;IfcSpace&#39;]
+        
+        # Get room names from IFC and convert to lowercase, filtering out None values
+        ifc_rooms = set(ifc_spaces_df[actual_room_name_column].dropna().str.lower().unique())
+        
+        # Get room names from Excel and convert to lowercase, filtering out None values
+        excel_rooms = set(target_program_df[target_room_name_column].dropna().str.lower().unique())
+        
+        # Create comparison DataFrame for Excel export
+        all_rooms = ifc_rooms.union(excel_rooms)
+        data = []
+        for room in sorted(all_rooms):
+            room_data = {
+                &#34;Room Name&#34;: room,
+                &#34;Status&#34;: &#34;In Both&#34; if room in ifc_rooms and room in excel_rooms else &#34;Only in IFC&#34; if room in ifc_rooms else &#34;Only in Excel&#34;,
+                &#34;GlobalId&#34;: &#34;&#34;  # Default empty GlobalId
+            }
+            
+            # Add GlobalId for rooms that exist in IFC
+            if room in ifc_rooms:
+                ifc_room = ifc_spaces_df[ifc_spaces_df[actual_room_name_column].str.lower() == room]
+                if not ifc_room.empty:
+                    room_data[&#34;GlobalId&#34;] = ifc_room[&#34;GlobalId&#34;].iloc[0]
+            
+            data.append(room_data)
+            
+        detailed_df = pd.DataFrame(data)
+        
+        # Create RoomComparisonResult instance
+        comparison = RoomComparisonResult(detailed_df, ifc_rooms, excel_rooms)
+        
+        # Export to Excel if output directory provided
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            building_prefix = f&#34;{building_name}_&#34; if building_name else &#34;&#34;
+            output_path = os.path.join(output_dir, f&#34;{building_prefix}room_name_comparison.xlsx&#34;)
+            comparison.to_excel(output_path, layout_config)
+        
+        return comparison.to_yaml()
+        
+    except Exception as e:
+        print(f&#34;Error comparing room names: {str(e)}&#34;)
+        import traceback
+        traceback.print_exc()
+        return {
+            &#34;room_comparison&#34;: {
+                &#34;status&#34;: &#34;error&#34;,
+                &#34;summary&#34;: f&#34;Error comparing room names: {str(e)}&#34;,
+                &#34;target&#34;: {},
+                &#34;ifc&#34;: {}
+            }
+        }</code></pre>
+</details>
+<div class="desc"><p>Compare room names between IFC spaces and a room program.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>metadata_actual_df</code></strong></dt>
+<dd>DataFrame containing IFC metadata including spaces (actual state)</dd>
+<dt><strong><code>target_program_df</code></strong></dt>
+<dd>DataFrame containing room program information (target state)</dd>
+<dt><strong><code>target_room_name_column</code></strong></dt>
+<dd>Column name in Excel containing target room names</dd>
+<dt><strong><code>actual_room_name_column</code></strong></dt>
+<dd>Column name in IFC containing actual room names</dd>
+<dt><strong><code>output_dir</code></strong></dt>
+<dd>Directory where Excel files should be saved</dd>
+<dt><strong><code>building_name</code></strong></dt>
+<dd>Name of the building (used in output filenames)</dd>
+<dt><strong><code>layout_config</code></strong></dt>
+<dd>Optional ExcelLayoutConfig for custom formatting</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Dictionary containing the comparison results in a format suitable for the building summary</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.create_room_program_from_excel"><code class="name flex">
+<span>def <span class="ident">create_room_program_from_excel</span></span>(<span>input_excel_path: str,<br>room_name_column: str = 'LongName',<br>area_column: str = 'NetFloorArea',<br>count_column: str | None = None,<br>output_path: str | None = None,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def create_room_program_from_excel(
+    input_excel_path: str,
+    room_name_column: str = &#34;LongName&#34;,
+    area_column: str = &#34;NetFloorArea&#34;,
+    count_column: Optional[str] = None,
+    output_path: Optional[str] = None,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Convert an Excel file with individual rooms into an aggregated room program format.
+    
+    This function takes an Excel file containing individual rooms and aggregates them by room type,
+    calculating the count and average area for each type. The output format matches
+    what is expected by room_program_comparison().
+    
+    Args:
+        input_excel_path: Path to Excel file containing individual rooms.
+            Each row should represent one room with at least:
+            - A room type/name column (default: &#34;LongName&#34;)
+            - An area column (default: &#34;NetFloorArea&#34;)
+            - Optionally a count column if rooms are already grouped
+        room_name_column: Column name in input Excel for the room type/name
+        area_column: Column name in input Excel for the area value
+        count_column: Optional column name for room count. If provided, uses this instead of counting rows.
+        output_path: Optional path to save the aggregated room program as Excel
+        layout_config: Optional ExcelLayoutConfig for custom formatting
+        
+    Returns:
+        pd.DataFrame: Aggregated room program with columns:
+            - Room Type (from room_name_column)
+            - Target Count (number of rooms of each type)
+            - Target Area/Room (average area per room type)
+            
+    Example:
+        Input Excel format:
+        | LongName | Soll m2 | Soll Anzahl | Other columns... |
+        |----------|---------|-------------|------------------|
+        | Office   | 20.0    | 2           | ...              |
+        | Meeting  | 30.0    | 1           | ...              |
+        
+        Output DataFrame:
+        | Room Type | Target Count | Target Area/Room |
+        |-----------|--------------|------------------|
+        | Office    | 2           | 20.0            |
+        | Meeting   | 1           | 30.0            |
+    &#34;&#34;&#34;
+    try:
+        # Load input Excel file
+        df = pd.read_excel(input_excel_path)
+        
+        if df.empty:
+            raise ValueError(&#34;Input Excel file is empty&#34;)
+            
+        # Verify required columns exist
+        missing_columns = []
+        for col, col_name in [
+            (room_name_column, &#34;room name&#34;),
+            (area_column, &#34;area&#34;)
+        ]:
+            if col not in df.columns:
+                missing_columns.append(f&#34;{col_name} ({col})&#34;)
+                
+        if missing_columns:
+            raise ValueError(f&#34;Missing required columns in input Excel: {&#39;, &#39;.join(missing_columns)}&#34;)
+            
+        # If count_column is provided, use it directly
+        if count_column:
+            if count_column not in df.columns:
+                raise ValueError(f&#34;Count column &#39;{count_column}&#39; not found in input Excel&#34;)
+                
+            # Group by room type and use provided count
+            result = df.groupby(room_name_column).agg({
+                count_column: &#39;sum&#39;,
+                area_column: &#39;mean&#39;
+            }).reset_index()
+            
+            # Rename columns to match expected output format
+            result.columns = [room_name_column, &#39;Target Count&#39;, &#39;Target Area/Room&#39;]
+            
+        else:
+            # Group by room type and calculate metrics
+            result = df.groupby(room_name_column).agg({
+                area_column: [&#39;count&#39;, &#39;mean&#39;]
+            }).reset_index()
+            
+            # Flatten multi-index columns
+            result.columns = [room_name_column, &#39;Target Count&#39;, &#39;Target Area/Room&#39;]
+        
+        # Round area to 2 decimal places
+        result[&#39;Target Area/Room&#39;] = result[&#39;Target Area/Room&#39;].round(2)
+        
+        # Export to Excel if path provided
+        if output_path:
+            # Create output directory if it doesn&#39;t exist
+            output_dir = os.path.dirname(output_path)
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+                
+            # Use default config if none provided
+            config = layout_config or ExcelLayoutConfig(
+                horizontal_lines=True,
+                vertical_lines=True,
+                bold_headers=True,
+                auto_column_width=True
+            )
+            
+            with pd.ExcelWriter(output_path, engine=&#39;openpyxl&#39;) as writer:
+                result.to_excel(writer, index=False, sheet_name=&#39;Room Program&#39;)
+                worksheet = writer.sheets[&#39;Room Program&#39;]
+                
+                # Apply styling based on config
+                if config.bold_headers:
+                    for cell in worksheet[1]:
+                        cell.font = openpyxl.styles.Font(bold=True)
+                        if config.header_color:
+                            cell.fill = openpyxl.styles.PatternFill(
+                                start_color=config.header_color,
+                                end_color=config.header_color,
+                                fill_type=&#39;solid&#39;
+                            )
+                
+                # Set number format
+                number_format = config.number_format
+                for row in worksheet.iter_rows(min_row=2):
+                    for cell in row:
+                        if isinstance(cell.value, (int, float)):
+                            cell.number_format = number_format
+                
+                # Auto-adjust column widths
+                if config.auto_column_width:
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column = [cell for cell in column]
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) &gt; max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = (max_length + 2)
+                        worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+        
+        return result
+        
+    except Exception as e:
+        print(f&#34;Error creating room program: {str(e)}&#34;)
+        import traceback
+        traceback.print_exc()
+        return pd.DataFrame()</code></pre>
+</details>
+<div class="desc"><p>Convert an Excel file with individual rooms into an aggregated room program format.</p>
+<p>This function takes an Excel file containing individual rooms and aggregates them by room type,
+calculating the count and average area for each type. The output format matches
+what is expected by room_program_comparison().</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>input_excel_path</code></strong></dt>
+<dd>Path to Excel file containing individual rooms.
+Each row should represent one room with at least:
+- A room type/name column (default: "LongName")
+- An area column (default: "NetFloorArea")
+- Optionally a count column if rooms are already grouped</dd>
+<dt><strong><code>room_name_column</code></strong></dt>
+<dd>Column name in input Excel for the room type/name</dd>
+<dt><strong><code>area_column</code></strong></dt>
+<dd>Column name in input Excel for the area value</dd>
+<dt><strong><code>count_column</code></strong></dt>
+<dd>Optional column name for room count. If provided, uses this instead of counting rows.</dd>
+<dt><strong><code>output_path</code></strong></dt>
+<dd>Optional path to save the aggregated room program as Excel</dd>
+<dt><strong><code>layout_config</code></strong></dt>
+<dd>Optional ExcelLayoutConfig for custom formatting</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>Aggregated room program with columns:
+- Room Type (from room_name_column)
+- Target Count (number of rooms of each type)
+- Target Area/Room (average area per room type)</dd>
+</dl>
+<h2 id="example">Example</h2>
+<p>Input Excel format:
+| LongName | Soll m2 | Soll Anzahl | Other columns&hellip; |
+|----------|---------|-------------|------------------|
+| Office
+| 20.0
+| 2
+| &hellip;
+|
+| Meeting
+| 30.0
+| 1
+| &hellip;
+|</p>
+<p>Output DataFrame:
+| Room Type | Target Count | Target Area/Room |
+|-----------|--------------|------------------|
+| Office
+| 2
+| 20.0
+|
+| Meeting
+| 1
+| 30.0
+|</p></div>
+</dd>
+<dt id="qto_buccaneer.reports.export_to_excel"><code class="name flex">
+<span>def <span class="ident">export_to_excel</span></span>(<span>df: pandas.core.frame.DataFrame,<br>output_dir: str,<br>filename_suffix: str = 'metrics',<br>building_name: str | None = None,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def export_to_excel(
+    df: pd.DataFrame, 
+    output_dir: str,
+    filename_suffix: str = &#34;metrics&#34;,
+    building_name: Optional[str] = None,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -&gt; str:
+    &#34;&#34;&#34;Export a DataFrame to a new Excel file with optional styling.
+    
+    Args:
+        df (pd.DataFrame): DataFrame to export
+        output_dir (str): Directory where the Excel file should be saved
+        filename_suffix (str): Suffix to add to the filename (default: &#34;metrics&#34;)
+        building_name (Optional[str]): Name of the building to include in filename
+        layout_config (Optional[ExcelLayoutConfig]): Configuration for Excel styling. 
+            If None, uses default ExcelLayoutConfig settings.
+            
+    Returns:
+        str: The path to the exported Excel file
+    &#34;&#34;&#34;
+    if df.empty:
+        return df
+        
+    # Use default config if none provided
+    if layout_config is None:
+        layout_config = ExcelLayoutConfig()
+    
+    # Create output directory if it doesn&#39;t exist
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+    
+    # Construct filename
+    filename_parts = []
+    if building_name:
+        filename_parts.append(building_name)
+    filename_parts.append(filename_suffix)
+    filename = &#34;_&#34;.join(filename_parts) + &#34;.xlsx&#34;
+    
+    # Create full output path
+    output_path = os.path.join(output_dir, filename)
+    
+    # Create Excel writer with the full path
+    with pd.ExcelWriter(output_path, engine=&#39;openpyxl&#39;) as writer:
+        # Write DataFrame to Excel
+        df.to_excel(writer, index=False, sheet_name=&#39;Sheet1&#39;)
+        
+        # Get workbook and worksheet
+        workbook = writer.book
+        worksheet = writer.sheets[&#39;Sheet1&#39;]
+        
+        # Apply styling based on config
+        if layout_config.bold_headers:
+            for cell in worksheet[1]:
+                cell.font = openpyxl.styles.Font(bold=True)
+                if layout_config.header_color:
+                    cell.fill = openpyxl.styles.PatternFill(
+                        start_color=layout_config.header_color,
+                        end_color=layout_config.header_color,
+                        fill_type=&#39;solid&#39;
+                    )
+        
+        # Set number format
+        number_format = layout_config.number_format
+        for row in worksheet.iter_rows(min_row=2):
+            for cell in row:
+                if isinstance(cell.value, (int, float)):
+                    cell.number_format = number_format
+        
+        # Set row height if specified
+        if layout_config.row_height:
+            for row in worksheet.iter_rows():
+                worksheet.row_dimensions[row[0].row].height = layout_config.row_height
+        
+        # Set column widths
+        if layout_config.auto_column_width:
+            for column in worksheet.columns:
+                max_length = 0
+                column = [cell for cell in column]
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) &gt; max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+        
+        # Apply borders
+        if layout_config.horizontal_lines or layout_config.vertical_lines:
+            for row in worksheet.iter_rows():
+                for cell in row:
+                    border = openpyxl.styles.Border()
+                    if layout_config.horizontal_lines:
+                        border.top = openpyxl.styles.Side(style=&#39;thin&#39;)
+                        border.bottom = openpyxl.styles.Side(style=&#39;thin&#39;)
+                    if layout_config.vertical_lines:
+                        border.left = openpyxl.styles.Side(style=&#39;thin&#39;)
+                        border.right = openpyxl.styles.Side(style=&#39;thin&#39;)
+                    cell.border = border
+        
+        # Apply alternating colors if enabled
+        if layout_config.alternating_colors:
+            for row_idx, row in enumerate(worksheet.iter_rows(min_row=2), start=2):
+                if row_idx % 2 == 0:
+                    for cell in row:
+                        cell.fill = openpyxl.styles.PatternFill(
+                            start_color=&#39;F0F0F0&#39;,
+                            end_color=&#39;F0F0F0&#39;,
+                            fill_type=&#39;solid&#39;
+                        )
+
+    return output_path</code></pre>
+</details>
+<div class="desc"><p>Export a DataFrame to a new Excel file with optional styling.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>df</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
+<dd>DataFrame to export</dd>
+<dt><strong><code>output_dir</code></strong> :&ensp;<code>str</code></dt>
+<dd>Directory where the Excel file should be saved</dd>
+<dt><strong><code>filename_suffix</code></strong> :&ensp;<code>str</code></dt>
+<dd>Suffix to add to the filename (default: "metrics")</dd>
+<dt><strong><code>building_name</code></strong> :&ensp;<code>Optional[str]</code></dt>
+<dd>Name of the building to include in filename</dd>
+<dt><strong><code>layout_config</code></strong> :&ensp;<code>Optional[<a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a>]</code></dt>
+<dd>Configuration for Excel styling.
+If None, uses default ExcelLayoutConfig settings.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The path to the exported Excel file</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.fill_text_line"><code class="name flex">
+<span>def <span class="ident">fill_text_line</span></span>(<span>text: str, width: int = 80, fill_char: str = ' ') ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fill_text_line(text: str, width: int = 80, fill_char: str = &#34; &#34;) -&gt; str:
+    &#34;&#34;&#34;
+    Fill a text line to a specific width with a fill character.
+    
+    Args:
+        text (str): The text to fill
+        width (int): The total width of the line
+        fill_char (str): The character to use for filling
+        
+    Returns:
+        str: The filled text line
+    &#34;&#34;&#34;
+    if not text:
+        return fill_char * width
+        
+    # Split text into words
+    words = text.split()
+    if not words:
+        return fill_char * width
+        
+    # Start with the first word
+    lines = [words[0]]
+    current_length = len(words[0])
+    
+    # Add remaining words
+    for word in words[1:]:
+        # If adding the word would exceed the width, start a new line
+        if current_length + len(word) + 1 &gt; width:
+            lines.append(word)
+            current_length = len(word)
+        else:
+            # Add the word to the current line
+            lines[-1] += &#34; &#34; + word
+            current_length += len(word) + 1
+            
+    # Fill each line to the specified width
+    filled_lines = []
+    for line in lines:
+        # Calculate how many fill characters to add
+        fill_count = width - len(line)
+        if fill_count &gt; 0:
+            filled_line = line + (fill_char * fill_count)
+        else:
+            filled_line = line
+        filled_lines.append(filled_line)
+        
+    return &#34;\n&#34;.join(filled_lines)</code></pre>
+</details>
+<div class="desc"><p>Fill a text line to a specific width with a fill character.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>text</code></strong> :&ensp;<code>str</code></dt>
+<dd>The text to fill</dd>
+<dt><strong><code>width</code></strong> :&ensp;<code>int</code></dt>
+<dd>The total width of the line</dd>
+<dt><strong><code>fill_char</code></strong> :&ensp;<code>str</code></dt>
+<dd>The character to use for filling</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The filled text line</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.format_definition_line"><code class="name flex">
+<span>def <span class="ident">format_definition_line</span></span>(<span>term: str, definition: str, width: int = 80) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def format_definition_line(term: str, definition: str, width: int = 80) -&gt; str:
+    &#34;&#34;&#34;
+    Format a definition line with the term and definition.
+    
+    Args:
+        term (str): The term being defined
+        definition (str): The definition of the term
+        width (int): The total width of the line
+        
+    Returns:
+        str: The formatted definition line
+    &#34;&#34;&#34;
+    # Create the line with term and definition
+    line = f&#34;{term}: {definition}&#34;
+    return fill_text_line(line, width)</code></pre>
+</details>
+<div class="desc"><p>Format a definition line with the term and definition.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>term</code></strong> :&ensp;<code>str</code></dt>
+<dd>The term being defined</dd>
+<dt><strong><code>definition</code></strong> :&ensp;<code>str</code></dt>
+<dd>The definition of the term</dd>
+<dt><strong><code>width</code></strong> :&ensp;<code>int</code></dt>
+<dd>The total width of the line</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The formatted definition line</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.format_disclaimer"><code class="name flex">
+<span>def <span class="ident">format_disclaimer</span></span>(<span>disclaimer: str, width: int = 80) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def format_disclaimer(disclaimer: str, width: int = 80) -&gt; str:
+    &#34;&#34;&#34;
+    Format the disclaimer text.
+    
+    Args:
+        disclaimer (str): The disclaimer text
+        width (int): The total width of the line
+        
+    Returns:
+        str: The formatted disclaimer
+    &#34;&#34;&#34;
+    return fill_text_line(disclaimer, width)</code></pre>
+</details>
+<div class="desc"><p>Format the disclaimer text.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>disclaimer</code></strong> :&ensp;<code>str</code></dt>
+<dd>The disclaimer text</dd>
+<dt><strong><code>width</code></strong> :&ensp;<code>int</code></dt>
+<dd>The total width of the line</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The formatted disclaimer</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.generate_metrics_report"><code class="name flex">
+<span>def <span class="ident">generate_metrics_report</span></span>(<span>metrics_df: pandas.core.frame.DataFrame,<br>building_name: str,<br>plots_dir: str,<br>building_adresse: str | None = None,<br>building_description: str | None = None,<br>output_dir: str = 'reports',<br>template_path: str = 'configs/abstractBIM_report_template.html',<br>style_config: <a title="qto_buccaneer.reports.ReportStyleConfig" href="#qto_buccaneer.reports.ReportStyleConfig">ReportStyleConfig</a> | None = None,<br>report_config_path: str = 'abstractBIM_report_config.yaml') ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def generate_metrics_report(
+    metrics_df: pd.DataFrame,
+    building_name: str,
+    plots_dir: str,
+    building_adresse: Optional[str] = None,
+    building_description: Optional[str] = None,
+    output_dir: str = &#39;reports&#39;,
+    template_path: str = &#39;configs/abstractBIM_report_template.html&#39;,
+    style_config: Optional[ReportStyleConfig] = None,
+    report_config_path: str = &#34;abstractBIM_report_config.yaml&#34;
+) -&gt; str:
+    &#34;&#34;&#34;
+    Generate a metrics report from the provided metrics DataFrame.
+    
+    Args:
+        metrics_df (pd.DataFrame): DataFrame containing the metrics data
+        building_name (str): Name of the project, used for the report title
+        plots_dir (str): Directory containing report plots
+        building_adresse (Optional[str]): Address of the building
+        building_description (Optional[str]): Description of the building
+        output_dir (str): Directory where the final PDF report will be saved
+        template_path (str): Path to the report template HTML file
+        style_config (Optional[ReportStyleConfig]): Configuration for report styling
+        report_config_path (str): Path to the report configuration YAML file
+        
+    Returns:
+        str: Path to the generated PDF report
+    &#34;&#34;&#34;
+    # Get the workspace root directory (two levels up from the current file)
+    workspace_root = Path(__file__).parent.parent.parent
+    
+    # Convert relative paths to absolute paths
+    template_file = str(workspace_root / &#39;src&#39; / &#39;qto_buccaneer&#39; / template_path)
+    plots_dir = str(workspace_root / plots_dir)
+    output_dir = str(workspace_root / output_dir)
+    
+    # Create output directory if it doesn&#39;t exist
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Construct output file path
+    output_file = f&#34;{building_name}_report.pdf&#34;
+    output_path = os.path.join(output_dir, output_file)
+    
+    print(f&#34;Looking for template at: {template_file}&#34;)  # Debug print
+    
+    # Set default image placeholders and formats
+    image_placeholders = [&#39;pic_gfa&#39;, &#39;pic_gv&#39;, &#39;pic_project&#39;, &#39;pic_room_floorplan_scale&#39;]
+    image_formats = [&#39;.png&#39;, &#39;.jpg&#39;, &#39;.jpeg&#39;]
+    
+    # Collect available images
+    images = {}
+    for key in image_placeholders:
+        found = False
+        for ext in image_formats:
+            img_path = os.path.join(plots_dir, f&#34;{key}{ext}&#34;)
+            if os.path.isfile(img_path):
+                images[key] = img_path
+                found = True
+                break
+        if not found:
+            images[key] = None
+    
+    # Verify template file exists
+    if not os.path.isfile(template_file):
+        raise FileNotFoundError(f&#34;Template file not found: {template_file}&#34;)
+    
+    # Load report configuration if provided
+    include_metrics = None
+    if report_config_path:
+        try:
+            with open(report_config_path, &#39;r&#39;) as f:
+                report_config = yaml.safe_load(f)
+                include_metrics = report_config.get(&#39;include_metrics&#39;, [])
+                print(f&#34;Loaded include_metrics from config: {include_metrics}&#34;)  # Debug print
+        except Exception as e:
+            print(f&#34;Warning: Could not load report config: {e}&#34;)
+    
+    # Create metrics table using the build_metrics_table function
+    metrics_table = build_metrics_table(metrics_df, include_metrics=include_metrics)
+    
+    # Render HTML
+    template_dir = os.path.dirname(template_file)
+    template_name = os.path.basename(template_file)
+    env = Environment(loader=FileSystemLoader(template_dir))
+    template = env.get_template(template_name)
+    
+    html_out = template.render(
+        project_name=building_name,
+        file_name=building_name,
+        address=building_adresse or &#34;&#34;,
+        description=building_description or &#34;&#34;,
+        date_time=datetime.now().strftime(&#39;%Y-%m-%d %H:%M&#39;),
+        images=images,
+        logo_path=style_config.logo_path if style_config else None,
+        metrics_table=metrics_table  # Pass the metrics table to the template
+    )
+    
+    # Save HTML
+    html_path = output_path.replace(&#39;.pdf&#39;, &#39;.html&#39;)
+    with open(html_path, &#39;w&#39;) as f:
+        f.write(html_out)
+    
+    # Convert to PDF with styling
+    try:
+        _convert_html_to_pdf(html_out, output_path, style_config)
+    except Exception as e:
+        print(f&#34;Warning: Could not convert to PDF: {e}&#34;)
+        print(f&#34;HTML report saved at: {html_path}&#34;)
+        return html_path
+    
+    return output_path</code></pre>
+</details>
+<div class="desc"><p>Generate a metrics report from the provided metrics DataFrame.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>metrics_df</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
+<dd>DataFrame containing the metrics data</dd>
+<dt><strong><code>building_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the project, used for the report title</dd>
+<dt><strong><code>plots_dir</code></strong> :&ensp;<code>str</code></dt>
+<dd>Directory containing report plots</dd>
+<dt><strong><code>building_adresse</code></strong> :&ensp;<code>Optional[str]</code></dt>
+<dd>Address of the building</dd>
+<dt><strong><code>building_description</code></strong> :&ensp;<code>Optional[str]</code></dt>
+<dd>Description of the building</dd>
+<dt><strong><code>output_dir</code></strong> :&ensp;<code>str</code></dt>
+<dd>Directory where the final PDF report will be saved</dd>
+<dt><strong><code>template_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the report template HTML file</dd>
+<dt><strong><code>style_config</code></strong> :&ensp;<code>Optional[<a title="qto_buccaneer.reports.ReportStyleConfig" href="#qto_buccaneer.reports.ReportStyleConfig">ReportStyleConfig</a>]</code></dt>
+<dd>Configuration for report styling</dd>
+<dt><strong><code>report_config_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the report configuration YAML file</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>Path to the generated PDF report</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.group_rooms_by_name"><code class="name flex">
+<span>def <span class="ident">group_rooms_by_name</span></span>(<span>input_excel_path: str,<br>input_room_name_column: str = 'LongName',<br>input_area_column: str = 'Soll m2',<br>output_room_name_column: str = 'Room Type',<br>output_area_column: str = 'Area',<br>output_count_column: str = 'Soll Anzahl',<br>output_path: str | None = None,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def group_rooms_by_name(
+    input_excel_path: str,
+    input_room_name_column: str = &#34;LongName&#34;,
+    input_area_column: str = &#34;Soll m2&#34;,
+    output_room_name_column: str = &#34;Room Type&#34;,
+    output_area_column: str = &#34;Area&#34;,
+    output_count_column: str = &#34;Soll Anzahl&#34;,
+    output_path: Optional[str] = None,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Group rooms by name and calculate aggregated metrics.
+    
+    This function takes an Excel file containing individual rooms and:
+    1. Groups them by room name
+    2. Counts the number of rooms in each group (minimum 1)
+    3. Sums the area values for each group (NaN for rooms without area)
+    
+    Args:
+        input_excel_path: Path to Excel file containing individual rooms
+        input_room_name_column: Column name for room types/names in input file
+        input_area_column: Column name for area values in input file
+        output_room_name_column: Column name for room types/names in output
+        output_area_column: Column name for area values in output
+        output_count_column: Column name for count values in output
+        output_path: Optional path to save the results as Excel
+        layout_config: Optional ExcelLayoutConfig for custom formatting
+        
+    Returns:
+        pd.DataFrame: Aggregated room program with columns:
+            - {output_room_name_column} (from input_room_name_column)
+            - {output_area_column} (sum of areas for each room type, NaN for rooms without area)
+            - {output_count_column} (number of rooms of each type, minimum 1)
+    &#34;&#34;&#34;
+    try:
+        # Load input Excel file
+        df = pd.read_excel(input_excel_path)
+        
+        if df.empty:
+            raise ValueError(&#34;Input Excel file is empty&#34;)
+            
+        # Verify required columns exist
+        missing_columns = []
+        for col, col_name in [
+            (input_room_name_column, &#34;room name&#34;),
+            (input_area_column, &#34;area&#34;)
+        ]:
+            if col not in df.columns:
+                missing_columns.append(f&#34;{col_name} ({col})&#34;)
+                
+        if missing_columns:
+            raise ValueError(f&#34;Missing required columns in input Excel: {&#39;, &#39;.join(missing_columns)}&#34;)
+            
+        # Group by room name and calculate metrics
+        result = df.groupby(input_room_name_column).agg({
+            input_area_column: lambda x: x.sum() if not x.isna().all() else pd.NA  # Sum areas, return NA if all are NA
+        }).reset_index()
+        
+        # Add count column (count all rooms, minimum 1)
+        result[output_count_column] = df.groupby(input_room_name_column).size().clip(lower=1).values
+        
+        # Rename columns for clarity
+        result.columns = [output_room_name_column, output_area_column, output_count_column]
+        
+        # Export to Excel if path provided
+        if output_path:
+            # Create output directory if it doesn&#39;t exist
+            output_dir = os.path.dirname(output_path)
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+                
+            # Use default config if none provided
+            config = layout_config or ExcelLayoutConfig(
+                horizontal_lines=True,
+                vertical_lines=True,
+                bold_headers=True,
+                auto_column_width=True
+            )
+            
+            with pd.ExcelWriter(output_path, engine=&#39;openpyxl&#39;) as writer:
+                result.to_excel(writer, index=False, sheet_name=&#39;Room Program&#39;)
+                worksheet = writer.sheets[&#39;Room Program&#39;]
+                
+                # Apply styling based on config
+                if config.bold_headers:
+                    for cell in worksheet[1]:
+                        cell.font = openpyxl.styles.Font(bold=True)
+                        if config.header_color:
+                            cell.fill = openpyxl.styles.PatternFill(
+                                start_color=config.header_color,
+                                end_color=config.header_color,
+                                fill_type=&#39;solid&#39;
+                            )
+                
+                # Set number format
+                number_format = config.number_format
+                for row in worksheet.iter_rows(min_row=2):
+                    for cell in row:
+                        if isinstance(cell.value, (int, float)):
+                            cell.number_format = number_format
+                
+                # Auto-adjust column widths
+                if config.auto_column_width:
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column = [cell for cell in column]
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) &gt; max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = (max_length + 2)
+                        worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+        
+        return result
+        
+    except Exception as e:
+        print(f&#34;Error grouping rooms: {str(e)}&#34;)
+        import traceback
+        traceback.print_exc()
+        return pd.DataFrame()</code></pre>
+</details>
+<div class="desc"><p>Group rooms by name and calculate aggregated metrics.</p>
+<p>This function takes an Excel file containing individual rooms and:
+1. Groups them by room name
+2. Counts the number of rooms in each group (minimum 1)
+3. Sums the area values for each group (NaN for rooms without area)</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>input_excel_path</code></strong></dt>
+<dd>Path to Excel file containing individual rooms</dd>
+<dt><strong><code>input_room_name_column</code></strong></dt>
+<dd>Column name for room types/names in input file</dd>
+<dt><strong><code>input_area_column</code></strong></dt>
+<dd>Column name for area values in input file</dd>
+<dt><strong><code>output_room_name_column</code></strong></dt>
+<dd>Column name for room types/names in output</dd>
+<dt><strong><code>output_area_column</code></strong></dt>
+<dd>Column name for area values in output</dd>
+<dt><strong><code>output_count_column</code></strong></dt>
+<dd>Column name for count values in output</dd>
+<dt><strong><code>output_path</code></strong></dt>
+<dd>Optional path to save the results as Excel</dd>
+<dt><strong><code>layout_config</code></strong></dt>
+<dd>Optional ExcelLayoutConfig for custom formatting</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>Aggregated room program with columns:
+- {output_room_name_column} (from input_room_name_column)
+- {output_area_column} (sum of areas for each room type, NaN for rooms without area)
+- {output_count_column} (number of rooms of each type, minimum 1)</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.load_metrics_config"><code class="name flex">
+<span>def <span class="ident">load_metrics_config</span></span>(<span>) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_metrics_config() -&gt; dict:
+    &#34;&#34;&#34;
+    Load metrics configuration from YAML file.
+    
+    Returns:
+        dict: Configuration dictionary
+    &#34;&#34;&#34;
+    # Get the workspace root directory (two levels up from the current file)
+    workspace_root = Path(__file__).parent.parent.parent
+    config_path = workspace_root / &#39;src&#39; / &#39;qto_buccaneer&#39; / &#39;configs&#39; / &#39;abstractBIM_report_config.yaml&#39;
+    print(f&#34;Loading metrics config from: {config_path}&#34;)  # Debug print
+    if not config_path.exists():
+        raise FileNotFoundError(f&#34;Metrics configuration file not found at: {config_path}&#34;)
+    
+    with open(config_path, &#39;r&#39;) as f:
+        config = yaml.safe_load(f)
+        print(f&#34;Loaded config sections: {list(config.keys())}&#34;)  # Debug print
+        return config</code></pre>
+</details>
+<div class="desc"><p>Load metrics configuration from YAML file.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Configuration dictionary</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.project_comparison"><code class="name flex">
+<span>def <span class="ident">project_comparison</span></span>(<span>df: pandas.core.frame.DataFrame,<br>output_path: str | None = None,<br>include_metrics: list[str] | None = None,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def project_comparison(
+    df: pd.DataFrame,
+    output_path: Optional[str] = None,
+    include_metrics: Optional[list[str]] = None,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Create and optionally export a project comparison DataFrame.
+    
+    Args:
+        df (pd.DataFrame): Input DataFrame containing metrics data
+        output_path (Optional[str]): Optional path to save Excel report
+        include_metrics (Optional[list[str]]): List of metric names to include in the comparison
+        layout_config (Optional[ExcelLayoutConfig]): Configuration for Excel layout.
+            If None, default settings will be used.
+            
+    Returns:
+        pd.DataFrame: Comparison table with projects as rows and metrics as columns
+    &#34;&#34;&#34;
+    try:
+        # Create the comparison DataFrame
+        result = _create_project_comparison_df(df, include_metrics)
+        
+        if result.empty:
+            print(&#34;No data was processed - empty result DataFrame&#34;)
+            return pd.DataFrame()
+            
+        # Export to Excel if output path is provided
+        if output_path:
+            result = _export_project_comparison_excel(
+                df=result,
+                output_path=output_path,
+                include_metrics=include_metrics,
+                layout_config=layout_config
+            )
+        
+        return result
+        
+    except Exception as e:
+        print(f&#34;Error creating comparison: {str(e)}&#34;)
+        import traceback
+        traceback.print_exc()  # Print full stack trace
+        return pd.DataFrame()</code></pre>
+</details>
+<div class="desc"><p>Create and optionally export a project comparison DataFrame.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>df</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
+<dd>Input DataFrame containing metrics data</dd>
+<dt><strong><code>output_path</code></strong> :&ensp;<code>Optional[str]</code></dt>
+<dd>Optional path to save Excel report</dd>
+<dt><strong><code>include_metrics</code></strong> :&ensp;<code>Optional[list[str]]</code></dt>
+<dd>List of metric names to include in the comparison</dd>
+<dt><strong><code>layout_config</code></strong> :&ensp;<code>Optional[<a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a>]</code></dt>
+<dd>Configuration for Excel layout.
+If None, default settings will be used.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>Comparison table with projects as rows and metrics as columns</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.render_template_with_filled_text"><code class="name flex">
+<span>def <span class="ident">render_template_with_filled_text</span></span>(<span>template, context)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def render_template_with_filled_text(template, context):
+    &#34;&#34;&#34;
+    Render the template with filled text lines.
+    
+    Args:
+        template: The Jinja2 template
+        context (dict): The context for the template
+        
+    Returns:
+        str: The rendered template with filled text
+    &#34;&#34;&#34;
+    # Format definitions
+    definitions = [
+        (&#34;Gross Floor Area (GFA)&#34;, &#34;The total area of all floors in a building, measured from the exterior walls.&#34;),
+        (&#34;Gross Volume (GV)&#34;, &#34;The total volume of the building, including all enclosed spaces.&#34;),
+        (&#34;Net Floor Area (NFA)&#34;, &#34;The usable area within the building, excluding walls.&#34;),
+        (&#34;Net Volume (NV)&#34;, &#34;The volume of usable space within the building.&#34;),
+        (&#34;Construction Area&#34;, &#34;Difference between GFA and NFA.&#34;),
+        (&#34;Construction Volume&#34;, &#34;Difference between GV and NV.&#34;),
+        (&#34;Facade Area (FA)&#34;, &#34;The total exterior surface area of the building envelope.&#34;),
+        (&#34;Room Type&#34;, &#34;A classification of rooms based on their intended function.&#34;),
+        (&#34;Spatial Relationships&#34;, &#34;Position between elements (e.g., a window relating to a room).&#34;),
+        (&#34;Storey&#34;, &#34;A horizontal division of a building.&#34;),
+        (&#34;Baseplate&#34;, &#34;The foundational slab at the bottom of the building.&#34;),
+        (&#34;Covering Area&#34;, &#34;Area of facade elements like cladding and panels.&#34;)
+    ]
+    
+    # Format each definition
+    formatted_definitions = [
+        format_definition_line(term, definition)
+        for term, definition in definitions
+    ]
+    
+    # Format disclaimer
+    disclaimer = &#34;These quantities were generated automatically using the abstractBIM system. Accuracy depends on input quality. The general terms and conditions of abstract AG apply.&#34;
+    formatted_disclaimer = format_disclaimer(disclaimer)
+    
+    # Add formatted text to context
+    context.update({
+        &#39;formatted_definitions&#39;: formatted_definitions,
+        &#39;formatted_disclaimer&#39;: formatted_disclaimer
+    })
+    
+    return template.render(context)</code></pre>
+</details>
+<div class="desc"><p>Render the template with filled text lines.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>template</code></strong></dt>
+<dd>The Jinja2 template</dd>
+<dt><strong><code>context</code></strong> :&ensp;<code>dict</code></dt>
+<dd>The context for the template</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>The rendered template with filled text</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.reports.room_program_comparison"><code class="name flex">
+<span>def <span class="ident">room_program_comparison</span></span>(<span>target_excel_path: str,<br>ifc_loader,<br>room_name_column: str = 'LongName',<br>target_count_column: str | None = None,<br>target_area_column: str = 'Target Area/Room',<br>ifc_room_name_attribute: str = 'LongName',<br>ifc_area_attribute: str = 'Qto_SpaceBaseQuantities.NetFloorArea',<br>output_path: str | None = None,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def room_program_comparison(
+    target_excel_path: str,
+    ifc_loader,
+    room_name_column: str = &#34;LongName&#34;,
+    target_count_column: Optional[str] = None,
+    target_area_column: str = &#34;Target Area/Room&#34;,
+    ifc_room_name_attribute: str = &#34;LongName&#34;,
+    ifc_area_attribute: str = &#34;Qto_SpaceBaseQuantities.NetFloorArea&#34;,
+    output_path: Optional[str] = None,
+    layout_config: Optional[ExcelLayoutConfig] = None
+) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Create a comparison between target room program and actual IFC spaces.
+    
+    The function expects a target room program in Excel format with the following structure:
+    - One row per room type (e.g., &#34;Office&#34;, &#34;Meeting Room&#34;, &#34;Bathroom&#34;)
+    - Columns for room type name and target area per room
+    - Optionally a column for target count, or it will be calculated from room names
+    
+    Args:
+        target_excel_path: Path to Excel file containing target room program.
+            Expected format: One row per room type with columns for name and area.
+        ifc_loader: Instance of IfcLoader with loaded IFC model
+        room_name_column: Column name in target Excel for room types (default: &#34;LongName&#34;)
+        target_count_column: Optional column name for target room count. If None, will be calculated.
+        target_area_column: Column name for target area per room (default: &#34;Target Area/Room&#34;)
+        ifc_room_name_attribute: Attribute name in IFC for room names (default: &#34;LongName&#34;)
+        ifc_area_attribute: Attribute name in IFC for area values (default: &#34;Qto_SpaceBaseQuantities.NetFloorArea&#34;)
+        output_path: Optional path to save Excel report
+        layout_config: Optional ExcelLayoutConfig for custom formatting
+        
+    Returns:
+        pd.DataFrame: Comparison table with the following metrics for each room type:
+            - Target Count: Number of rooms planned (calculated if not provided)
+            - Target Area/Room: Planned area per room
+            - Target Total Area: Total planned area (count × area/room)
+            - Actual Count: Number of rooms in IFC
+            - Actual Total Area: Total area in IFC
+            - Average Area/Room: Actual average area per room
+            - Count Difference: Actual - Target count
+            - Area Difference: Actual - Target total area
+            - Percentage differences for both count and area
+    &#34;&#34;&#34;
+    # Load target room program
+    try:
+        target_df = pd.read_excel(target_excel_path)
+        print(f&#34;Loaded target Excel file. Columns found: {target_df.columns.tolist()}&#34;)  # Debug print
+        
+        # Verify required columns exist
+        missing_columns = []
+        for col, col_name in [
+            (room_name_column, &#34;room name&#34;),
+            (target_area_column, &#34;target area&#34;)
+        ]:
+            if col not in target_df.columns:
+                missing_columns.append(f&#34;{col_name} ({col})&#34;)
+        
+        if missing_columns:
+            raise ValueError(f&#34;Missing required columns in target Excel: {&#39;, &#39;.join(missing_columns)}&#34;)
+            
+        # If no target_count_column provided, calculate counts from room names
+        if target_count_column is None:
+            print(&#34;No target count column provided - calculating counts from room names&#34;)
+            # Group by room name and count occurrences
+            count_df = target_df.groupby(room_name_column).size().reset_index(name=&#39;Target Count&#39;)
+            # Merge with original DataFrame
+            target_df = pd.merge(target_df, count_df, on=room_name_column)
+            target_count_column = &#39;Target Count&#39;
+        elif target_count_column not in target_df.columns:
+            raise ValueError(f&#34;Target count column &#39;{target_count_column}&#39; not found in Excel&#34;)
+            
+    except Exception as e:
+        print(f&#34;Error loading target Excel file: {str(e)}&#34;)
+        return pd.DataFrame()
+        
+    # Get actual spaces from IFC
+    try:
+        spaces_df = ifc_loader.get_space_information()
+        print(f&#34;Loaded spaces from IFC. Found {len(spaces_df)} spaces.&#34;)  # Debug print
+        
+        if spaces_df.empty:
+            raise ValueError(&#34;No spaces found in IFC model&#34;)
+            
+        # Verify required IFC data columns
+        if ifc_room_name_attribute not in spaces_df.columns:
+            raise ValueError(f&#34;IFC spaces missing &#39;{ifc_room_name_attribute}&#39; attribute&#34;)
+        if ifc_area_attribute not in spaces_df.columns:
+            raise ValueError(f&#34;IFC spaces missing &#39;{ifc_area_attribute}&#39; quantity&#34;)
+            
+    except Exception as e:
+        print(f&#34;Error processing IFC spaces: {str(e)}&#34;)
+        return pd.DataFrame()
+    
+    # Initialize result DataFrame
+    result = pd.DataFrame()
+    
+    try:
+        # Process each room type from target program
+        data = []
+        for _, row in target_df.iterrows():
+            room_name = row[room_name_column]
+            target_count = float(row[target_count_column])  # Convert to float for safety
+            target_area = float(row[target_area_column])
+            
+            print(f&#34;Processing room type: {room_name}&#34;)  # Debug print
+            
+            # Get actual spaces matching this room name
+            actual_spaces = spaces_df[spaces_df[ifc_room_name_attribute] == room_name]
+            actual_count = len(actual_spaces)
+            
+            # Sum up actual areas
+            actual_total_area = actual_spaces[ifc_area_attribute].sum()
+            
+            print(f&#34;Found {actual_count} spaces with total area {actual_total_area}&#34;)  # Debug print
+            
+            # Calculate metrics
+            target_total_area = target_count * target_area
+            avg_area_per_room = actual_total_area / actual_count if actual_count &gt; 0 else 0
+            
+            count_diff = actual_count - target_count
+            count_diff_pct = (count_diff / target_count * 100) if target_count &gt; 0 else 0
+            
+            area_diff = actual_total_area - target_total_area
+            area_diff_pct = (area_diff / target_total_area * 100) if target_total_area &gt; 0 else 0
+            
+            data.append({
+                &#39;Room Type&#39;: room_name,
+                &#39;Target Count&#39;: target_count,
+                &#39;Target sqm/room&#39;: target_area,
+                &#39;Target Total sqm&#39;: target_total_area,
+                &#39;Actual Count&#39;: actual_count,
+                &#39;Actual Total sqm&#39;: actual_total_area,
+                &#39;Avg sqm/room&#39;: avg_area_per_room,
+                &#39;Count Diff&#39;: count_diff,
+                &#39;% Count Diff&#39;: count_diff_pct,
+                &#39;Area Diff&#39;: area_diff,
+                &#39;% Area Diff&#39;: area_diff_pct
+            })
+            
+        result = pd.DataFrame(data)
+        
+        if result.empty:
+            print(&#34;No data was processed - empty result DataFrame&#34;)
+            return pd.DataFrame()
+            
+        # Add totals row
+        totals = {
+            &#39;Room Type&#39;: &#39;TOTAL&#39;,
+            &#39;Target Count&#39;: result[&#39;Target Count&#39;].sum(),
+            &#39;Target Total sqm&#39;: result[&#39;Target Total sqm&#39;].sum(),
+            &#39;Actual Count&#39;: result[&#39;Actual Count&#39;].sum(),
+            &#39;Actual Total sqm&#39;: result[&#39;Actual Total sqm&#39;].sum(),
+            &#39;Count Diff&#39;: result[&#39;Count Diff&#39;].sum(),
+            &#39;Area Diff&#39;: result[&#39;Area Diff&#39;].sum()
+        }
+        
+        # Calculate weighted averages for percentages
+        total_target_count = result[&#39;Target Count&#39;].sum()
+        total_target_area = result[&#39;Target Total sqm&#39;].sum()
+        
+        if total_target_count &gt; 0:
+            totals[&#39;% Count Diff&#39;] = (totals[&#39;Count Diff&#39;] / total_target_count * 100)
+        if total_target_area &gt; 0:
+            totals[&#39;% Area Diff&#39;] = (totals[&#39;Area Diff&#39;] / total_target_area * 100)
+            
+        # Calculate overall average sqm/room
+        if totals[&#39;Actual Count&#39;] &gt; 0:
+            totals[&#39;Avg sqm/room&#39;] = totals[&#39;Actual Total sqm&#39;] / totals[&#39;Actual Count&#39;]
+        else:
+            totals[&#39;Avg sqm/room&#39;] = 0
+            
+        totals[&#39;Target sqm/room&#39;] = totals[&#39;Target Total sqm&#39;] / totals[&#39;Target Count&#39;] if totals[&#39;Target Count&#39;] &gt; 0 else 0
+        
+        # Append totals row
+        result = pd.concat([result, pd.DataFrame([totals])], ignore_index=True)
+        
+        # Export to Excel if output path is provided
+        if output_path:
+            result = _export_room_program_comparison(
+                df=result,
+                output_path=output_path,
+                layout_config=layout_config
+            )
+        
+        return result
+        
+    except Exception as e:
+        print(f&#34;Error creating comparison: {str(e)}&#34;)
+        import traceback
+        traceback.print_exc()  # Print full stack trace
+        return pd.DataFrame()</code></pre>
+</details>
+<div class="desc"><p>Create a comparison between target room program and actual IFC spaces.</p>
+<p>The function expects a target room program in Excel format with the following structure:
+- One row per room type (e.g., "Office", "Meeting Room", "Bathroom")
+- Columns for room type name and target area per room
+- Optionally a column for target count, or it will be calculated from room names</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>target_excel_path</code></strong></dt>
+<dd>Path to Excel file containing target room program.
+Expected format: One row per room type with columns for name and area.</dd>
+<dt><strong><code>ifc_loader</code></strong></dt>
+<dd>Instance of IfcLoader with loaded IFC model</dd>
+<dt><strong><code>room_name_column</code></strong></dt>
+<dd>Column name in target Excel for room types (default: "LongName")</dd>
+<dt><strong><code>target_count_column</code></strong></dt>
+<dd>Optional column name for target room count. If None, will be calculated.</dd>
+<dt><strong><code>target_area_column</code></strong></dt>
+<dd>Column name for target area per room (default: "Target Area/Room")</dd>
+<dt><strong><code>ifc_room_name_attribute</code></strong></dt>
+<dd>Attribute name in IFC for room names (default: "LongName")</dd>
+<dt><strong><code>ifc_area_attribute</code></strong></dt>
+<dd>Attribute name in IFC for area values (default: "Qto_SpaceBaseQuantities.NetFloorArea")</dd>
+<dt><strong><code>output_path</code></strong></dt>
+<dd>Optional path to save Excel report</dd>
+<dt><strong><code>layout_config</code></strong></dt>
+<dd>Optional ExcelLayoutConfig for custom formatting</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>Comparison table with the following metrics for each room type:
+- Target Count: Number of rooms planned (calculated if not provided)
+- Target Area/Room: Planned area per room
+- Target Total Area: Total planned area (count × area/room)
+- Actual Count: Number of rooms in IFC
+- Actual Total Area: Total area in IFC
+- Average Area/Room: Actual average area per room
+- Count Difference: Actual - Target count
+- Area Difference: Actual - Target total area
+- Percentage differences for both count and area</dd>
+</dl></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="qto_buccaneer.reports.ExcelLayoutConfig"><code class="flex name class">
+<span>class <span class="ident">ExcelLayoutConfig</span></span>
+<span>(</span><span>horizontal_lines: bool = True,<br>vertical_lines: bool = False,<br>bold_headers: bool = True,<br>auto_column_width: bool = True,<br>row_height: float | None = None,<br>alternating_colors: bool = False,<br>number_format: str = '#,##0.00',<br>header_color: str = 'E0E0E0')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class ExcelLayoutConfig:
+    &#34;&#34;&#34;Configuration for Excel export layout.&#34;&#34;&#34;
+    horizontal_lines: bool = True
+    vertical_lines: bool = False
+    bold_headers: bool = True
+    auto_column_width: bool = True
+    row_height: Optional[float] = None
+    alternating_colors: bool = False
+    number_format: str = &#39;#,##0.00&#39;
+    header_color: str = &#39;E0E0E0&#39;  # Light gray
+    
+    def to_dict(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Convert config to dictionary.&#34;&#34;&#34;
+        return {k: v for k, v in self.__dict__.items()}</code></pre>
+</details>
+<div class="desc"><p>Configuration for Excel export layout.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="qto_buccaneer.reports.ExcelLayoutConfig.alternating_colors"><code class="name">var <span class="ident">alternating_colors</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ExcelLayoutConfig.auto_column_width"><code class="name">var <span class="ident">auto_column_width</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ExcelLayoutConfig.bold_headers"><code class="name">var <span class="ident">bold_headers</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ExcelLayoutConfig.header_color"><code class="name">var <span class="ident">header_color</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ExcelLayoutConfig.horizontal_lines"><code class="name">var <span class="ident">horizontal_lines</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ExcelLayoutConfig.number_format"><code class="name">var <span class="ident">number_format</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ExcelLayoutConfig.row_height"><code class="name">var <span class="ident">row_height</span> : float | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ExcelLayoutConfig.vertical_lines"><code class="name">var <span class="ident">vertical_lines</span> : bool</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="qto_buccaneer.reports.ExcelLayoutConfig.to_dict"><code class="name flex">
+<span>def <span class="ident">to_dict</span></span>(<span>self) ‑> Dict[str, Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_dict(self) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Convert config to dictionary.&#34;&#34;&#34;
+    return {k: v for k, v in self.__dict__.items()}</code></pre>
+</details>
+<div class="desc"><p>Convert config to dictionary.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig"><code class="flex name class">
+<span>class <span class="ident">ReportStyleConfig</span></span>
+<span>(</span><span>logo_path: str | None = None,<br>footer_text: str = 'Generated by QTO Buccaneer',<br>page_size: str = 'A4',<br>margin_top: str = '1.5cm',<br>margin_bottom: str = '1.5cm',<br>margin_left: str = '2cm',<br>margin_right: str = '1.5cm',<br>font_family: str = 'Arial',<br>font_size: str = '10pt',<br>header_height: str = '2cm',<br>footer_height: str = '2cm')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class ReportStyleConfig:
+    &#34;&#34;&#34;Configuration for report styling.&#34;&#34;&#34;
+    logo_path: Optional[str] = None
+    footer_text: str = &#34;Generated by QTO Buccaneer&#34;
+    page_size: str = &#34;A4&#34;
+    margin_top: str = &#34;1.5cm&#34;
+    margin_bottom: str = &#34;1.5cm&#34;
+    margin_left: str = &#34;2cm&#34;
+    margin_right: str = &#34;1.5cm&#34;
+    font_family: str = &#34;Arial&#34;
+    font_size: str = &#34;10pt&#34;
+    header_height: str = &#34;2cm&#34;
+    footer_height: str = &#34;2cm&#34;
+    
+    def to_css(self) -&gt; str:
+        &#34;&#34;&#34;Convert config to CSS string.&#34;&#34;&#34;
+        return f&#34;&#34;&#34;
+            @page {{
+                size: {self.page_size};
+                margin-top: {self.margin_top};
+                margin-bottom: {self.margin_bottom};
+                margin-left: {self.margin_left};
+                margin-right: {self.margin_right};
+                
+                @top-center {{
+                    content: string(title);
+                    font-family: {self.font_family};
+                    font-size: {self.font_size};
+                }}
+                
+                @bottom-left {{
+                    content: string(project-name);
+                    font-family: {self.font_family};
+                    font-size: {self.font_size};
+                }}
+                
+                @bottom-right {{
+                    content: &#34;Page &#34; counter(page) &#34; of &#34; counter(pages);
+                    font-family: {self.font_family};
+                    font-size: {self.font_size};
+                }}
+            }}
+            
+            body {{
+                font-family: {self.font_family};
+                font-size: {self.font_size};
+                margin: 0;  /* Reset body margin to ensure page margins are used */
+            }}
+            
+            .header {{
+                height: {self.header_height};
+            }}
+            
+            .footer {{
+                height: {self.footer_height};
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 1em;
+            }}
+            
+            .footer-left {{
+                font-weight: bold;
+            }}
+            
+            .logo {{
+                max-height: 2cm;
+                max-width: 5cm;
+            }}
+            
+            string(project-name) {{
+                content: &#34;{self.footer_text}&#34;;
+            }}
+        &#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>Configuration for report styling.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.font_family"><code class="name">var <span class="ident">font_family</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.font_size"><code class="name">var <span class="ident">font_size</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.footer_height"><code class="name">var <span class="ident">footer_height</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.footer_text"><code class="name">var <span class="ident">footer_text</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.header_height"><code class="name">var <span class="ident">header_height</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.logo_path"><code class="name">var <span class="ident">logo_path</span> : str | None</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.margin_bottom"><code class="name">var <span class="ident">margin_bottom</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.margin_left"><code class="name">var <span class="ident">margin_left</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.margin_right"><code class="name">var <span class="ident">margin_right</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.margin_top"><code class="name">var <span class="ident">margin_top</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.page_size"><code class="name">var <span class="ident">page_size</span> : str</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="qto_buccaneer.reports.ReportStyleConfig.to_css"><code class="name flex">
+<span>def <span class="ident">to_css</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_css(self) -&gt; str:
+    &#34;&#34;&#34;Convert config to CSS string.&#34;&#34;&#34;
+    return f&#34;&#34;&#34;
+        @page {{
+            size: {self.page_size};
+            margin-top: {self.margin_top};
+            margin-bottom: {self.margin_bottom};
+            margin-left: {self.margin_left};
+            margin-right: {self.margin_right};
+            
+            @top-center {{
+                content: string(title);
+                font-family: {self.font_family};
+                font-size: {self.font_size};
+            }}
+            
+            @bottom-left {{
+                content: string(project-name);
+                font-family: {self.font_family};
+                font-size: {self.font_size};
+            }}
+            
+            @bottom-right {{
+                content: &#34;Page &#34; counter(page) &#34; of &#34; counter(pages);
+                font-family: {self.font_family};
+                font-size: {self.font_size};
+            }}
+        }}
+        
+        body {{
+            font-family: {self.font_family};
+            font-size: {self.font_size};
+            margin: 0;  /* Reset body margin to ensure page margins are used */
+        }}
+        
+        .header {{
+            height: {self.header_height};
+        }}
+        
+        .footer {{
+            height: {self.footer_height};
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1em;
+        }}
+        
+        .footer-left {{
+            font-weight: bold;
+        }}
+        
+        .logo {{
+            max-height: 2cm;
+            max-width: 5cm;
+        }}
+        
+        string(project-name) {{
+            content: &#34;{self.footer_text}&#34;;
+        }}
+    &#34;&#34;&#34;</code></pre>
+</details>
+<div class="desc"><p>Convert config to CSS string.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="qto_buccaneer.reports.RoomComparisonResult"><code class="flex name class">
+<span>class <span class="ident">RoomComparisonResult</span></span>
+<span>(</span><span>detailed_df: pandas.core.frame.DataFrame, ifc_rooms: set, excel_rooms: set)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RoomComparisonResult:
+    &#34;&#34;&#34;Class to hold and format room comparison results.&#34;&#34;&#34;
+    
+    def __init__(self, detailed_df: pd.DataFrame, ifc_rooms: set, excel_rooms: set):
+        self.detailed_df = detailed_df
+        self.ifc_rooms = ifc_rooms
+        self.excel_rooms = excel_rooms
+        
+        # Calculate summary statistics
+        self.total_target_rooms = len(excel_rooms)
+        self.total_ifc_rooms = len(ifc_rooms)
+        self.matching_rooms = len(ifc_rooms.intersection(excel_rooms))
+        self.missing_rooms = list(excel_rooms - ifc_rooms)
+        self.extra_rooms = list(ifc_rooms - excel_rooms)
+        
+        # Determine status
+        if not self.missing_rooms and not self.extra_rooms:
+            self.status = &#34;passed&#34;
+        elif self.missing_rooms:
+            self.status = &#34;failed-rooms missing in ifc&#34;
+        else:
+            self.status = &#34;failed-rooms added in ifc&#34;
+    
+    def to_yaml(self) -&gt; dict:
+        &#34;&#34;&#34;Generate YAML summary of the comparison.&#34;&#34;&#34;
+        summary = {
+            &#34;type&#34;: &#34;room_comparison&#34;,
+            &#34;status&#34;: self.status,
+            &#34;summary&#34;: f&#34;{self.matching_rooms} of {self.total_target_rooms} rooms found in IFC&#34;,
+            &#34;target&#34;: {
+                &#34;total_rooms&#34;: self.total_target_rooms,
+                &#34;found_rooms&#34;: self.matching_rooms,
+                &#34;missing_rooms&#34;: len(self.missing_rooms)
+            },
+            &#34;ifc&#34;: {
+                &#34;total_rooms&#34;: self.total_ifc_rooms,
+                &#34;matching_rooms&#34;: self.matching_rooms,
+                &#34;extra_rooms&#34;: len(self.extra_rooms)
+            }
+        }
+        
+        # Add issue details if there are any
+        if self.status != &#34;passed&#34;:
+            summary[&#34;issues&#34;] = {}
+            if self.missing_rooms:
+                summary[&#34;issues&#34;][&#34;missing_rooms&#34;] = [
+                    {&#34;name&#34;: room} for room in sorted(self.missing_rooms)
+                ]
+            if self.extra_rooms:
+                # Get GlobalIds for extra rooms from the detailed DataFrame
+                extra_rooms_data = []
+                for room in sorted(self.extra_rooms):
+                    room_data = self.detailed_df[
+                        (self.detailed_df[&#34;Room Name&#34;].str.lower() == room) &amp; 
+                        (self.detailed_df[&#34;Status&#34;] == &#34;Only in IFC&#34;)
+                    ]
+                    if not room_data.empty:
+                        extra_rooms_data.append({
+                            &#34;global_id&#34;: room_data[&#34;GlobalId&#34;].iloc[0],
+                            &#34;LongName&#34;: room,
+                        })
+                    else:
+                        extra_rooms_data.append({&#34;name&#34;: room})
+                summary[&#34;issues&#34;][&#34;extra_rooms&#34;] = extra_rooms_data
+        
+        return summary
+    
+    def to_dict(self) -&gt; dict:
+        &#34;&#34;&#34;Get all comparison data as a dictionary.&#34;&#34;&#34;
+        return {
+            &#34;detailed_df&#34;: self.detailed_df.to_dict(),
+            &#34;summary&#34;: self.to_yaml(),
+            &#34;status&#34;: self.status,
+            &#34;statistics&#34;: {
+                &#34;total_target_rooms&#34;: self.total_target_rooms,
+                &#34;total_ifc_rooms&#34;: self.total_ifc_rooms,
+                &#34;matching_rooms&#34;: self.matching_rooms,
+                &#34;missing_rooms_count&#34;: len(self.missing_rooms),
+                &#34;extra_rooms_count&#34;: len(self.extra_rooms)
+            }
+        }
+    
+    def to_excel(self, output_path: str, layout_config: Optional[ExcelLayoutConfig] = None) -&gt; None:
+        &#34;&#34;&#34;Export detailed comparison to Excel with formatting.&#34;&#34;&#34;
+        if self.detailed_df.empty:
+            print(&#34;Warning: No data to export to Excel!&#34;)
+            return
+            
+        # Make sure the output directory exists
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            
+        try:
+            # Use provided config or create default one
+            config = layout_config or ExcelLayoutConfig(
+                horizontal_lines=True,
+                vertical_lines=True,
+                bold_headers=True,
+                auto_column_width=True
+            )
+            
+            with pd.ExcelWriter(output_path, engine=&#39;openpyxl&#39;) as writer:
+                self.detailed_df.to_excel(writer, index=False, sheet_name=&#39;Room Name Comparison&#39;)
+                worksheet = writer.sheets[&#39;Room Name Comparison&#39;]
+                
+                # Apply styling based on config
+                if config.bold_headers:
+                    for cell in worksheet[1]:
+                        cell.font = openpyxl.styles.Font(bold=True)
+                        if config.header_color:
+                            cell.fill = openpyxl.styles.PatternFill(
+                                start_color=config.header_color,
+                                end_color=config.header_color,
+                                fill_type=&#39;solid&#39;
+                            )
+                
+                # Auto-adjust column widths
+                if config.auto_column_width:
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column = [cell for cell in column]
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) &gt; max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = (max_length + 2)
+                        worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+                        
+        except Exception as e:
+            print(f&#34;Error exporting to Excel: {str(e)}&#34;)
+            import traceback
+            traceback.print_exc()</code></pre>
+</details>
+<div class="desc"><p>Class to hold and format room comparison results.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="qto_buccaneer.reports.RoomComparisonResult.to_dict"><code class="name flex">
+<span>def <span class="ident">to_dict</span></span>(<span>self) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_dict(self) -&gt; dict:
+    &#34;&#34;&#34;Get all comparison data as a dictionary.&#34;&#34;&#34;
+    return {
+        &#34;detailed_df&#34;: self.detailed_df.to_dict(),
+        &#34;summary&#34;: self.to_yaml(),
+        &#34;status&#34;: self.status,
+        &#34;statistics&#34;: {
+            &#34;total_target_rooms&#34;: self.total_target_rooms,
+            &#34;total_ifc_rooms&#34;: self.total_ifc_rooms,
+            &#34;matching_rooms&#34;: self.matching_rooms,
+            &#34;missing_rooms_count&#34;: len(self.missing_rooms),
+            &#34;extra_rooms_count&#34;: len(self.extra_rooms)
+        }
+    }</code></pre>
+</details>
+<div class="desc"><p>Get all comparison data as a dictionary.</p></div>
+</dd>
+<dt id="qto_buccaneer.reports.RoomComparisonResult.to_excel"><code class="name flex">
+<span>def <span class="ident">to_excel</span></span>(<span>self,<br>output_path: str,<br>layout_config: <a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a> | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_excel(self, output_path: str, layout_config: Optional[ExcelLayoutConfig] = None) -&gt; None:
+    &#34;&#34;&#34;Export detailed comparison to Excel with formatting.&#34;&#34;&#34;
+    if self.detailed_df.empty:
+        print(&#34;Warning: No data to export to Excel!&#34;)
+        return
+        
+    # Make sure the output directory exists
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+        
+    try:
+        # Use provided config or create default one
+        config = layout_config or ExcelLayoutConfig(
+            horizontal_lines=True,
+            vertical_lines=True,
+            bold_headers=True,
+            auto_column_width=True
+        )
+        
+        with pd.ExcelWriter(output_path, engine=&#39;openpyxl&#39;) as writer:
+            self.detailed_df.to_excel(writer, index=False, sheet_name=&#39;Room Name Comparison&#39;)
+            worksheet = writer.sheets[&#39;Room Name Comparison&#39;]
+            
+            # Apply styling based on config
+            if config.bold_headers:
+                for cell in worksheet[1]:
+                    cell.font = openpyxl.styles.Font(bold=True)
+                    if config.header_color:
+                        cell.fill = openpyxl.styles.PatternFill(
+                            start_color=config.header_color,
+                            end_color=config.header_color,
+                            fill_type=&#39;solid&#39;
+                        )
+            
+            # Auto-adjust column widths
+            if config.auto_column_width:
+                for column in worksheet.columns:
+                    max_length = 0
+                    column = [cell for cell in column]
+                    for cell in column:
+                        try:
+                            if len(str(cell.value)) &gt; max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    adjusted_width = (max_length + 2)
+                    worksheet.column_dimensions[get_column_letter(column[0].column)].width = adjusted_width
+                    
+    except Exception as e:
+        print(f&#34;Error exporting to Excel: {str(e)}&#34;)
+        import traceback
+        traceback.print_exc()</code></pre>
+</details>
+<div class="desc"><p>Export detailed comparison to Excel with formatting.</p></div>
+</dd>
+<dt id="qto_buccaneer.reports.RoomComparisonResult.to_yaml"><code class="name flex">
+<span>def <span class="ident">to_yaml</span></span>(<span>self) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_yaml(self) -&gt; dict:
+    &#34;&#34;&#34;Generate YAML summary of the comparison.&#34;&#34;&#34;
+    summary = {
+        &#34;type&#34;: &#34;room_comparison&#34;,
+        &#34;status&#34;: self.status,
+        &#34;summary&#34;: f&#34;{self.matching_rooms} of {self.total_target_rooms} rooms found in IFC&#34;,
+        &#34;target&#34;: {
+            &#34;total_rooms&#34;: self.total_target_rooms,
+            &#34;found_rooms&#34;: self.matching_rooms,
+            &#34;missing_rooms&#34;: len(self.missing_rooms)
+        },
+        &#34;ifc&#34;: {
+            &#34;total_rooms&#34;: self.total_ifc_rooms,
+            &#34;matching_rooms&#34;: self.matching_rooms,
+            &#34;extra_rooms&#34;: len(self.extra_rooms)
+        }
+    }
+    
+    # Add issue details if there are any
+    if self.status != &#34;passed&#34;:
+        summary[&#34;issues&#34;] = {}
+        if self.missing_rooms:
+            summary[&#34;issues&#34;][&#34;missing_rooms&#34;] = [
+                {&#34;name&#34;: room} for room in sorted(self.missing_rooms)
+            ]
+        if self.extra_rooms:
+            # Get GlobalIds for extra rooms from the detailed DataFrame
+            extra_rooms_data = []
+            for room in sorted(self.extra_rooms):
+                room_data = self.detailed_df[
+                    (self.detailed_df[&#34;Room Name&#34;].str.lower() == room) &amp; 
+                    (self.detailed_df[&#34;Status&#34;] == &#34;Only in IFC&#34;)
+                ]
+                if not room_data.empty:
+                    extra_rooms_data.append({
+                        &#34;global_id&#34;: room_data[&#34;GlobalId&#34;].iloc[0],
+                        &#34;LongName&#34;: room,
+                    })
+                else:
+                    extra_rooms_data.append({&#34;name&#34;: room})
+            summary[&#34;issues&#34;][&#34;extra_rooms&#34;] = extra_rooms_data
+    
+    return summary</code></pre>
+</details>
+<div class="desc"><p>Generate YAML summary of the comparison.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="qto_buccaneer" href="index.html">qto_buccaneer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="qto_buccaneer.reports.build_metrics_table" href="#qto_buccaneer.reports.build_metrics_table">build_metrics_table</a></code></li>
+<li><code><a title="qto_buccaneer.reports.compare_room_names" href="#qto_buccaneer.reports.compare_room_names">compare_room_names</a></code></li>
+<li><code><a title="qto_buccaneer.reports.create_room_program_from_excel" href="#qto_buccaneer.reports.create_room_program_from_excel">create_room_program_from_excel</a></code></li>
+<li><code><a title="qto_buccaneer.reports.export_to_excel" href="#qto_buccaneer.reports.export_to_excel">export_to_excel</a></code></li>
+<li><code><a title="qto_buccaneer.reports.fill_text_line" href="#qto_buccaneer.reports.fill_text_line">fill_text_line</a></code></li>
+<li><code><a title="qto_buccaneer.reports.format_definition_line" href="#qto_buccaneer.reports.format_definition_line">format_definition_line</a></code></li>
+<li><code><a title="qto_buccaneer.reports.format_disclaimer" href="#qto_buccaneer.reports.format_disclaimer">format_disclaimer</a></code></li>
+<li><code><a title="qto_buccaneer.reports.generate_metrics_report" href="#qto_buccaneer.reports.generate_metrics_report">generate_metrics_report</a></code></li>
+<li><code><a title="qto_buccaneer.reports.group_rooms_by_name" href="#qto_buccaneer.reports.group_rooms_by_name">group_rooms_by_name</a></code></li>
+<li><code><a title="qto_buccaneer.reports.load_metrics_config" href="#qto_buccaneer.reports.load_metrics_config">load_metrics_config</a></code></li>
+<li><code><a title="qto_buccaneer.reports.project_comparison" href="#qto_buccaneer.reports.project_comparison">project_comparison</a></code></li>
+<li><code><a title="qto_buccaneer.reports.render_template_with_filled_text" href="#qto_buccaneer.reports.render_template_with_filled_text">render_template_with_filled_text</a></code></li>
+<li><code><a title="qto_buccaneer.reports.room_program_comparison" href="#qto_buccaneer.reports.room_program_comparison">room_program_comparison</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="qto_buccaneer.reports.ExcelLayoutConfig" href="#qto_buccaneer.reports.ExcelLayoutConfig">ExcelLayoutConfig</a></code></h4>
+<ul class="two-column">
+<li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.alternating_colors" href="#qto_buccaneer.reports.ExcelLayoutConfig.alternating_colors">alternating_colors</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.auto_column_width" href="#qto_buccaneer.reports.ExcelLayoutConfig.auto_column_width">auto_column_width</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.bold_headers" href="#qto_buccaneer.reports.ExcelLayoutConfig.bold_headers">bold_headers</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.header_color" href="#qto_buccaneer.reports.ExcelLayoutConfig.header_color">header_color</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.horizontal_lines" href="#qto_buccaneer.reports.ExcelLayoutConfig.horizontal_lines">horizontal_lines</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.number_format" href="#qto_buccaneer.reports.ExcelLayoutConfig.number_format">number_format</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.row_height" href="#qto_buccaneer.reports.ExcelLayoutConfig.row_height">row_height</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.to_dict" href="#qto_buccaneer.reports.ExcelLayoutConfig.to_dict">to_dict</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ExcelLayoutConfig.vertical_lines" href="#qto_buccaneer.reports.ExcelLayoutConfig.vertical_lines">vertical_lines</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="qto_buccaneer.reports.ReportStyleConfig" href="#qto_buccaneer.reports.ReportStyleConfig">ReportStyleConfig</a></code></h4>
+<ul class="two-column">
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.font_family" href="#qto_buccaneer.reports.ReportStyleConfig.font_family">font_family</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.font_size" href="#qto_buccaneer.reports.ReportStyleConfig.font_size">font_size</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.footer_height" href="#qto_buccaneer.reports.ReportStyleConfig.footer_height">footer_height</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.footer_text" href="#qto_buccaneer.reports.ReportStyleConfig.footer_text">footer_text</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.header_height" href="#qto_buccaneer.reports.ReportStyleConfig.header_height">header_height</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.logo_path" href="#qto_buccaneer.reports.ReportStyleConfig.logo_path">logo_path</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.margin_bottom" href="#qto_buccaneer.reports.ReportStyleConfig.margin_bottom">margin_bottom</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.margin_left" href="#qto_buccaneer.reports.ReportStyleConfig.margin_left">margin_left</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.margin_right" href="#qto_buccaneer.reports.ReportStyleConfig.margin_right">margin_right</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.margin_top" href="#qto_buccaneer.reports.ReportStyleConfig.margin_top">margin_top</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.page_size" href="#qto_buccaneer.reports.ReportStyleConfig.page_size">page_size</a></code></li>
+<li><code><a title="qto_buccaneer.reports.ReportStyleConfig.to_css" href="#qto_buccaneer.reports.ReportStyleConfig.to_css">to_css</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="qto_buccaneer.reports.RoomComparisonResult" href="#qto_buccaneer.reports.RoomComparisonResult">RoomComparisonResult</a></code></h4>
+<ul class="">
+<li><code><a title="qto_buccaneer.reports.RoomComparisonResult.to_dict" href="#qto_buccaneer.reports.RoomComparisonResult.to_dict">to_dict</a></code></li>
+<li><code><a title="qto_buccaneer.reports.RoomComparisonResult.to_excel" href="#qto_buccaneer.reports.RoomComparisonResult.to_excel">to_excel</a></code></li>
+<li><code><a title="qto_buccaneer.reports.RoomComparisonResult.to_yaml" href="#qto_buccaneer.reports.RoomComparisonResult.to_yaml">to_yaml</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

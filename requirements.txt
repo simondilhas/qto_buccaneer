@@ -1,0 +1,49 @@
+# Core dependencies
+ifcopenshell>=0.8.1
+pandas>=2.2.3
+pyyaml>=6.0.2
+numpy>=1.19.3,<2.0.0
+python-dotenv>=1.1.0
+openpyxl>=3.1.5
+shapely>=2.0.7
+azure-storage-blob>=12.19.0
+streamlit>=1.32.0
+
+# Documentation dependencies
+pdoc3>=0.11.6
+sphinx>=8.2.3
+sphinx-rtd-theme>=3.0.2
+sphinxcontrib-applehelp>=2.0.0
+sphinxcontrib-devhelp>=2.0.0
+sphinxcontrib-htmlhelp>=2.1.0
+sphinxcontrib-jquery>=4.1
+sphinxcontrib-jsmath>=1.0.1
+sphinxcontrib-qthelp>=2.0.0
+sphinxcontrib-serializinghtml>=2.0.0
+
+# Optional dependencies for reports and plots
+plotly>=6.0.1
+weasyprint>=65.0
+pdfkit>=1.0.0
+pillow>=7.1.0,<11.0.0
+kaleido>=0.2.1
+
+# Required for PDF generation
+tinycss2>=1.4.0
+tinyhtml5>=2.0.0
+webencodings>=0.5.1
+zopfli>=0.2.3
+
+# Required for data handling
+python-dateutil>=2.9.0
+pytz>=2025.2
+tzdata>=2025.2
+
+# Required for heatmap generation
+seaborn>=0.13.0
+matplotlib>=3.8.0
+
+# Development dependencies (for local development)
+# These are in requirements_dev.txt
+
+mapbox_earcut

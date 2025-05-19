@@ -1,0 +1,2283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>qto_buccaneer.utils API documentation</title>
+<meta name="description" content="Utility modules for QTO Buccaneer …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>qto_buccaneer.utils</code></h1>
+</header>
+<section id="section-intro">
+<p>Utility modules for QTO Buccaneer.</p>
+<p>This package contains helper functions and classes for working with IFC models and performing quantity takeoffs:</p>
+<h3 id="core-utilities">Core Utilities</h3>
+<ul>
+<li>ifc_loader.py: IFC file loading and manipulation</li>
+<li>Load and parse IFC files</li>
+<li>Extract geometry and properties</li>
+<li>
+<p>Handle IFC model navigation</p>
+</li>
+<li>
+<p>qto_calculator.py: Quantity calculations</p>
+</li>
+<li>Perform quantity takeoffs</li>
+<li>Calculate areas, volumes, and other metrics</li>
+<li>
+<p>Support custom calculation rules</p>
+</li>
+<li>
+<p>config_loader.py: Configuration handling</p>
+</li>
+<li>Load and validate YAML configurations</li>
+<li>Manage project settings</li>
+<li>
+<p>Handle metric definitions</p>
+</li>
+<li>
+<p>ifc_json_loader.py: JSON-based IFC data handling</p>
+</li>
+<li>Convert IFC to structured JSON</li>
+<li>Handle geometry and metadata</li>
+<li>
+<p>Support for floorplan generation</p>
+</li>
+<li>
+<p>plots_utils.py: Plotting and visualization</p>
+</li>
+<li>Parse filter strings</li>
+<li>Apply layout settings</li>
+<li>Support for element filtering</li>
+</ul>
+<h3 id="usage">Usage</h3>
+<pre><code class="language-python">from qto_buccaneer.utils import IfcLoader, QtoCalculator
+
+# Load IFC model
+loader = IfcLoader(&quot;path/to/model.ifc&quot;)
+model = loader.load()
+
+# Calculate quantities
+calculator = QtoCalculator(model)
+quantities = calculator.calculate_quantities()
+</code></pre>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="qto_buccaneer.utils.config_loader" href="config_loader.html">qto_buccaneer.utils.config_loader</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="qto_buccaneer.utils.ifc_json_loader" href="ifc_json_loader.html">qto_buccaneer.utils.ifc_json_loader</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="qto_buccaneer.utils.ifc_loader" href="ifc_loader.html">qto_buccaneer.utils.ifc_loader</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="qto_buccaneer.utils.ifc_metadata_extractor" href="ifc_metadata_extractor.html">qto_buccaneer.utils.ifc_metadata_extractor</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="qto_buccaneer.utils.plots_utils" href="plots_utils.html">qto_buccaneer.utils.plots_utils</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="qto_buccaneer.utils.qto_calculator" href="qto_calculator.html">qto_buccaneer.utils.qto_calculator</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="qto_buccaneer.utils.load_config"><code class="name flex">
+<span>def <span class="ident">load_config</span></span>(<span>config_name: str, search_paths: List[str] = None) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_config(config_name: str, search_paths: List[str] = None) -&gt; dict:
+    &#34;&#34;&#34;
+    Load metrics configuration from YAML file.
+    
+    Args:
+        config_name: Name of the config file to load
+        search_paths: Optional list of paths to search for the config file
+        
+    Returns:
+        dict: Loaded configuration
+        
+    Raises:
+        FileNotFoundError: If config file cannot be found
+    &#34;&#34;&#34;
+    config_path = find_config_file(config_name, search_paths)
+    with open(config_path, &#39;r&#39;) as f:
+        return yaml.safe_load(f)</code></pre>
+</details>
+<div class="desc"><p>Load metrics configuration from YAML file.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>config_name</code></strong></dt>
+<dd>Name of the config file to load</dd>
+<dt><strong><code>search_paths</code></strong></dt>
+<dd>Optional list of paths to search for the config file</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Loaded configuration</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>FileNotFoundError</code></dt>
+<dd>If config file cannot be found</dd>
+</dl></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="qto_buccaneer.utils.IfcJsonLoader"><code class="flex name class">
+<span>class <span class="ident">IfcJsonLoader</span></span>
+<span>(</span><span>geometry_json: List[Dict[str, Any]], properties_json: Dict[str, Any])</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class IfcJsonLoader:
+    &#34;&#34;&#34;A class to load and manage IFC data from JSON files.
+    
+    This class provides methods to access geometry and properties data from IFC models
+    that have been converted to JSON format.
+    &#34;&#34;&#34;
+    
+    def __init__(self, geometry_json: List[Dict[str, Any]], properties_json: Dict[str, Any]):
+        &#34;&#34;&#34;Initialize the loader with geometry and properties data.
+        
+        Args:
+            geometry_json: List of geometry objects, each containing an &#39;id&#39; and geometry data
+            properties_json: Dictionary containing elements and their properties
+        &#34;&#34;&#34;
+        self.geometry = geometry_json
+        self.properties = properties_json
+        
+        # Create indexes for faster lookups using numeric IDs
+        self.geometry_index = {str(item[&#34;id&#34;]): item for item in self.geometry}
+        self.properties_index = {str(elem_id): elem for elem_id, elem in properties_json[&#34;elements&#34;].items()}
+        
+        # Build indexes from the data
+        self.by_type_index = {}
+        self.global_id_to_id = {}
+        
+        for elem_id, element in properties_json[&#34;elements&#34;].items():
+            # Build by_type index
+            ifc_entity = element.get(&#34;IfcEntity&#34;)
+            if ifc_entity:
+                if ifc_entity not in self.by_type_index:
+                    self.by_type_index[ifc_entity] = []
+                self.by_type_index[ifc_entity].append(int(elem_id))
+            
+            # Build global_id to id mapping
+            global_id = element.get(&#34;GlobalId&#34;)
+            if global_id:
+                self.global_id_to_id[global_id] = elem_id
+        
+        # Initialize storey cache
+        self._storey_cache = {}  # element_id -&gt; storey_name
+        self._build_storey_cache()
+    
+    def _build_storey_cache(self):
+        &#34;&#34;&#34;Build a cache of element_id -&gt; storey_name mappings.&#34;&#34;&#34;
+        # First build storey name lookup
+        storey_names = {}
+        for storey_id in self.by_type_index.get(&#39;IfcBuildingStorey&#39;, []):
+            storey = self.properties_index.get(str(storey_id))
+            if storey:
+                storey_names[str(storey_id)] = storey.get(&#39;Name&#39;, &#39;Unknown&#39;)
+        
+        print(f&#34;\n=== Building Storey Cache ===&#34;)
+        print(f&#34;Found {len(storey_names)} storeys with names:&#34;)
+        for storey_id, name in storey_names.items():
+            print(f&#34;  - Storey {storey_id}: {name}&#34;)
+            storey = self.properties_index.get(str(storey_id))
+            print(f&#34;    Full storey data: {storey}&#34;)
+        
+        print(&#34;\n=== Building Element -&gt; Storey Mapping ===&#34;)
+        # First map elements directly contained in storeys
+        for storey_id, storey_name in storey_names.items():
+            storey = self.properties_index.get(str(storey_id))
+            if not storey:
+                continue
+                
+            # Get elements directly contained in this storey
+            contained_elements = storey.get(&#39;ContainsElements&#39;, [])
+            if isinstance(contained_elements, str):
+                # Handle case where it&#39;s a string representation of a list
+                contained_elements = [e.strip(&#34;&#39;&#34;) for e in contained_elements.strip(&#39;[]&#39;).split(&#39;,&#39;)]
+            
+            print(f&#34;\nStorey {storey_name} contains elements:&#34;)
+            for element_id in contained_elements:
+                if element_id:
+                    self._storey_cache[str(element_id)] = storey_name
+                    element = self.properties_index.get(str(element_id))
+                    print(f&#34;  - Element {element_id}:&#34;)
+                    print(f&#34;    Type: {element.get(&#39;IfcEntity&#39;, &#39;Unknown&#39;) if element else &#39;Unknown&#39;}&#34;)
+                    print(f&#34;    Properties: {element}&#34;)
+        
+        # Then handle elements that might be nested under other elements
+        for element_id, element in self.properties_index.items():
+            if element_id in self._storey_cache:
+                continue
+                
+            current_id = str(element_id)
+            path = []
+            while current_id:
+                path.append(current_id)
+                if current_id in storey_names:
+                    self._storey_cache[str(element_id)] = storey_names[current_id]
+                    print(f&#34;\nElement {element_id}:&#34;)
+                    print(f&#34;  Type: {element.get(&#39;IfcEntity&#39;, &#39;Unknown&#39;)}&#34;)
+                    print(f&#34;  Parent chain: {&#39; -&gt; &#39;.join(path)}&#34;)
+                    print(f&#34;  Assigned to storey: {storey_names[current_id]}&#34;)
+                    break
+                current = self.properties_index.get(str(current_id))
+                if not current:
+                    print(f&#34;\nElement {element_id}:&#34;)
+                    print(f&#34;  Type: {element.get(&#39;IfcEntity&#39;, &#39;Unknown&#39;)}&#34;)
+                    print(f&#34;  Parent chain: {&#39; -&gt; &#39;.join(path)}&#34;)
+                    print(f&#34;  WARNING: Parent chain broken at {current_id}&#34;)
+                    break
+                # Convert parent_id to string if it exists
+                parent_id = current.get(&#39;parent_id&#39;)
+                current_id = str(parent_id) if parent_id is not None else None
+                if not current_id:
+                    print(f&#34;\nElement {element_id}:&#34;)
+                    print(f&#34;  Type: {element.get(&#39;IfcEntity&#39;, &#39;Unknown&#39;)}&#34;)
+                    print(f&#34;  Parent chain: {&#39; -&gt; &#39;.join(path)}&#34;)
+                    print(f&#34;  WARNING: No parent_id found for {current_id}&#34;)
+        
+        print(f&#34;\n=== Summary ===&#34;)
+        print(f&#34;Built storey cache with {len(self._storey_cache)} elements&#34;)
+        print(f&#34;Elements without storey: {len(self.properties_index) - len(self._storey_cache)}&#34;)
+        
+        # Print space-specific summary
+        spaces = [id for id, elem in self.properties_index.items() if elem.get(&#39;IfcEntity&#39;) == &#39;IfcSpace&#39;]
+        spaces_with_storey = [id for id in spaces if id in self._storey_cache]
+        print(f&#34;\n=== Spaces Summary ===&#34;)
+        print(f&#34;Total spaces: {len(spaces)}&#34;)
+        print(f&#34;Spaces with storey: {len(spaces_with_storey)}&#34;)
+        print(f&#34;Spaces without storey: {len(spaces) - len(spaces_with_storey)}&#34;)
+        for space_id in spaces:
+            storey = self._storey_cache.get(str(space_id))
+            print(f&#34;\nSpace {space_id}:&#34;)
+            print(f&#34;  Storey: {storey if storey else &#39;Not found&#39;}&#34;)
+            space = self.properties_index.get(str(space_id))
+            print(f&#34;  Parent ID: {space.get(&#39;parent_id&#39;, &#39;None&#39;)}&#34;)
+            print(f&#34;  Properties: {space}&#34;)
+    
+    def get_spaces_in_storey(self, storey_name: str) -&gt; List[str]:
+        &#34;&#34;&#34;Return a list of IDs of spaces in a given storey.
+        
+        Args:
+            storey_name: Name of the storey to filter spaces by
+            
+        Returns:
+            List of IDs for spaces in the specified storey
+        &#34;&#34;&#34;
+        ids = []
+        # Get all spaces using the by_type index
+        space_ids = self.by_type_index.get(&#34;IfcSpace&#34;, [])
+        
+        for space_id in space_ids:
+            space = self.properties_index.get(str(space_id))
+            if not space:
+                continue
+                
+            # Get storey from cache
+            space_storey = self._storey_cache.get(str(space_id))
+            
+            # If no storey info, include the space in all storeys
+            if space_storey is None:
+                ids.append(str(space_id))
+                print(f&#34;Found space {space_id} (no storey info)&#34;)
+            # Otherwise check if the storey name matches
+            elif space_storey == storey_name:
+                ids.append(str(space_id))
+                print(f&#34;Found space {space_id} in storey {storey_name}&#34;)
+        
+        return ids
+    
+    def get_geometry(self, element_id: str) -&gt; Optional[Dict[str, Any]]:
+        &#34;&#34;&#34;Get geometry for a given element ID.
+        
+        Args:
+            element_id: The ID of the element to get geometry for
+            
+        Returns:
+            Geometry data for the element, or None if not found
+        &#34;&#34;&#34;
+        return self.geometry_index.get(str(element_id))
+    
+    def get_properties(self, element_id: str) -&gt; Optional[Dict[str, Any]]:
+        &#34;&#34;&#34;Get properties for a given element ID.
+        
+        Args:
+            element_id: The ID of the element to get properties for
+            
+        Returns:
+            Properties data for the element, or None if not found
+        &#34;&#34;&#34;
+        return self.properties_index.get(str(element_id))
+    
+    def get_storey_for_space(self, space_id: str) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the storey name for a given space.
+        
+        Args:
+            space_id: The ID of the space
+            
+        Returns:
+            The storey name, or None if not found
+        &#34;&#34;&#34;
+        return self._storey_cache.get(str(space_id))
+
+    def get_storey_for_element(self, element_id: str) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the storey name for an element by its ID.&#34;&#34;&#34;
+        return self._storey_cache.get(str(element_id))</code></pre>
+</details>
+<div class="desc"><p>A class to load and manage IFC data from JSON files.</p>
+<p>This class provides methods to access geometry and properties data from IFC models
+that have been converted to JSON format.</p>
+<p>Initialize the loader with geometry and properties data.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>geometry_json</code></strong></dt>
+<dd>List of geometry objects, each containing an 'id' and geometry data</dd>
+<dt><strong><code>properties_json</code></strong></dt>
+<dd>Dictionary containing elements and their properties</dd>
+</dl></div>
+<h3>Methods</h3>
+<dl>
+<dt id="qto_buccaneer.utils.IfcJsonLoader.get_geometry"><code class="name flex">
+<span>def <span class="ident">get_geometry</span></span>(<span>self, element_id: str) ‑> Dict[str, Any] | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_geometry(self, element_id: str) -&gt; Optional[Dict[str, Any]]:
+    &#34;&#34;&#34;Get geometry for a given element ID.
+    
+    Args:
+        element_id: The ID of the element to get geometry for
+        
+    Returns:
+        Geometry data for the element, or None if not found
+    &#34;&#34;&#34;
+    return self.geometry_index.get(str(element_id))</code></pre>
+</details>
+<div class="desc"><p>Get geometry for a given element ID.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>element_id</code></strong></dt>
+<dd>The ID of the element to get geometry for</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Geometry data for the element, or None if not found</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.IfcJsonLoader.get_properties"><code class="name flex">
+<span>def <span class="ident">get_properties</span></span>(<span>self, element_id: str) ‑> Dict[str, Any] | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_properties(self, element_id: str) -&gt; Optional[Dict[str, Any]]:
+    &#34;&#34;&#34;Get properties for a given element ID.
+    
+    Args:
+        element_id: The ID of the element to get properties for
+        
+    Returns:
+        Properties data for the element, or None if not found
+    &#34;&#34;&#34;
+    return self.properties_index.get(str(element_id))</code></pre>
+</details>
+<div class="desc"><p>Get properties for a given element ID.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>element_id</code></strong></dt>
+<dd>The ID of the element to get properties for</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Properties data for the element, or None if not found</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.IfcJsonLoader.get_spaces_in_storey"><code class="name flex">
+<span>def <span class="ident">get_spaces_in_storey</span></span>(<span>self, storey_name: str) ‑> List[str]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_spaces_in_storey(self, storey_name: str) -&gt; List[str]:
+    &#34;&#34;&#34;Return a list of IDs of spaces in a given storey.
+    
+    Args:
+        storey_name: Name of the storey to filter spaces by
+        
+    Returns:
+        List of IDs for spaces in the specified storey
+    &#34;&#34;&#34;
+    ids = []
+    # Get all spaces using the by_type index
+    space_ids = self.by_type_index.get(&#34;IfcSpace&#34;, [])
+    
+    for space_id in space_ids:
+        space = self.properties_index.get(str(space_id))
+        if not space:
+            continue
+            
+        # Get storey from cache
+        space_storey = self._storey_cache.get(str(space_id))
+        
+        # If no storey info, include the space in all storeys
+        if space_storey is None:
+            ids.append(str(space_id))
+            print(f&#34;Found space {space_id} (no storey info)&#34;)
+        # Otherwise check if the storey name matches
+        elif space_storey == storey_name:
+            ids.append(str(space_id))
+            print(f&#34;Found space {space_id} in storey {storey_name}&#34;)
+    
+    return ids</code></pre>
+</details>
+<div class="desc"><p>Return a list of IDs of spaces in a given storey.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>storey_name</code></strong></dt>
+<dd>Name of the storey to filter spaces by</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>List of IDs for spaces in the specified storey</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.IfcJsonLoader.get_storey_for_element"><code class="name flex">
+<span>def <span class="ident">get_storey_for_element</span></span>(<span>self, element_id: str) ‑> str | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_storey_for_element(self, element_id: str) -&gt; Optional[str]:
+    &#34;&#34;&#34;Get the storey name for an element by its ID.&#34;&#34;&#34;
+    return self._storey_cache.get(str(element_id))</code></pre>
+</details>
+<div class="desc"><p>Get the storey name for an element by its ID.</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.IfcJsonLoader.get_storey_for_space"><code class="name flex">
+<span>def <span class="ident">get_storey_for_space</span></span>(<span>self, space_id: str) ‑> str | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_storey_for_space(self, space_id: str) -&gt; Optional[str]:
+    &#34;&#34;&#34;Get the storey name for a given space.
+    
+    Args:
+        space_id: The ID of the space
+        
+    Returns:
+        The storey name, or None if not found
+    &#34;&#34;&#34;
+    return self._storey_cache.get(str(space_id))</code></pre>
+</details>
+<div class="desc"><p>Get the storey name for a given space.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>space_id</code></strong></dt>
+<dd>The ID of the space</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The storey name, or None if not found</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="qto_buccaneer.utils.IfcLoader"><code class="flex name class">
+<span>class <span class="ident">IfcLoader</span></span>
+<span>(</span><span>model_or_path: str | ForwardRef('ifcopenshell.file'))</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class IfcLoader:
+    def __init__(self, model_or_path: Union[str, &#39;ifcopenshell.file&#39;]):
+        &#34;&#34;&#34;Initialize an IFC project from a file path or model.
+
+        Args:
+            model_or_path: Either a path to an IFC file (str) or an already loaded IFC model
+        
+        Raises:
+            IfcFileNotFoundError: If a file path is provided and cannot be found
+            IfcInvalidFileError: If the file path provided is not a valid IFC file
+        &#34;&#34;&#34;
+        if isinstance(model_or_path, str):
+            self.file_path = model_or_path
+            
+            # Check if file exists
+            if not os.path.exists(model_or_path):
+                raise IfcFileNotFoundError(f&#34;IFC file not found: {model_or_path}&#34;)
+            
+            try:
+                self.model = ifcopenshell.open(model_or_path)
+            except Exception as e:
+                raise IfcInvalidFileError(f&#34;Could not open {model_or_path} as an IFC file: {str(e)}&#34;)
+        else:
+            self.file_path = None
+            self.model = model_or_path
+
+    def get_property_value(self, element, set_name: str, prop_name: str) -&gt; Optional[Any]:
+        &#34;&#34;&#34;
+        Retrieves the value of a property or quantity from a specified Pset or Qset.
+        Supports both IfcPropertySet and IfcElementQuantity.
+
+        Args:
+            element: The IFC element to extract the property from.
+            set_name (str): The name of the property set or quantity set (e.g. &#34;Pset_SpaceCommon&#34;, &#34;Qto_SpaceBaseQuantities&#34;).
+            prop_name (str): The name of the property or quantity (e.g. &#34;IsExternal&#34;, &#34;NetFloorArea&#34;).
+
+        Returns:
+            The unwrapped property value if found, otherwise None.
+        &#34;&#34;&#34;
+        if element is None or not hasattr(element, &#34;IsDefinedBy&#34;):
+            return None
+
+        for definition in element.IsDefinedBy:
+            if not hasattr(definition, &#34;RelatingPropertyDefinition&#34;):
+                continue
+
+            prop_def = definition.RelatingPropertyDefinition
+            if prop_def is None:
+                continue
+
+            # Process property sets
+            if prop_def.is_a(&#34;IfcPropertySet&#34;) and prop_def.Name == set_name:
+                for prop in getattr(prop_def, &#34;HasProperties&#34;, []):
+                    if prop.Name == prop_name:
+                        if hasattr(prop, &#34;NominalValue&#34;):
+                            val = prop.NominalValue
+                            if hasattr(val, &#34;wrappedValue&#34;):
+                                return val.wrappedValue
+                            return val
+                        elif hasattr(prop, &#34;Value&#34;):  # For simple props
+                            val = prop.Value
+                            if hasattr(val, &#34;wrappedValue&#34;):
+                                return val.wrappedValue
+                            return val
+
+            # Process quantity sets
+            elif prop_def.is_a(&#34;IfcElementQuantity&#34;) and prop_def.Name == set_name:
+                for quantity in getattr(prop_def, &#34;Quantities&#34;, []):
+                    if quantity.Name == prop_name:
+                        if quantity.is_a(&#34;IfcQuantityArea&#34;):
+                            val = quantity.AreaValue
+                        elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
+                            val = quantity.VolumeValue
+                        elif quantity.is_a(&#34;IfcQuantityLength&#34;):
+                            val = quantity.LengthValue
+                        elif quantity.is_a(&#34;IfcQuantityCount&#34;):
+                            val = quantity.CountValue
+                        elif quantity.is_a(&#34;IfcQuantityWeight&#34;):
+                            val = quantity.WeightValue
+                        elif hasattr(quantity, &#34;NominalValue&#34;):
+                            val = quantity.NominalValue
+                        else:
+                            val = None
+
+                        if hasattr(val, &#34;wrappedValue&#34;):
+                            return val.wrappedValue
+                        return val
+
+        return None
+
+
+    def get_property_sets(self, element) -&gt; Dict[str, Dict[str, Any]]:
+        &#34;&#34;&#34;
+        Get all property sets for an element with their properties.
+        
+        Args:
+            element: The IFC element
+            
+        Returns:
+            Dictionary of property sets with their properties
+            
+        Example:
+            &gt;&gt;&gt; loader = IfcLoader(&#34;house.ifc&#34;)
+            &gt;&gt;&gt; wall = loader.model.by_type(&#34;IfcWall&#34;)[0]
+            &gt;&gt;&gt; property_sets = loader.get_property_sets(wall)
+            &gt;&gt;&gt; for pset_name, properties in property_sets.items():
+            &gt;&gt;&gt;     print(f&#34;Property Set: {pset_name}&#34;)
+            &gt;&gt;&gt;     for prop_name, value in properties.items():
+            &gt;&gt;&gt;         print(f&#34;  {prop_name}: {value}&#34;)
+        &#34;&#34;&#34;
+        result = {}
+        
+        if not hasattr(element, &#34;IsDefinedBy&#34;):
+            return result
+            
+        for definition in element.IsDefinedBy:
+            if not hasattr(definition, &#34;RelatingPropertyDefinition&#34;):
+                continue
+                
+            prop_def = definition.RelatingPropertyDefinition
+            if prop_def is None:
+                continue
+                
+            # Process property sets
+            if prop_def.is_a(&#34;IfcPropertySet&#34;):
+                pset_name = prop_def.Name
+                properties = {}
+                
+                for prop in getattr(prop_def, &#34;HasProperties&#34;, []):
+                    if hasattr(prop, &#34;NominalValue&#34;):
+                        properties[prop.Name] = prop.NominalValue
+                    elif hasattr(prop, &#34;Value&#34;):
+                        properties[prop.Name] = prop.Value
+                        
+                result[pset_name] = properties
+                
+            # Process quantity sets
+            elif prop_def.is_a(&#34;IfcElementQuantity&#34;):
+                qset_name = prop_def.Name
+                quantities = {}
+                
+                for quantity in getattr(prop_def, &#34;Quantities&#34;, []):
+                    if quantity.is_a(&#34;IfcQuantityArea&#34;):
+                        quantities[quantity.Name] = quantity.AreaValue
+                    elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
+                        quantities[quantity.Name] = quantity.VolumeValue
+                    elif quantity.is_a(&#34;IfcQuantityLength&#34;):
+                        quantities[quantity.Name] = quantity.LengthValue
+                    elif quantity.is_a(&#34;IfcQuantityCount&#34;):
+                        quantities[quantity.Name] = quantity.CountValue
+                    elif quantity.is_a(&#34;IfcQuantityWeight&#34;):
+                        quantities[quantity.Name] = quantity.WeightValue
+                        
+                result[qset_name] = quantities
+                
+        return result
+
+    def get_elements(
+        self,
+        ifc_entity: str,
+        filters: Optional[dict] = None,
+        filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;AND&#34;,
+    ) -&gt; List[IfcElement]:
+        &#34;&#34;&#34;Get elements of a specific type with optional filters.&#34;&#34;&#34;
+        elements = self.model.by_type(ifc_entity)
+        
+        if not filters:
+            return elements
+            
+        print(f&#34;\nFiltering {len(elements)} {ifc_entity} elements with:&#34;)
+        print(f&#34;Filters: {filters}&#34;)
+        print(f&#34;Filter logic: {filter_logic}&#34;)
+        
+        filtered_elements = []
+        for element in elements:
+            matches = []
+            for key, value in filters.items():
+                # Get the attribute value
+                attr_value = getattr(element, key, None)
+                print(f&#34;\nElement: {element}&#34;)
+                print(f&#34;Checking filter {key}: {value}&#34;)
+                print(f&#34;Element has {key}: {attr_value}&#34;)
+                
+                # Handle different types of filter values
+                if isinstance(value, list):
+                    # For list values, check if any match
+                    if isinstance(value[0], tuple) and len(value[0]) == 2:
+                        # Handle comparison operators
+                        op, val = value[0]
+                        if op == &#34;&gt;&#34;:
+                            matches.append(attr_value &gt; val)
+                        elif op == &#34;&gt;=&#34;:
+                            matches.append(attr_value &gt;= val)
+                        elif op == &#34;&lt;&#34;:
+                            matches.append(attr_value &lt; val)
+                        elif op == &#34;&lt;=&#34;:
+                            matches.append(attr_value &lt;= val)
+                        elif op == &#34;=&#34;:
+                            matches.append(attr_value == val)
+                    else:
+                        # For simple list values, check if any match
+                        matches.append(attr_value in value)
+                else:
+                    # For single values, check exact match
+                    matches.append(attr_value == value)
+            
+            # Apply filter logic
+            if filter_logic == &#34;AND&#34;:
+                if all(matches):
+                    filtered_elements.append(element)
+            else:  # OR
+                if any(matches):
+                    filtered_elements.append(element)
+        
+        print(f&#34;Found {len(filtered_elements)} matching elements&#34;)
+        return filtered_elements
+
+    def get_project_info(self) -&gt; dict:
+        &#34;&#34;&#34;
+        Get project information from IFC file.
+        
+        Returns:
+            dict: Project information including name, number, phase etc.
+        &#34;&#34;&#34;
+        project = self.model.by_type(&#34;IfcProject&#34;)[0]
+        return {
+            &#34;project_name&#34;: getattr(project, &#34;Name&#34;, &#34;Unknown&#34;),
+            &#34;project_number&#34;: getattr(project, &#34;GlobalId&#34;, &#34;Unknown&#34;),
+            &#34;project_phase&#34;: getattr(project, &#34;Phase&#34;, &#34;Unknown&#34;),
+            &#34;project_status&#34;: getattr(project, &#34;Status&#34;, &#34;Unknown&#34;)
+        }
+
+    def get_space_information(self, ifc_entity: str = &#34;IfcSpace&#34;) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;
+        Get space information from IFC file and return it as a DataFrame.
+        
+        Args:
+            ifc_entity (str): The IFC entity type to query (default: &#34;IfcSpace&#34;)
+            
+        Returns:
+            pd.DataFrame: Element information including:
+                - Direct attributes (e.g., Name, GlobalId)
+                - Property set values (columns named as &#39;PsetName.PropertyName&#39;)
+                - Quantity set values (columns named as &#39;QsetName.QuantityName&#39;)
+        &#34;&#34;&#34;
+        elements = self.model.by_type(ifc_entity)
+        
+        # Initialize empty list to store data
+        data = []
+        
+        for element in elements:
+            # Get basic attributes
+            element_data = {
+                &#39;GlobalId&#39;: getattr(element, &#34;GlobalId&#34;, None),
+                &#39;Name&#39;: getattr(element, &#34;Name&#34;, None),
+                &#39;LongName&#39;: getattr(element, &#34;LongName&#34;, None),
+                &#39;Description&#39;: getattr(element, &#34;Description&#34;, None),
+                &#39;ObjectType&#39;: getattr(element, &#34;ObjectType&#34;, None),
+                &#39;IFC_ENTITY_TYPE&#39;: element.is_a()  # This gets the IFC entity type
+            }
+            
+            # Get property and quantity sets
+            psets = self.get_property_sets(element)
+            
+            # Add properties and quantities with combined names
+            for set_name, properties in psets.items():
+                for prop_name, value in properties.items():
+                    # Handle wrapped values
+                    if hasattr(value, &#34;wrappedValue&#34;):
+                        value = value.wrappedValue
+                    column_name = f&#34;{set_name}.{prop_name}&#34;
+                    element_data[column_name] = value
+            
+            data.append(element_data)
+        
+        # Create DataFrame
+        df = pd.DataFrame(data)
+        
+        return df
+
+    def get_element_spatial_relationship(self, ifc_entity: Optional[str] = None) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;
+        Get spatial information for IFC elements, including both contained elements (through
+        IfcRelContainedInSpatialStructure) and aggregated elements like spaces (through IfcRelAggregates).
+        
+        Args:
+            ifc_entity (Optional[str]): Optional filter for specific IFC entity types
+            
+        Returns:
+            pd.DataFrame: DataFrame containing element GlobalIds and their associated stories/elevations
+        &#34;&#34;&#34;
+        print(&#34;Start&#34;)
+        
+        data = {
+            &#39;GlobalId&#39;: [],
+            &#39;BuildingStory&#39;: [],
+            &#39;ElevationOfStory&#39;: []
+        }
+        
+        try:
+            connected_elements = set()  # Use set to avoid duplicates
+            stories = self.model.by_type(&#34;IfcBuildingStorey&#34;)
+            print(f&#34;Found {len(stories)} stories&#34;)
+            
+            for story in stories:
+                # Get all relationships where this story is the container
+                for rel in self.model.get_inverse(story):
+                    # Handle contained elements (walls, doors, etc)
+                    if rel.is_a(&#39;IfcRelContainedInSpatialStructure&#39;):
+                        elements = rel.RelatedElements
+                    # Handle aggregated elements (typically spaces)
+                    elif rel.is_a(&#39;IfcRelAggregates&#39;):
+                        elements = rel.RelatedObjects
+                    else:
+                        continue
+                    
+                    # Process all elements from the relationship
+                    for element in elements:
+                        # If specific entity type is requested, filter for it
+                        if ifc_entity is None or element.is_a(ifc_entity):
+                            connected_elements.add(element)
+                            data[&#39;GlobalId&#39;].append(element.GlobalId)
+                            data[&#39;BuildingStory&#39;].append(story.Name)
+                            data[&#39;ElevationOfStory&#39;].append(float(getattr(story, &#34;Elevation&#34;, 0.0)))
+            
+            print(f&#34;Found {len(connected_elements)} elements connected to stories&#34;)
+            
+            df = pd.DataFrame(data)
+            print(f&#34;DataFrame shape: {df.shape}&#34;)
+            return df
+            
+        except Exception as e:
+            print(f&#34;Error: {e}&#34;)
+            return pd.DataFrame(columns=list(data.keys()))</code></pre>
+</details>
+<div class="desc"><p>Initialize an IFC project from a file path or model.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>model_or_path</code></strong></dt>
+<dd>Either a path to an IFC file (str) or an already loaded IFC model</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>IfcFileNotFoundError</code></dt>
+<dd>If a file path is provided and cannot be found</dd>
+<dt><code>IfcInvalidFileError</code></dt>
+<dd>If the file path provided is not a valid IFC file</dd>
+</dl></div>
+<h3>Methods</h3>
+<dl>
+<dt id="qto_buccaneer.utils.IfcLoader.get_element_spatial_relationship"><code class="name flex">
+<span>def <span class="ident">get_element_spatial_relationship</span></span>(<span>self, ifc_entity: str | None = None) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_element_spatial_relationship(self, ifc_entity: Optional[str] = None) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Get spatial information for IFC elements, including both contained elements (through
+    IfcRelContainedInSpatialStructure) and aggregated elements like spaces (through IfcRelAggregates).
+    
+    Args:
+        ifc_entity (Optional[str]): Optional filter for specific IFC entity types
+        
+    Returns:
+        pd.DataFrame: DataFrame containing element GlobalIds and their associated stories/elevations
+    &#34;&#34;&#34;
+    print(&#34;Start&#34;)
+    
+    data = {
+        &#39;GlobalId&#39;: [],
+        &#39;BuildingStory&#39;: [],
+        &#39;ElevationOfStory&#39;: []
+    }
+    
+    try:
+        connected_elements = set()  # Use set to avoid duplicates
+        stories = self.model.by_type(&#34;IfcBuildingStorey&#34;)
+        print(f&#34;Found {len(stories)} stories&#34;)
+        
+        for story in stories:
+            # Get all relationships where this story is the container
+            for rel in self.model.get_inverse(story):
+                # Handle contained elements (walls, doors, etc)
+                if rel.is_a(&#39;IfcRelContainedInSpatialStructure&#39;):
+                    elements = rel.RelatedElements
+                # Handle aggregated elements (typically spaces)
+                elif rel.is_a(&#39;IfcRelAggregates&#39;):
+                    elements = rel.RelatedObjects
+                else:
+                    continue
+                
+                # Process all elements from the relationship
+                for element in elements:
+                    # If specific entity type is requested, filter for it
+                    if ifc_entity is None or element.is_a(ifc_entity):
+                        connected_elements.add(element)
+                        data[&#39;GlobalId&#39;].append(element.GlobalId)
+                        data[&#39;BuildingStory&#39;].append(story.Name)
+                        data[&#39;ElevationOfStory&#39;].append(float(getattr(story, &#34;Elevation&#34;, 0.0)))
+        
+        print(f&#34;Found {len(connected_elements)} elements connected to stories&#34;)
+        
+        df = pd.DataFrame(data)
+        print(f&#34;DataFrame shape: {df.shape}&#34;)
+        return df
+        
+    except Exception as e:
+        print(f&#34;Error: {e}&#34;)
+        return pd.DataFrame(columns=list(data.keys()))</code></pre>
+</details>
+<div class="desc"><p>Get spatial information for IFC elements, including both contained elements (through
+IfcRelContainedInSpatialStructure) and aggregated elements like spaces (through IfcRelAggregates).</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ifc_entity</code></strong> :&ensp;<code>Optional[str]</code></dt>
+<dd>Optional filter for specific IFC entity types</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>DataFrame containing element GlobalIds and their associated stories/elevations</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.utils.IfcLoader.get_elements"><code class="name flex">
+<span>def <span class="ident">get_elements</span></span>(<span>self,<br>ifc_entity: str,<br>filters: dict | None = None,<br>filter_logic: Literal['AND', 'OR'] = 'AND') ‑> List[Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_elements(
+    self,
+    ifc_entity: str,
+    filters: Optional[dict] = None,
+    filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;AND&#34;,
+) -&gt; List[IfcElement]:
+    &#34;&#34;&#34;Get elements of a specific type with optional filters.&#34;&#34;&#34;
+    elements = self.model.by_type(ifc_entity)
+    
+    if not filters:
+        return elements
+        
+    print(f&#34;\nFiltering {len(elements)} {ifc_entity} elements with:&#34;)
+    print(f&#34;Filters: {filters}&#34;)
+    print(f&#34;Filter logic: {filter_logic}&#34;)
+    
+    filtered_elements = []
+    for element in elements:
+        matches = []
+        for key, value in filters.items():
+            # Get the attribute value
+            attr_value = getattr(element, key, None)
+            print(f&#34;\nElement: {element}&#34;)
+            print(f&#34;Checking filter {key}: {value}&#34;)
+            print(f&#34;Element has {key}: {attr_value}&#34;)
+            
+            # Handle different types of filter values
+            if isinstance(value, list):
+                # For list values, check if any match
+                if isinstance(value[0], tuple) and len(value[0]) == 2:
+                    # Handle comparison operators
+                    op, val = value[0]
+                    if op == &#34;&gt;&#34;:
+                        matches.append(attr_value &gt; val)
+                    elif op == &#34;&gt;=&#34;:
+                        matches.append(attr_value &gt;= val)
+                    elif op == &#34;&lt;&#34;:
+                        matches.append(attr_value &lt; val)
+                    elif op == &#34;&lt;=&#34;:
+                        matches.append(attr_value &lt;= val)
+                    elif op == &#34;=&#34;:
+                        matches.append(attr_value == val)
+                else:
+                    # For simple list values, check if any match
+                    matches.append(attr_value in value)
+            else:
+                # For single values, check exact match
+                matches.append(attr_value == value)
+        
+        # Apply filter logic
+        if filter_logic == &#34;AND&#34;:
+            if all(matches):
+                filtered_elements.append(element)
+        else:  # OR
+            if any(matches):
+                filtered_elements.append(element)
+    
+    print(f&#34;Found {len(filtered_elements)} matching elements&#34;)
+    return filtered_elements</code></pre>
+</details>
+<div class="desc"><p>Get elements of a specific type with optional filters.</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.IfcLoader.get_project_info"><code class="name flex">
+<span>def <span class="ident">get_project_info</span></span>(<span>self) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_project_info(self) -&gt; dict:
+    &#34;&#34;&#34;
+    Get project information from IFC file.
+    
+    Returns:
+        dict: Project information including name, number, phase etc.
+    &#34;&#34;&#34;
+    project = self.model.by_type(&#34;IfcProject&#34;)[0]
+    return {
+        &#34;project_name&#34;: getattr(project, &#34;Name&#34;, &#34;Unknown&#34;),
+        &#34;project_number&#34;: getattr(project, &#34;GlobalId&#34;, &#34;Unknown&#34;),
+        &#34;project_phase&#34;: getattr(project, &#34;Phase&#34;, &#34;Unknown&#34;),
+        &#34;project_status&#34;: getattr(project, &#34;Status&#34;, &#34;Unknown&#34;)
+    }</code></pre>
+</details>
+<div class="desc"><p>Get project information from IFC file.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>Project information including name, number, phase etc.</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.utils.IfcLoader.get_property_sets"><code class="name flex">
+<span>def <span class="ident">get_property_sets</span></span>(<span>self, element) ‑> Dict[str, Dict[str, Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_property_sets(self, element) -&gt; Dict[str, Dict[str, Any]]:
+    &#34;&#34;&#34;
+    Get all property sets for an element with their properties.
+    
+    Args:
+        element: The IFC element
+        
+    Returns:
+        Dictionary of property sets with their properties
+        
+    Example:
+        &gt;&gt;&gt; loader = IfcLoader(&#34;house.ifc&#34;)
+        &gt;&gt;&gt; wall = loader.model.by_type(&#34;IfcWall&#34;)[0]
+        &gt;&gt;&gt; property_sets = loader.get_property_sets(wall)
+        &gt;&gt;&gt; for pset_name, properties in property_sets.items():
+        &gt;&gt;&gt;     print(f&#34;Property Set: {pset_name}&#34;)
+        &gt;&gt;&gt;     for prop_name, value in properties.items():
+        &gt;&gt;&gt;         print(f&#34;  {prop_name}: {value}&#34;)
+    &#34;&#34;&#34;
+    result = {}
+    
+    if not hasattr(element, &#34;IsDefinedBy&#34;):
+        return result
+        
+    for definition in element.IsDefinedBy:
+        if not hasattr(definition, &#34;RelatingPropertyDefinition&#34;):
+            continue
+            
+        prop_def = definition.RelatingPropertyDefinition
+        if prop_def is None:
+            continue
+            
+        # Process property sets
+        if prop_def.is_a(&#34;IfcPropertySet&#34;):
+            pset_name = prop_def.Name
+            properties = {}
+            
+            for prop in getattr(prop_def, &#34;HasProperties&#34;, []):
+                if hasattr(prop, &#34;NominalValue&#34;):
+                    properties[prop.Name] = prop.NominalValue
+                elif hasattr(prop, &#34;Value&#34;):
+                    properties[prop.Name] = prop.Value
+                    
+            result[pset_name] = properties
+            
+        # Process quantity sets
+        elif prop_def.is_a(&#34;IfcElementQuantity&#34;):
+            qset_name = prop_def.Name
+            quantities = {}
+            
+            for quantity in getattr(prop_def, &#34;Quantities&#34;, []):
+                if quantity.is_a(&#34;IfcQuantityArea&#34;):
+                    quantities[quantity.Name] = quantity.AreaValue
+                elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
+                    quantities[quantity.Name] = quantity.VolumeValue
+                elif quantity.is_a(&#34;IfcQuantityLength&#34;):
+                    quantities[quantity.Name] = quantity.LengthValue
+                elif quantity.is_a(&#34;IfcQuantityCount&#34;):
+                    quantities[quantity.Name] = quantity.CountValue
+                elif quantity.is_a(&#34;IfcQuantityWeight&#34;):
+                    quantities[quantity.Name] = quantity.WeightValue
+                    
+            result[qset_name] = quantities
+            
+    return result</code></pre>
+</details>
+<div class="desc"><p>Get all property sets for an element with their properties.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>element</code></strong></dt>
+<dd>The IFC element</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Dictionary of property sets with their properties</p>
+<h2 id="example">Example</h2>
+<pre><code class="language-python-repl">&gt;&gt;&gt; loader = IfcLoader(&quot;house.ifc&quot;)
+&gt;&gt;&gt; wall = loader.model.by_type(&quot;IfcWall&quot;)[0]
+&gt;&gt;&gt; property_sets = loader.get_property_sets(wall)
+&gt;&gt;&gt; for pset_name, properties in property_sets.items():
+&gt;&gt;&gt;     print(f&quot;Property Set: {pset_name}&quot;)
+&gt;&gt;&gt;     for prop_name, value in properties.items():
+&gt;&gt;&gt;         print(f&quot;  {prop_name}: {value}&quot;)
+</code></pre></div>
+</dd>
+<dt id="qto_buccaneer.utils.IfcLoader.get_property_value"><code class="name flex">
+<span>def <span class="ident">get_property_value</span></span>(<span>self, element, set_name: str, prop_name: str) ‑> Any | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_property_value(self, element, set_name: str, prop_name: str) -&gt; Optional[Any]:
+    &#34;&#34;&#34;
+    Retrieves the value of a property or quantity from a specified Pset or Qset.
+    Supports both IfcPropertySet and IfcElementQuantity.
+
+    Args:
+        element: The IFC element to extract the property from.
+        set_name (str): The name of the property set or quantity set (e.g. &#34;Pset_SpaceCommon&#34;, &#34;Qto_SpaceBaseQuantities&#34;).
+        prop_name (str): The name of the property or quantity (e.g. &#34;IsExternal&#34;, &#34;NetFloorArea&#34;).
+
+    Returns:
+        The unwrapped property value if found, otherwise None.
+    &#34;&#34;&#34;
+    if element is None or not hasattr(element, &#34;IsDefinedBy&#34;):
+        return None
+
+    for definition in element.IsDefinedBy:
+        if not hasattr(definition, &#34;RelatingPropertyDefinition&#34;):
+            continue
+
+        prop_def = definition.RelatingPropertyDefinition
+        if prop_def is None:
+            continue
+
+        # Process property sets
+        if prop_def.is_a(&#34;IfcPropertySet&#34;) and prop_def.Name == set_name:
+            for prop in getattr(prop_def, &#34;HasProperties&#34;, []):
+                if prop.Name == prop_name:
+                    if hasattr(prop, &#34;NominalValue&#34;):
+                        val = prop.NominalValue
+                        if hasattr(val, &#34;wrappedValue&#34;):
+                            return val.wrappedValue
+                        return val
+                    elif hasattr(prop, &#34;Value&#34;):  # For simple props
+                        val = prop.Value
+                        if hasattr(val, &#34;wrappedValue&#34;):
+                            return val.wrappedValue
+                        return val
+
+        # Process quantity sets
+        elif prop_def.is_a(&#34;IfcElementQuantity&#34;) and prop_def.Name == set_name:
+            for quantity in getattr(prop_def, &#34;Quantities&#34;, []):
+                if quantity.Name == prop_name:
+                    if quantity.is_a(&#34;IfcQuantityArea&#34;):
+                        val = quantity.AreaValue
+                    elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
+                        val = quantity.VolumeValue
+                    elif quantity.is_a(&#34;IfcQuantityLength&#34;):
+                        val = quantity.LengthValue
+                    elif quantity.is_a(&#34;IfcQuantityCount&#34;):
+                        val = quantity.CountValue
+                    elif quantity.is_a(&#34;IfcQuantityWeight&#34;):
+                        val = quantity.WeightValue
+                    elif hasattr(quantity, &#34;NominalValue&#34;):
+                        val = quantity.NominalValue
+                    else:
+                        val = None
+
+                    if hasattr(val, &#34;wrappedValue&#34;):
+                        return val.wrappedValue
+                    return val
+
+    return None</code></pre>
+</details>
+<div class="desc"><p>Retrieves the value of a property or quantity from a specified Pset or Qset.
+Supports both IfcPropertySet and IfcElementQuantity.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>element</code></strong></dt>
+<dd>The IFC element to extract the property from.</dd>
+<dt><strong><code>set_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>The name of the property set or quantity set (e.g. "Pset_SpaceCommon", "Qto_SpaceBaseQuantities").</dd>
+<dt><strong><code>prop_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>The name of the property or quantity (e.g. "IsExternal", "NetFloorArea").</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The unwrapped property value if found, otherwise None.</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.IfcLoader.get_space_information"><code class="name flex">
+<span>def <span class="ident">get_space_information</span></span>(<span>self, ifc_entity: str = 'IfcSpace') ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_space_information(self, ifc_entity: str = &#34;IfcSpace&#34;) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Get space information from IFC file and return it as a DataFrame.
+    
+    Args:
+        ifc_entity (str): The IFC entity type to query (default: &#34;IfcSpace&#34;)
+        
+    Returns:
+        pd.DataFrame: Element information including:
+            - Direct attributes (e.g., Name, GlobalId)
+            - Property set values (columns named as &#39;PsetName.PropertyName&#39;)
+            - Quantity set values (columns named as &#39;QsetName.QuantityName&#39;)
+    &#34;&#34;&#34;
+    elements = self.model.by_type(ifc_entity)
+    
+    # Initialize empty list to store data
+    data = []
+    
+    for element in elements:
+        # Get basic attributes
+        element_data = {
+            &#39;GlobalId&#39;: getattr(element, &#34;GlobalId&#34;, None),
+            &#39;Name&#39;: getattr(element, &#34;Name&#34;, None),
+            &#39;LongName&#39;: getattr(element, &#34;LongName&#34;, None),
+            &#39;Description&#39;: getattr(element, &#34;Description&#34;, None),
+            &#39;ObjectType&#39;: getattr(element, &#34;ObjectType&#34;, None),
+            &#39;IFC_ENTITY_TYPE&#39;: element.is_a()  # This gets the IFC entity type
+        }
+        
+        # Get property and quantity sets
+        psets = self.get_property_sets(element)
+        
+        # Add properties and quantities with combined names
+        for set_name, properties in psets.items():
+            for prop_name, value in properties.items():
+                # Handle wrapped values
+                if hasattr(value, &#34;wrappedValue&#34;):
+                    value = value.wrappedValue
+                column_name = f&#34;{set_name}.{prop_name}&#34;
+                element_data[column_name] = value
+        
+        data.append(element_data)
+    
+    # Create DataFrame
+    df = pd.DataFrame(data)
+    
+    return df</code></pre>
+</details>
+<div class="desc"><p>Get space information from IFC file and return it as a DataFrame.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ifc_entity</code></strong> :&ensp;<code>str</code></dt>
+<dd>The IFC entity type to query (default: "IfcSpace")</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>Element information including:
+- Direct attributes (e.g., Name, GlobalId)
+- Property set values (columns named as 'PsetName.PropertyName')
+- Quantity set values (columns named as 'QsetName.QuantityName')</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+<dt id="qto_buccaneer.utils.QtoCalculator"><code class="flex name class">
+<span>class <span class="ident">QtoCalculator</span></span>
+<span>(</span><span>loader)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class QtoCalculator:
+    &#34;&#34;&#34;
+    Calculator for quantity takeoffs from IFC models.
+
+    The default values are based on the abstractBIM IFC, but can be overridden.
+
+    Common Filter Examples:
+    ----------------------
+    1. Filter by properties:
+       - Interior elements: {&#34;Pset_WallCommon.IsExternal&#34;: False}
+       - Exterior elements: {&#34;Pset_WallCommon.IsExternal&#34;: True}
+       - Specific type: {&#34;PredefinedType&#34;: &#34;ROOF&#34;}
+       - By name: {&#34;Name&#34;: &#34;Wall1&#34;}
+
+    2. Filter by measurements:
+       - Walls thicker than 15cm: {&#34;Width&#34;: (&#34;&gt;&#34;, 0.15)}
+       - Walls exactly 20cm thick: {&#34;Width&#34;: (&#34;=&#34;, 0.20)}
+       - Walls up to 30cm thick: {&#34;Width&#34;: (&#34;&lt;=&#34;, 0.30)}
+
+    3. Filter by multiple names:
+       - Multiple spaces: {&#34;Name&#34;: [&#34;Kitchen&#34;, &#34;Bathroom&#34;, &#34;Living&#34;]}
+       - Exclude spaces: {&#34;Name&#34;: [&#34;Void&#34;, &#34;Shaft&#34;]}
+
+    4. Combining filters:
+       - Interior walls thicker than 15cm:
+         {
+             &#34;Pset_WallCommon.IsExternal&#34;: False,
+             &#34;Width&#34;: (&#34;&gt;&#34;, 0.15)
+         }
+
+    Filter Logic:
+    - &#34;AND&#34;: Element must match all conditions (default)
+    - &#34;OR&#34;: Element must match any condition
+
+    All measurements should be in meters for length/width/height
+    and square meters for areas.
+    &#34;&#34;&#34;
+    def __init__(self, loader):
+        self.loader = loader
+
+    def sum_quantity(self, elements, qset: str, quantity_name: str) -&gt; float:
+        &#34;&#34;&#34;
+        Sums up a quantity value from a quantity set for a list of IFC elements.
+
+        Args:
+            elements: List of IFC elements (e.g. spaces).
+            qset (str): Name of the quantity set (e.g. &#34;Qto_SpaceBaseQuantities&#34;).
+            quantity_name (str): Name of the quantity to sum (e.g. &#34;NetFloorArea&#34;).
+
+        Returns:
+            float: The total sum of the found quantities.
+        &#34;&#34;&#34;
+        total = 0.0
+
+        for el in elements:
+            for rel in getattr(el, &#34;IsDefinedBy&#34;, []):
+                qto = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+                if not qto or not qto.is_a(&#34;IfcElementQuantity&#34;) or qto.Name != qset:
+                    continue
+                for quantity in getattr(qto, &#34;Quantities&#34;, []):
+                    if quantity.Name == quantity_name:
+                        try:
+                            if quantity.is_a(&#34;IfcQuantityArea&#34;):
+                                value = quantity.AreaValue
+                            elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
+                                value = quantity.VolumeValue
+                            elif quantity.is_a(&#34;IfcQuantityLength&#34;):
+                                value = quantity.LengthValue
+                            else:
+                                value = None
+
+                            if value is not None:
+                                total += value
+
+                        except AttributeError:
+                            # Log or skip if quantity is malformed
+                            pass
+        return total
+    
+
+    def _get_property_value(self, element, pset_name: str, prop_name: str) -&gt; tuple[Any, Any]:
+        &#34;&#34;&#34;Get a property value from a property set or quantity set.
+        
+        Args:
+            element: The IFC element to get the property from
+            pset_name: Name of the property set or quantity set
+            prop_name: Name of the property or quantity
+            
+        Returns:
+            Tuple of (raw_value, float_value). float_value will be None if value cannot be converted to float.
+        &#34;&#34;&#34;
+        raw_value = self._find_property_or_quantity(element, pset_name, prop_name)
+        float_value = self._try_convert_to_float(raw_value)
+        return raw_value, float_value
+
+    def _find_property_or_quantity(self, element, pset_name: str, prop_name: str) -&gt; Any:
+        &#34;&#34;&#34;Find a property or quantity value from an element&#39;s property/quantity sets.&#34;&#34;&#34;
+        for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+            definition = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+            if not definition:
+                continue
+                
+            if definition.Name != pset_name:
+                continue
+                
+            if definition.is_a(&#34;IfcPropertySet&#34;):
+                return self._get_property_from_set(definition, prop_name)
+            elif definition.is_a(&#34;IfcElementQuantity&#34;):
+                return self._get_quantity_from_set(definition, prop_name)
+                
+        return None
+
+    def _get_property_from_set(self, pset, prop_name: str) -&gt; Any:
+        &#34;&#34;&#34;Get a property value from a property set.&#34;&#34;&#34;
+        for prop in pset.HasProperties:
+            if prop.Name == prop_name and hasattr(prop, &#39;NominalValue&#39;):
+                return prop.NominalValue.wrappedValue
+        return None
+
+    def _get_quantity_from_set(self, qto, quantity_name: str) -&gt; Any:
+        &#34;&#34;&#34;Get a quantity value from a quantity set.&#34;&#34;&#34;
+        for quantity in qto.Quantities:
+            if quantity.Name == quantity_name:
+                if quantity.is_a(&#34;IfcQuantityArea&#34;):
+                    return quantity.AreaValue
+                elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
+                    return quantity.VolumeValue
+                elif quantity.is_a(&#34;IfcQuantityLength&#34;):
+                    return quantity.LengthValue
+        return None
+
+    def _try_convert_to_float(self, value: Any) -&gt; Optional[float]:
+        &#34;&#34;&#34;Try to convert a value to float, return None if conversion fails.&#34;&#34;&#34;
+        if value is None:
+            return None
+            
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return None
+
+    def _compare_numeric(self, value: float, operator: str, compare_value: float) -&gt; bool:
+        &#34;&#34;&#34;Compare two numeric values using the specified operator.&#34;&#34;&#34;
+        print(f&#34;Comparing {value} {operator} {compare_value} (types: {type(value)}, {type(compare_value)})&#34;)
+        result = False
+        if operator == &#34;&gt;&#34;:
+            result = value &gt; compare_value
+        elif operator == &#34;&gt;=&#34;:
+            result = value &gt;= compare_value
+        elif operator == &#34;&lt;&#34;:
+            result = value &lt; compare_value
+        elif operator == &#34;&lt;=&#34;:
+            result = value &lt;= compare_value
+        elif operator == &#34;=&#34;:
+            result = value == compare_value
+        print(f&#34;Comparison result: {result}&#34;)
+        return result
+
+    def _check_value_match(self, test_value: Any, filter_value: Any) -&gt; bool:
+        &#34;&#34;&#34;Check if a value matches a filter condition.&#34;&#34;&#34;
+        print(f&#34;\nChecking value match:&#34;)
+        print(f&#34;Test value: {test_value} (type: {type(test_value)})&#34;)
+        print(f&#34;Filter value: {filter_value} (type: {type(filter_value)})&#34;)
+        
+        # Handle numeric comparisons
+        if isinstance(filter_value, list):
+            if len(filter_value) == 2 and filter_value[0] in [&#34;&gt;&#34;, &#34;&gt;=&#34;, &#34;&lt;&#34;, &#34;&lt;=&#34;, &#34;=&#34;]:
+                try:
+                    test_float = float(test_value) if test_value is not None else None
+                    compare_value = float(filter_value[1])
+                    print(f&#34;Numeric comparison: {test_float} {filter_value[0]} {compare_value}&#34;)
+                    print(f&#34;Test value type: {type(test_float)}, Compare value type: {type(compare_value)}&#34;)
+                    if test_float is not None:
+                        result = self._compare_numeric(test_float, filter_value[0], compare_value)
+                        print(f&#34;Numeric comparison result: {result}&#34;)
+                        return result
+                except (ValueError, TypeError) as e:
+                    print(f&#34;Failed to convert to float: {e}&#34;)
+                    return False
+            else:
+                # List of possible values
+                result = str(test_value) in [str(v) for v in filter_value]
+                print(f&#34;List comparison result: {result}&#34;)
+                return result
+        else:
+            # Direct comparison
+            result = str(test_value) == str(filter_value)
+            print(f&#34;Direct comparison result: {result}&#34;)
+            return result
+        return False
+
+    def _apply_filter(self, element, filter_dict: dict, filter_logic: str = &#34;AND&#34;) -&gt; bool:
+        &#34;&#34;&#34;Apply a filter dictionary to an element.&#34;&#34;&#34;
+        if not filter_dict:
+            return True
+            
+        print(f&#34;\nApplying filter to element {element.GlobalId}:&#34;)
+        print(f&#34;Filter dict: {filter_dict}&#34;)
+        print(f&#34;Filter logic: {filter_logic}&#34;)
+        
+        matches = []
+        for key, value in filter_dict.items():
+            print(f&#34;\nChecking filter: {key} = {value}&#34;)
+            # Handle property set attributes
+            if &#34;.&#34; in key:
+                pset_name, prop_name = key.split(&#34;.&#34;)
+                prop_value, _ = self._get_property_value(element, pset_name, prop_name)
+                print(f&#34;Property {pset_name}.{prop_name} value: {prop_value}&#34;)
+                match_result = self._check_value_match(prop_value, value)
+                print(f&#34;Match result: {match_result}&#34;)
+                matches.append(match_result)
+            else:
+                # Direct attribute
+                attr_value = getattr(element, key, None)
+                print(f&#34;Direct attribute {key} value: {attr_value}&#34;)
+                match_result = self._check_value_match(attr_value, value)
+                print(f&#34;Match result: {match_result}&#34;)
+                matches.append(match_result)
+        
+        if filter_logic == &#34;AND&#34;:
+            result = all(matches)
+        else:  # OR logic
+            result = any(matches)
+            
+        print(f&#34;Final filter result: {result} (matches: {matches})&#34;)
+        return result
+
+    def calculate_quantity(
+        self,
+        quantity_type: Literal[&#34;area&#34;, &#34;volume&#34;, &#34;count&#34;],
+        include_filter: Optional[dict] = None,
+        include_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;OR&#34;,
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;OR&#34;,
+        ifc_entity: str = &#34;IfcSpace&#34;,
+        pset_name: Optional[str] = None,
+        prop_name: Optional[str] = None
+    ) -&gt; Union[float, int]:
+        &#34;&#34;&#34;
+        Generic method to calculate quantities (area, volume, or count) with filters and filter logic.
+        For count metrics, pset_name and prop_name are optional as we just count the elements.
+        &#34;&#34;&#34;
+        # Default filters and property names based on quantity type
+        defaults = {
+            &#34;area&#34;: {
+                &#34;include_filter&#34;: {&#34;Name&#34;: &#34;GrossArea&#34;},
+                &#34;prop_name&#34;: &#34;NetFloorArea&#34;
+            },
+            &#34;volume&#34;: {
+                &#34;include_filter&#34;: {&#34;Name&#34;: &#34;GrossVolume&#34;},
+                &#34;prop_name&#34;: &#34;NetVolume&#34;
+            },
+            &#34;count&#34;: {
+                &#34;include_filter&#34;: None,
+                &#34;prop_name&#34;: None
+            }
+        }
+
+        # Use provided values or defaults
+        include_filter = include_filter or defaults[quantity_type][&#34;include_filter&#34;]
+        prop_name = prop_name or defaults[quantity_type][&#34;prop_name&#34;]
+
+        # Get all elements of the specified type first
+        elements = self.loader.get_elements(ifc_entity=ifc_entity) or []
+        print(f&#34;\nFound {len(elements)} {ifc_entity} elements&#34;)
+        
+        # Apply include filter
+        if include_filter:
+            filtered_elements = [
+                element for element in elements 
+                if self._apply_filter(element, include_filter, include_filter_logic)
+            ]
+            elements = filtered_elements
+            print(f&#34;After include filtering: {len(elements)} elements&#34;)
+        
+        # Apply subtract filter
+        if subtract_filter:
+            elements = [
+                element for element in elements 
+                if not self._apply_filter(element, subtract_filter, subtract_filter_logic)
+            ]
+            print(f&#34;After subtract filtering: {len(elements)} elements&#34;)
+
+        if quantity_type == &#34;count&#34;:
+            # For count, just return the number of elements
+            return len(elements)
+        else:
+            # For area and volume, sum the quantities
+            return self.sum_quantity(elements, pset_name, prop_name)
+
+
+
+    def _get_elements_by_space(
+        self,
+        ifc_entity: str,
+        grouping_pset: str,
+        grouping_attribute_or_property: str,
+        room_reference_attribute_guid: str,
+        include_filter: dict = None,
+        include_filter_logic: str = &#34;AND&#34;,
+        metric_pset_name: str = None,
+        metric_prop_name: str = None,
+    ) -&gt; dict:
+        &#34;&#34;&#34;Get elements grouped by space and sum their quantities.
+
+        Args:
+            ifc_entity: The IFC entity to get elements for.
+            grouping_pset: The name of the property set to get the grouping attribute from.
+            grouping_attribute_or_property: The attribute to group the elements by.
+            room_reference_attribute_guid: The property set and property name for the room reference GUID.
+            include_filter: A dictionary of conditions to include only specific elements.
+            include_filter_logic: The logic to use when combining multiple include filters.
+            metric_pset_name: The name of the property set to get the quantity from.
+            metric_prop_name: The name of the property to get the quantity from.
+
+        Returns:
+            A dictionary with the space name as key and the sum of quantities as value.
+        &#34;&#34;&#34;
+        print(&#34;\nDEBUG - Starting _get_elements_by_space&#34;)
+        print(f&#34;Parameters:&#34;)
+        print(f&#34;- ifc_entity: {ifc_entity}&#34;)
+        print(f&#34;- grouping_pset: {grouping_pset}&#34;)
+        print(f&#34;- grouping_attribute_or_property: {grouping_attribute_or_property}&#34;)
+        print(f&#34;- room_reference_attribute_guid: {room_reference_attribute_guid}&#34;)
+        print(f&#34;- include_filter: {include_filter}&#34;)
+        print(f&#34;- include_filter_logic: {include_filter_logic}&#34;)
+        print(f&#34;- metric_pset_name: {metric_pset_name}&#34;)
+        print(f&#34;- metric_prop_name: {metric_prop_name}&#34;)
+
+        # Get all elements of the specified entity
+        elements = self.loader.get_elements(ifc_entity=ifc_entity) or []
+        print(f&#34;\nFound {len(elements)} {ifc_entity} elements&#34;)
+
+        # Apply include filters if specified
+        if include_filter:
+            elements = [
+                element for element in elements 
+                if self._apply_filter(element, include_filter, include_filter_logic)
+            ]
+            print(f&#34;After filtering: {len(elements)} elements&#34;)
+
+        # Create a dictionary to store the sum of quantities for each space
+        space_quantities = {}
+
+        # Get all spaces for mapping GUIDs to names
+        spaces = self.loader.get_elements(ifc_entity=&#34;IfcSpace&#34;) or []
+        space_map = {}
+        for space in spaces:
+            # Get the grouping attribute value from the space
+            if &#39;.&#39; in grouping_attribute_or_property:
+                # Handle property set attributes
+                pset_name_group, prop_name_group = grouping_attribute_or_property.split(&#39;.&#39;)
+                group_value, _ = self._get_property_value(space, pset_name_group, prop_name_group)
+            else:
+                # Handle direct attributes
+                group_value = getattr(space, grouping_attribute_or_property, None)
+            
+            if group_value is not None:
+                space_map[space.GlobalId] = str(group_value)
+        print(f&#34;\nFound {len(spaces)} spaces for mapping&#34;)
+        print(f&#34;Space map: {space_map}&#34;)
+
+        # Process each element
+        for element in elements:
+            print(f&#34;\nProcessing element {element.GlobalId}&#34;)
+            
+            # Get the quantity from the property set
+            quantity = 0.0
+            for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+                qto = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+                if not qto or not qto.is_a(&#34;IfcElementQuantity&#34;):
+                    continue
+                if metric_pset_name and qto.Name != metric_pset_name:
+                    continue
+                for q in getattr(qto, &#34;Quantities&#34;, []):
+                    if q.Name == metric_prop_name:
+                        if q.is_a(&#34;IfcQuantityArea&#34;):
+                            quantity = q.AreaValue
+                        elif q.is_a(&#34;IfcQuantityVolume&#34;):
+                            quantity = q.VolumeValue
+                        elif q.is_a(&#34;IfcQuantityLength&#34;):
+                            quantity = q.LengthValue
+                        break
+            
+            if quantity == 0.0:
+                print(f&#34;Warning: No quantity found for element {element.GlobalId}&#34;)
+                continue
+
+            print(f&#34;Found quantity: {quantity}&#34;)
+
+            # Get space references from the property set
+            space_guids = []
+            if room_reference_attribute_guid:
+                ref_pset_name, ref_prop_name = room_reference_attribute_guid.split(&#34;.&#34;)
+                for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+                    pset = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+                    if not pset or not pset.is_a(&#34;IfcPropertySet&#34;) or pset.Name != ref_pset_name:
+                        continue
+                    for prop in pset.HasProperties:
+                        if prop.Name == ref_prop_name and hasattr(prop, &#39;NominalValue&#39;):
+                            value = prop.NominalValue.wrappedValue
+                            if isinstance(value, list):
+                                space_guids.extend(value)
+                            else:
+                                space_guids.append(value)
+                            print(f&#34;Found space reference: {value}&#34;)
+
+            print(f&#34;Found space references: {space_guids}&#34;)
+
+            # For each space reference, add the quantity to the space&#39;s total
+            for space_guid in space_guids:
+                space_name = space_map.get(space_guid)
+                if space_name:
+                    if space_name not in space_quantities:
+                        space_quantities[space_name] = 0.0
+                    space_quantities[space_name] += quantity
+                    print(f&#34;Added quantity {quantity} to space {space_name}&#34;)
+                else:
+                    print(f&#34;Warning: No space name found for GUID {space_guid}&#34;)
+
+        print(f&#34;\nFinal space quantities: {space_quantities}&#34;)
+        return space_quantities
+
+
+    def _get_elements_by_attribute(
+        self,
+        ifc_entity: str,
+        grouping_attribute: str,
+        grouping_pset: Optional[str] = None,
+        include_filter: Optional[dict] = None,
+        include_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;AND&#34;,
+        subtract_filter: Optional[dict] = None,
+        subtract_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;AND&#34;,
+        pset_name: str = &#34;Qto_BaseQuantities&#34;,
+        prop_name: str = &#34;NetArea&#34;,
+    ) -&gt; dict:
+        &#34;&#34;&#34;Get elements grouped by an attribute with their quantities.&#34;&#34;&#34;
+        # Get filtered elements first
+        print(f&#34;\nGetting elements with filters:&#34;)
+        print(f&#34;Entity: {ifc_entity}&#34;)
+        print(f&#34;Include filter: {include_filter}&#34;)
+        print(f&#34;Include filter logic: {include_filter_logic}&#34;)
+        print(f&#34;Grouping attribute: {grouping_attribute}&#34;)
+        print(f&#34;Grouping pset: {grouping_pset}&#34;)
+        print(f&#34;Pset name: {pset_name}&#34;)
+        print(f&#34;Prop name: {prop_name}&#34;)
+        
+        # Get all elements of the specified type first
+        elements = self.loader.get_elements(ifc_entity=ifc_entity) or []
+        print(f&#34;\nFound {len(elements)} {ifc_entity} elements&#34;)
+        
+        # Debug first element&#39;s properties
+        if elements:
+            self.debug_element_properties(elements[0])
+        
+        # Initialize result
+        result = {}
+        
+        # Process each element
+        for element in elements:
+            print(f&#34;\nProcessing element {element.GlobalId}&#34;)
+            
+            # Get the quantity
+            quantity = 0.0
+            for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+                qto = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+                if not qto or not qto.is_a(&#34;IfcElementQuantity&#34;):
+                    continue
+                print(f&#34;Found quantity set: {qto.Name}&#34;)
+                for q in getattr(qto, &#34;Quantities&#34;, []):
+                    if q.Name == prop_name:
+                        if q.is_a(&#34;IfcQuantityArea&#34;):
+                            quantity = q.AreaValue
+                            print(f&#34;Found area: {quantity}&#34;)
+                        elif q.is_a(&#34;IfcQuantityVolume&#34;):
+                            quantity = q.VolumeValue
+                        elif q.is_a(&#34;IfcQuantityLength&#34;):
+                            quantity = q.LengthValue
+                        break
+            
+            if quantity == 0.0:
+                print(f&#34;Warning: No quantity found for element {element.GlobalId}&#34;)
+                continue
+
+            # Get the grouping value
+            group_value = None
+            
+            # Check if grouping_attribute is a property set attribute
+            if &#34;.&#34; in grouping_attribute:
+                pset_name_group, prop_name_group = grouping_attribute.split(&#34;.&#34;)
+                print(f&#34;Looking for property {pset_name_group}.{prop_name_group}&#34;)
+                
+                # Get the property value directly
+                group_value, _ = self._get_property_value(element, pset_name_group, prop_name_group)
+                if group_value is not None:
+                    print(f&#34;Found group value: {group_value}&#34;)
+            else:
+                # For direct attributes (e.g., &#34;LongName&#34;)
+                if hasattr(element, grouping_attribute):
+                    group_value = getattr(element, grouping_attribute)
+                    print(f&#34;Got direct attribute {grouping_attribute} = {group_value}&#34;)
+            
+            if group_value is not None:
+                # Convert group value to string for consistency
+                group_value = str(group_value)
+                if group_value not in result:
+                    result[group_value] = 0.0
+                result[group_value] += quantity
+                print(f&#34;Added quantity {quantity} to group {group_value}&#34;)
+            else:
+                print(f&#34;Warning: No grouping value found for element {element.GlobalId}&#34;)
+                self.debug_element_properties(element)
+
+        print(f&#34;Final result: {result}&#34;)
+        return result
+
+    def debug_element_attributes(self, ifc_entity: str):
+        &#34;&#34;&#34;Debug function to understand how to access element attributes.&#34;&#34;&#34;
+        elements = self.loader.get_elements(ifc_entity=ifc_entity) or []
+        
+        if not elements:
+            print(f&#34;No elements found for entity {ifc_entity}&#34;)
+            return
+            
+        element = elements[0]  # Take first element as example
+        print(f&#34;\nDebugging element: {element}&#34;)
+        
+        # 1. Print all direct attributes
+        print(&#34;\nDirect attributes:&#34;)
+        for attr in dir(element):
+            if not attr.startswith(&#39;_&#39;):
+                try:
+                    value = getattr(element, attr)
+                    print(f&#34;{attr}: {value}&#34;)
+                except:
+                    print(f&#34;{attr}: &lt;error accessing&gt;&#34;)
+        
+        # 2. Print all property sets and their properties
+        print(&#34;\nProperty sets:&#34;)
+        for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+            pset = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+            if pset and pset.is_a(&#34;IfcPropertySet&#34;):
+                print(f&#34;\nProperty Set: {pset.Name}&#34;)
+                for prop in pset.HasProperties:
+                    if hasattr(prop, &#39;NominalValue&#39;):
+                        print(f&#34;  {prop.Name}: {prop.NominalValue.wrappedValue}&#34;)
+                    else:
+                        print(f&#34;  {prop.Name}: &lt;no NominalValue&gt;&#34;)
+        
+        # 3. Print all quantity sets
+        print(&#34;\nQuantity sets:&#34;)
+        for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+            qto = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+            if qto and qto.is_a(&#34;IfcElementQuantity&#34;):
+                print(f&#34;\nQuantity Set: {qto.Name}&#34;)
+                for q in getattr(qto, &#34;Quantities&#34;, []):
+                    if q.is_a(&#34;IfcQuantityArea&#34;):
+                        print(f&#34;  {q.Name}: {q.AreaValue}&#34;)
+                    elif q.is_a(&#34;IfcQuantityVolume&#34;):
+                        print(f&#34;  {q.Name}: {q.VolumeValue}&#34;)
+                    elif q.is_a(&#34;IfcQuantityLength&#34;):
+                        print(f&#34;  {q.Name}: {q.LengthValue}&#34;)
+                    else:
+                        print(f&#34;  {q.Name}: &lt;unknown quantity type&gt;&#34;)
+
+    def debug_element_properties(self, element) -&gt; None:
+        &#34;&#34;&#34;Debug method to print all property sets and their properties for an element.&#34;&#34;&#34;
+        print(&#34;\nDEBUG - Element Properties:&#34;)
+        print(f&#34;Element Type: {element.is_a()}&#34;)
+        print(f&#34;Element GlobalId: {element.GlobalId}&#34;)
+        
+        for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+            definition = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+            if not definition:
+                continue
+                
+            print(f&#34;\nProperty Set/Quantity Set: {definition.Name}&#34;)
+            print(f&#34;Type: {definition.is_a()}&#34;)
+            
+            if definition.is_a(&#34;IfcPropertySet&#34;):
+                for prop in definition.HasProperties:
+                    if hasattr(prop, &#39;NominalValue&#39;):
+                        print(f&#34;  Property: {prop.Name} = {prop.NominalValue.wrappedValue}&#34;)
+            elif definition.is_a(&#34;IfcElementQuantity&#34;):
+                for quantity in definition.Quantities:
+                    if quantity.is_a(&#34;IfcQuantityArea&#34;):
+                        print(f&#34;  Quantity: {quantity.Name} = {quantity.AreaValue}&#34;)
+                    elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
+                        print(f&#34;  Quantity: {quantity.Name} = {quantity.VolumeValue}&#34;)
+                    elif quantity.is_a(&#34;IfcQuantityLength&#34;):
+                        print(f&#34;  Quantity: {quantity.Name} = {quantity.LengthValue}&#34;)</code></pre>
+</details>
+<div class="desc"><p>Calculator for quantity takeoffs from IFC models.</p>
+<p>The default values are based on the abstractBIM IFC, but can be overridden.</p>
+<h2 id="common-filter-examples">Common Filter Examples:</h2>
+<ol>
+<li>Filter by properties:</li>
+<li>Interior elements: {"Pset_WallCommon.IsExternal": False}</li>
+<li>Exterior elements: {"Pset_WallCommon.IsExternal": True}</li>
+<li>Specific type: {"PredefinedType": "ROOF"}</li>
+<li>
+<p>By name: {"Name": "Wall1"}</p>
+</li>
+<li>
+<p>Filter by measurements:</p>
+</li>
+<li>Walls thicker than 15cm: {"Width": ("&gt;", 0.15)}</li>
+<li>Walls exactly 20cm thick: {"Width": ("=", 0.20)}</li>
+<li>
+<p>Walls up to 30cm thick: {"Width": ("&lt;=", 0.30)}</p>
+</li>
+<li>
+<p>Filter by multiple names:</p>
+</li>
+<li>Multiple spaces: {"Name": ["Kitchen", "Bathroom", "Living"]}</li>
+<li>
+<p>Exclude spaces: {"Name": ["Void", "Shaft"]}</p>
+</li>
+<li>
+<p>Combining filters:</p>
+</li>
+<li>Interior walls thicker than 15cm:
+{
+"Pset_WallCommon.IsExternal": False,
+"Width": ("&gt;", 0.15)
+}</li>
+</ol>
+<p>Filter Logic:
+- "AND": Element must match all conditions (default)
+- "OR": Element must match any condition</p>
+<p>All measurements should be in meters for length/width/height
+and square meters for areas.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="qto_buccaneer.utils.QtoCalculator.calculate_quantity"><code class="name flex">
+<span>def <span class="ident">calculate_quantity</span></span>(<span>self,<br>quantity_type: Literal['area', 'volume', 'count'],<br>include_filter: dict | None = None,<br>include_filter_logic: Literal['AND', 'OR'] = 'OR',<br>subtract_filter: dict | None = None,<br>subtract_filter_logic: Literal['AND', 'OR'] = 'OR',<br>ifc_entity: str = 'IfcSpace',<br>pset_name: str | None = None,<br>prop_name: str | None = None) ‑> float | int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_quantity(
+    self,
+    quantity_type: Literal[&#34;area&#34;, &#34;volume&#34;, &#34;count&#34;],
+    include_filter: Optional[dict] = None,
+    include_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;OR&#34;,
+    subtract_filter: Optional[dict] = None,
+    subtract_filter_logic: Literal[&#34;AND&#34;, &#34;OR&#34;] = &#34;OR&#34;,
+    ifc_entity: str = &#34;IfcSpace&#34;,
+    pset_name: Optional[str] = None,
+    prop_name: Optional[str] = None
+) -&gt; Union[float, int]:
+    &#34;&#34;&#34;
+    Generic method to calculate quantities (area, volume, or count) with filters and filter logic.
+    For count metrics, pset_name and prop_name are optional as we just count the elements.
+    &#34;&#34;&#34;
+    # Default filters and property names based on quantity type
+    defaults = {
+        &#34;area&#34;: {
+            &#34;include_filter&#34;: {&#34;Name&#34;: &#34;GrossArea&#34;},
+            &#34;prop_name&#34;: &#34;NetFloorArea&#34;
+        },
+        &#34;volume&#34;: {
+            &#34;include_filter&#34;: {&#34;Name&#34;: &#34;GrossVolume&#34;},
+            &#34;prop_name&#34;: &#34;NetVolume&#34;
+        },
+        &#34;count&#34;: {
+            &#34;include_filter&#34;: None,
+            &#34;prop_name&#34;: None
+        }
+    }
+
+    # Use provided values or defaults
+    include_filter = include_filter or defaults[quantity_type][&#34;include_filter&#34;]
+    prop_name = prop_name or defaults[quantity_type][&#34;prop_name&#34;]
+
+    # Get all elements of the specified type first
+    elements = self.loader.get_elements(ifc_entity=ifc_entity) or []
+    print(f&#34;\nFound {len(elements)} {ifc_entity} elements&#34;)
+    
+    # Apply include filter
+    if include_filter:
+        filtered_elements = [
+            element for element in elements 
+            if self._apply_filter(element, include_filter, include_filter_logic)
+        ]
+        elements = filtered_elements
+        print(f&#34;After include filtering: {len(elements)} elements&#34;)
+    
+    # Apply subtract filter
+    if subtract_filter:
+        elements = [
+            element for element in elements 
+            if not self._apply_filter(element, subtract_filter, subtract_filter_logic)
+        ]
+        print(f&#34;After subtract filtering: {len(elements)} elements&#34;)
+
+    if quantity_type == &#34;count&#34;:
+        # For count, just return the number of elements
+        return len(elements)
+    else:
+        # For area and volume, sum the quantities
+        return self.sum_quantity(elements, pset_name, prop_name)</code></pre>
+</details>
+<div class="desc"><p>Generic method to calculate quantities (area, volume, or count) with filters and filter logic.
+For count metrics, pset_name and prop_name are optional as we just count the elements.</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.QtoCalculator.debug_element_attributes"><code class="name flex">
+<span>def <span class="ident">debug_element_attributes</span></span>(<span>self, ifc_entity: str)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def debug_element_attributes(self, ifc_entity: str):
+    &#34;&#34;&#34;Debug function to understand how to access element attributes.&#34;&#34;&#34;
+    elements = self.loader.get_elements(ifc_entity=ifc_entity) or []
+    
+    if not elements:
+        print(f&#34;No elements found for entity {ifc_entity}&#34;)
+        return
+        
+    element = elements[0]  # Take first element as example
+    print(f&#34;\nDebugging element: {element}&#34;)
+    
+    # 1. Print all direct attributes
+    print(&#34;\nDirect attributes:&#34;)
+    for attr in dir(element):
+        if not attr.startswith(&#39;_&#39;):
+            try:
+                value = getattr(element, attr)
+                print(f&#34;{attr}: {value}&#34;)
+            except:
+                print(f&#34;{attr}: &lt;error accessing&gt;&#34;)
+    
+    # 2. Print all property sets and their properties
+    print(&#34;\nProperty sets:&#34;)
+    for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+        pset = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+        if pset and pset.is_a(&#34;IfcPropertySet&#34;):
+            print(f&#34;\nProperty Set: {pset.Name}&#34;)
+            for prop in pset.HasProperties:
+                if hasattr(prop, &#39;NominalValue&#39;):
+                    print(f&#34;  {prop.Name}: {prop.NominalValue.wrappedValue}&#34;)
+                else:
+                    print(f&#34;  {prop.Name}: &lt;no NominalValue&gt;&#34;)
+    
+    # 3. Print all quantity sets
+    print(&#34;\nQuantity sets:&#34;)
+    for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+        qto = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+        if qto and qto.is_a(&#34;IfcElementQuantity&#34;):
+            print(f&#34;\nQuantity Set: {qto.Name}&#34;)
+            for q in getattr(qto, &#34;Quantities&#34;, []):
+                if q.is_a(&#34;IfcQuantityArea&#34;):
+                    print(f&#34;  {q.Name}: {q.AreaValue}&#34;)
+                elif q.is_a(&#34;IfcQuantityVolume&#34;):
+                    print(f&#34;  {q.Name}: {q.VolumeValue}&#34;)
+                elif q.is_a(&#34;IfcQuantityLength&#34;):
+                    print(f&#34;  {q.Name}: {q.LengthValue}&#34;)
+                else:
+                    print(f&#34;  {q.Name}: &lt;unknown quantity type&gt;&#34;)</code></pre>
+</details>
+<div class="desc"><p>Debug function to understand how to access element attributes.</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.QtoCalculator.debug_element_properties"><code class="name flex">
+<span>def <span class="ident">debug_element_properties</span></span>(<span>self, element) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def debug_element_properties(self, element) -&gt; None:
+    &#34;&#34;&#34;Debug method to print all property sets and their properties for an element.&#34;&#34;&#34;
+    print(&#34;\nDEBUG - Element Properties:&#34;)
+    print(f&#34;Element Type: {element.is_a()}&#34;)
+    print(f&#34;Element GlobalId: {element.GlobalId}&#34;)
+    
+    for rel in getattr(element, &#34;IsDefinedBy&#34;, []):
+        definition = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+        if not definition:
+            continue
+            
+        print(f&#34;\nProperty Set/Quantity Set: {definition.Name}&#34;)
+        print(f&#34;Type: {definition.is_a()}&#34;)
+        
+        if definition.is_a(&#34;IfcPropertySet&#34;):
+            for prop in definition.HasProperties:
+                if hasattr(prop, &#39;NominalValue&#39;):
+                    print(f&#34;  Property: {prop.Name} = {prop.NominalValue.wrappedValue}&#34;)
+        elif definition.is_a(&#34;IfcElementQuantity&#34;):
+            for quantity in definition.Quantities:
+                if quantity.is_a(&#34;IfcQuantityArea&#34;):
+                    print(f&#34;  Quantity: {quantity.Name} = {quantity.AreaValue}&#34;)
+                elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
+                    print(f&#34;  Quantity: {quantity.Name} = {quantity.VolumeValue}&#34;)
+                elif quantity.is_a(&#34;IfcQuantityLength&#34;):
+                    print(f&#34;  Quantity: {quantity.Name} = {quantity.LengthValue}&#34;)</code></pre>
+</details>
+<div class="desc"><p>Debug method to print all property sets and their properties for an element.</p></div>
+</dd>
+<dt id="qto_buccaneer.utils.QtoCalculator.sum_quantity"><code class="name flex">
+<span>def <span class="ident">sum_quantity</span></span>(<span>self, elements, qset: str, quantity_name: str) ‑> float</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sum_quantity(self, elements, qset: str, quantity_name: str) -&gt; float:
+    &#34;&#34;&#34;
+    Sums up a quantity value from a quantity set for a list of IFC elements.
+
+    Args:
+        elements: List of IFC elements (e.g. spaces).
+        qset (str): Name of the quantity set (e.g. &#34;Qto_SpaceBaseQuantities&#34;).
+        quantity_name (str): Name of the quantity to sum (e.g. &#34;NetFloorArea&#34;).
+
+    Returns:
+        float: The total sum of the found quantities.
+    &#34;&#34;&#34;
+    total = 0.0
+
+    for el in elements:
+        for rel in getattr(el, &#34;IsDefinedBy&#34;, []):
+            qto = getattr(rel, &#34;RelatingPropertyDefinition&#34;, None)
+            if not qto or not qto.is_a(&#34;IfcElementQuantity&#34;) or qto.Name != qset:
+                continue
+            for quantity in getattr(qto, &#34;Quantities&#34;, []):
+                if quantity.Name == quantity_name:
+                    try:
+                        if quantity.is_a(&#34;IfcQuantityArea&#34;):
+                            value = quantity.AreaValue
+                        elif quantity.is_a(&#34;IfcQuantityVolume&#34;):
+                            value = quantity.VolumeValue
+                        elif quantity.is_a(&#34;IfcQuantityLength&#34;):
+                            value = quantity.LengthValue
+                        else:
+                            value = None
+
+                        if value is not None:
+                            total += value
+
+                    except AttributeError:
+                        # Log or skip if quantity is malformed
+                        pass
+    return total</code></pre>
+</details>
+<div class="desc"><p>Sums up a quantity value from a quantity set for a list of IFC elements.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>elements</code></strong></dt>
+<dd>List of IFC elements (e.g. spaces).</dd>
+<dt><strong><code>qset</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the quantity set (e.g. "Qto_SpaceBaseQuantities").</dd>
+<dt><strong><code>quantity_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the quantity to sum (e.g. "NetFloorArea").</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>float</code></dt>
+<dd>The total sum of the found quantities.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul>
+<li><a href="#core-utilities">Core Utilities</a></li>
+<li><a href="#usage">Usage</a></li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="qto_buccaneer" href="../index.html">qto_buccaneer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="qto_buccaneer.utils.config_loader" href="config_loader.html">qto_buccaneer.utils.config_loader</a></code></li>
+<li><code><a title="qto_buccaneer.utils.ifc_json_loader" href="ifc_json_loader.html">qto_buccaneer.utils.ifc_json_loader</a></code></li>
+<li><code><a title="qto_buccaneer.utils.ifc_loader" href="ifc_loader.html">qto_buccaneer.utils.ifc_loader</a></code></li>
+<li><code><a title="qto_buccaneer.utils.ifc_metadata_extractor" href="ifc_metadata_extractor.html">qto_buccaneer.utils.ifc_metadata_extractor</a></code></li>
+<li><code><a title="qto_buccaneer.utils.plots_utils" href="plots_utils.html">qto_buccaneer.utils.plots_utils</a></code></li>
+<li><code><a title="qto_buccaneer.utils.qto_calculator" href="qto_calculator.html">qto_buccaneer.utils.qto_calculator</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="qto_buccaneer.utils.load_config" href="#qto_buccaneer.utils.load_config">load_config</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="qto_buccaneer.utils.IfcJsonLoader" href="#qto_buccaneer.utils.IfcJsonLoader">IfcJsonLoader</a></code></h4>
+<ul class="">
+<li><code><a title="qto_buccaneer.utils.IfcJsonLoader.get_geometry" href="#qto_buccaneer.utils.IfcJsonLoader.get_geometry">get_geometry</a></code></li>
+<li><code><a title="qto_buccaneer.utils.IfcJsonLoader.get_properties" href="#qto_buccaneer.utils.IfcJsonLoader.get_properties">get_properties</a></code></li>
+<li><code><a title="qto_buccaneer.utils.IfcJsonLoader.get_spaces_in_storey" href="#qto_buccaneer.utils.IfcJsonLoader.get_spaces_in_storey">get_spaces_in_storey</a></code></li>
+<li><code><a title="qto_buccaneer.utils.IfcJsonLoader.get_storey_for_element" href="#qto_buccaneer.utils.IfcJsonLoader.get_storey_for_element">get_storey_for_element</a></code></li>
+<li><code><a title="qto_buccaneer.utils.IfcJsonLoader.get_storey_for_space" href="#qto_buccaneer.utils.IfcJsonLoader.get_storey_for_space">get_storey_for_space</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="qto_buccaneer.utils.IfcLoader" href="#qto_buccaneer.utils.IfcLoader">IfcLoader</a></code></h4>
+<ul class="">
+<li><code><a title="qto_buccaneer.utils.IfcLoader.get_element_spatial_relationship" href="#qto_buccaneer.utils.IfcLoader.get_element_spatial_relationship">get_element_spatial_relationship</a></code></li>
+<li><code><a title="qto_buccaneer.utils.IfcLoader.get_elements" href="#qto_buccaneer.utils.IfcLoader.get_elements">get_elements</a></code></li>
+<li><code><a title="qto_buccaneer.utils.IfcLoader.get_project_info" href="#qto_buccaneer.utils.IfcLoader.get_project_info">get_project_info</a></code></li>
+<li><code><a title="qto_buccaneer.utils.IfcLoader.get_property_sets" href="#qto_buccaneer.utils.IfcLoader.get_property_sets">get_property_sets</a></code></li>
+<li><code><a title="qto_buccaneer.utils.IfcLoader.get_property_value" href="#qto_buccaneer.utils.IfcLoader.get_property_value">get_property_value</a></code></li>
+<li><code><a title="qto_buccaneer.utils.IfcLoader.get_space_information" href="#qto_buccaneer.utils.IfcLoader.get_space_information">get_space_information</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="qto_buccaneer.utils.QtoCalculator" href="#qto_buccaneer.utils.QtoCalculator">QtoCalculator</a></code></h4>
+<ul class="">
+<li><code><a title="qto_buccaneer.utils.QtoCalculator.calculate_quantity" href="#qto_buccaneer.utils.QtoCalculator.calculate_quantity">calculate_quantity</a></code></li>
+<li><code><a title="qto_buccaneer.utils.QtoCalculator.debug_element_attributes" href="#qto_buccaneer.utils.QtoCalculator.debug_element_attributes">debug_element_attributes</a></code></li>
+<li><code><a title="qto_buccaneer.utils.QtoCalculator.debug_element_properties" href="#qto_buccaneer.utils.QtoCalculator.debug_element_properties">debug_element_properties</a></code></li>
+<li><code><a title="qto_buccaneer.utils.QtoCalculator.sum_quantity" href="#qto_buccaneer.utils.QtoCalculator.sum_quantity">sum_quantity</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

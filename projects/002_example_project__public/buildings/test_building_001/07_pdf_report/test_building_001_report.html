@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>test_building_001 – Bill of Quantities</title>
+  <style>
+    body { font-family: sans-serif; counter-reset: page; }
+    h1, h2, h3 { color: #2C3E50; margin-top: 2em; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+    th, td { padding: 8px; text-align: left; }
+    img { max-width: 100%; height: auto; margin: 1em 0; }
+    .placeholder { color: #aaa; font-style: italic; }
+    .page-break-before {
+      page-break-before: always;
+      counter-increment: page;
+    }
+    .project-title {
+      string-set: project-name content();
+    }
+    @page {
+      @bottom-left {
+        content: string(project-name);
+        font-family: sans-serif;
+        font-size: 8pt;
+      }
+      @bottom-right {
+        content: counter(page) "/" counter(pages);
+        font-family: sans-serif;
+        font-size: 8pt;
+      }
+    }
+    @page :first {
+      @bottom-left { content: none; }
+      @bottom-right { content: none; }
+    }
+    
+    /* Section-specific styles */
+    .title-page {
+        text-align: center;
+        margin: 100px 0;
+    }
+    
+    .title-page h1 {
+        font-size: 2.5em;
+        margin-bottom: 1em;
+    }
+    
+    .title-page p {
+        font-size: 1.2em;
+        margin: 0.5em 0;
+    }
+    
+    .table-of-contents {
+        margin: 20px 0;
+    }
+    
+    .table-of-contents ul {
+        list-style-type: none;
+        padding: 0;
+    }
+    
+    .table-of-contents li {
+        margin: 10px 0;
+    }
+    
+    .table-of-contents a {
+        text-decoration: none;
+        color: #2C3E50;
+    }
+    
+    .table-of-contents a::after {
+        content: leader('.') target-counter(attr(href), page);
+        float: right;
+    }
+    
+    .metrics-section {
+        margin: 20px 0;
+    }
+    
+    .metrics-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    
+    .metrics-table td {
+        padding: 8px 12px;
+        text-align: left;
+    }
+    
+    .metrics-table td:nth-child(1) {
+        width: 30%;
+    }
+    
+    .metrics-table td:nth-child(2) {
+        width: 30%;
+        text-align: right;
+    }
+    
+    .metrics-table td:nth-child(3) {
+        width: 40%;
+        text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Titel Page -->
+
+    
+    <div class="title-page" id="title_page">
+        <h1>test_building_001</h1>
+        <p><strong>Version:</strong> 2025-04-27 12:24</p>
+        <p><strong>File Name:</strong> test_building_001</p>
+        <p><strong>Address:</strong> </p>
+        
+    </div>
+    <div class="page-break-before"></div>
+
+    <!-- Table of Contents -->
+
+    
+
+    
+    <div class="table-of-contents" id="table_of_contents">
+        <h2>Inhaltsverzeichnis</h2>
+        <ul>
+            
+            <li><a href="#title_page">Titelseite</a></li>
+            
+            <li><a href="#table_of_contents">Inhaltsverzeichnis</a></li>
+            
+            <li><a href="#general_metrics">Allgemeine Kennzahlen & Benchmarks</a></li>
+            
+            <li><a href="#appendix">Appendix</a></li>
+        </ul>
+    </div>
+    <div class="page-break-before"></div>
+    
+    <!-- General Metrics & Benchmarks -->
+
+    
+
+    
+    <div class="metrics-section" id="general_metrics">
+        <h2>Allgemeine Kennzahlen & Benchmarks</h2>
+        
+        
+        <table class="metrics-table">
+            <tbody>
+                
+                <tr>
+                    <td>Bruttogeschossfläche (BGF)</td>
+                    <td>206.04 m²</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td>Bruttorauminhalt (BRI)</td>
+                    <td>710.21 m³</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td>Konstruktionsfläche</td>
+                    <td>49.95 m²</td>
+                    <td>24.2% of Bruttogeschossfläche</td>
+                </tr>
+                
+                <tr>
+                    <td>Konstruktionsvolumen</td>
+                    <td>197.75 m³</td>
+                    <td>27.8% of Bruttorauminhalt</td>
+                </tr>
+                
+                <tr>
+                    <td>Geschossanzahl</td>
+                    <td>4.0</td>
+                    <td></td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+    <div class="page-break-before"></div>
+
+    <!-- Usable Space -->
+
+    
+
+
+<h2 id="appendix">Appendix</h2>
+<h3>Definitions</h3>
+
+
+<h3>Disclaimer</h3>
+<p></p>
+
+</body>
+</html>

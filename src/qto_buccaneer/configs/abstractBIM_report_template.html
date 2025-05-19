@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ project_name }} – Bill of Quantities</title>
+  <style>
+    body { font-family: sans-serif; counter-reset: page; }
+    h1, h2, h3 { color: #2C3E50; margin-top: 2em; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+    th, td { padding: 8px; text-align: left; }
+    img { max-width: 100%; height: auto; margin: 1em 0; }
+    .placeholder { color: #aaa; font-style: italic; }
+    .page-break-before {
+      page-break-before: always;
+      counter-increment: page;
+    }
+    .project-title {
+      string-set: project-name content();
+    }
+    @page {
+      @bottom-left {
+        content: string(project-name);
+        font-family: sans-serif;
+        font-size: 8pt;
+      }
+      @bottom-right {
+        content: counter(page) "/" counter(pages);
+        font-family: sans-serif;
+        font-size: 8pt;
+      }
+    }
+    @page :first {
+      @bottom-left { content: none; }
+      @bottom-right { content: none; }
+    }
+    
+    /* Section-specific styles */
+    .title-page {
+        text-align: center;
+        margin: 100px 0;
+    }
+    
+    .title-page h1 {
+        font-size: 2.5em;
+        margin-bottom: 1em;
+    }
+    
+    .title-page p {
+        font-size: 1.2em;
+        margin: 0.5em 0;
+    }
+    
+    .table-of-contents {
+        margin: 20px 0;
+    }
+    
+    .table-of-contents ul {
+        list-style-type: none;
+        padding: 0;
+    }
+    
+    .table-of-contents li {
+        margin: 10px 0;
+    }
+    
+    .table-of-contents a {
+        text-decoration: none;
+        color: #2C3E50;
+    }
+    
+    .table-of-contents a::after {
+        content: leader('.') target-counter(attr(href), page);
+        float: right;
+    }
+    
+    .metrics-section {
+        margin: 20px 0;
+    }
+    
+    .metrics-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    
+    .metrics-table td {
+        padding: 8px 12px;
+        text-align: left;
+    }
+    
+    .metrics-table td:nth-child(1) {
+        width: 30%;
+    }
+    
+    .metrics-table td:nth-child(2) {
+        width: 30%;
+        text-align: right;
+    }
+    
+    .metrics-table td:nth-child(3) {
+        width: 40%;
+        text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Titel Page -->
+{% for section_id, section in metrics_table.items() %}
+    {% if section_id == 'title_page' %}
+    <div class="title-page" id="{{ section_id }}">
+        <h1>{{ project_name }}</h1>
+        <p><strong>Version:</strong> {{ date_time }}</p>
+        <p><strong>File Name:</strong> {{ file_name }}</p>
+        <p><strong>Address:</strong> {{ address }}</p>
+        {% if images.pic_project %}<img src="{{ images.pic_project }}">{% endif %}
+    </div>
+    <div class="page-break-before"></div>
+
+    <!-- Table of Contents -->
+
+    {% elif section_id == 'table_of_contents' %}
+    <div class="table-of-contents" id="{{ section_id }}">
+        <h2>{{ section.title }}</h2>
+        <ul>
+            {% for toc_section_id, toc_section in metrics_table.items() %}
+            <li><a href="#{{ toc_section_id }}">{{ toc_section.title }}</a></li>
+            {% endfor %}
+            <li><a href="#appendix">Appendix</a></li>
+        </ul>
+    </div>
+    <div class="page-break-before"></div>
+    
+    <!-- General Metrics & Benchmarks -->
+
+    {% elif section_id == 'general_metrics' %}
+    <div class="metrics-section" id="{{ section_id }}">
+        <h2>{{ section.title }}</h2>
+        {% if section_id == 'general_metrics' and images.pic_gfa %}
+        <img src="{{ images.pic_gfa }}">
+        {% endif %}
+        {% if section_id == 'general_metrics' and images.pic_gv %}
+        <img src="{{ images.pic_gv }}">
+        {% endif %}
+        <table class="metrics-table">
+            <tbody>
+                {% for metric in section.metrics %}
+                <tr>
+                    <td>{{ metric.name }}</td>
+                    <td>{{ metric.value1 }}</td>
+                    <td>{{ metric.value2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="page-break-before"></div>
+
+    <!-- Usable Space -->
+
+    {% elif section_id == 'usable_space' %}
+    <div class="metrics-section" id="{{ section_id }}">
+        <h2>{{ section.title }}</h2>
+    {% endif %}
+{% endfor %}
+
+<h2 id="appendix">Appendix</h2>
+<h3>Definitions</h3>
+{% for definition in formatted_definitions %}
+<p>{{ definition }}</p>
+{% endfor %}
+
+<h3>Disclaimer</h3>
+<p>{{ formatted_disclaimer }}</p>
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: qto_buccaneer
+Version: 0.1.3
+Requires-Python: >=3.8
+License-File: LICENSE.md
+Dynamic: license-file
+Dynamic: requires-python

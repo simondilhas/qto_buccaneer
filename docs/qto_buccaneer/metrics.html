@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>qto_buccaneer.metrics API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>qto_buccaneer.metrics</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="qto_buccaneer.metrics.calculate_all_metrics"><code class="name flex">
+<span>def <span class="ident">calculate_all_metrics</span></span>(<span>config: Dict,<br>ifc_path: str,<br>file_info: dict | None = None,<br>output_dir: str | None = None) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_all_metrics(config: Dict, ifc_path: str, file_info: Optional[dict] = None, output_dir: Optional[str] = None) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Calculate all metrics (base, relationship-based, derived, space-based, and grouped) defined in the configuration.
+
+    This function processes an IFC file and calculates all metrics defined in the configuration file. It handles:
+    - Standard metrics (single values for the entire project)
+    - Room-based metrics (calculations grouped by room)
+    - Grouped-by-attribute metrics (calculations grouped by specific attributes)
+    - Derived metrics (calculated from other metrics using formulas)
+
+    Args:
+        config (Dict): Configuration dictionary containing metric definitions.
+                      Usually loaded from metrics_config_abstractBIM.yaml
+        ifc_path (str): Path to the IFC file to analyze
+        file_info (Optional[dict]): Additional file metadata. Defaults to None.
+
+    Returns:
+        pd.DataFrame: DataFrame containing calculated metrics with columns:
+            - metric_name: Name of the metric
+            - value: Calculated numeric value
+            - unit: Unit of measurement (m², m³, ratio, etc.)
+            - category: Type of measurement (area, volume, ratio, count)
+            - description: Description of what is being measured
+            - calculation_time: When the metric was calculated
+            - status: Calculation status (success/error)
+
+    Example:
+        ```python
+        from qto_buccaneer.utils.config import load_config
+        from qto_buccaneer.metrics import calculate_all_metrics
+
+        # Load configuration
+        config = load_config(&#34;src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml&#34;)
+
+        # Calculate metrics
+        ifc_path = &#34;path/to/your/model.ifc&#34;
+        results = calculate_all_metrics(config, ifc_path)
+
+        # View results
+        print(results[[&#34;metric_name&#34;, &#34;value&#34;, &#34;unit&#34;]])
+
+        # Example output:
+        #      metric_name      value  unit
+        # 0    gross_floor_area  1500.0   m²
+        # 1    gross_volume     4500.0   m³
+        # 2    windows_count       25.0    -
+        ```
+
+    Note:
+        The configuration file must follow the structure defined in metrics_config_abstractBIM.yaml.
+        See the configs package documentation for details on metric configuration.
+    &#34;&#34;&#34;
+    results = []
+    
+    # Calculate base metrics
+    for metric_name in config.get(&#39;metrics&#39;, {}).keys():
+        metric_df = calculate_single_metric(
+            ifc_path=ifc_path,
+            config=config,
+            metric_name=metric_name,
+            file_info=file_info
+        )
+        results.append(metric_df)
+
+    # Calculate space-based metrics
+    for metric_name in config.get(&#39;room_based_metrics&#39;, {}).keys():
+        metric_df = calculate_single_metric_by_space(
+            ifc_path=ifc_path,
+            config=config,
+            metric_name=metric_name,
+            file_info=file_info
+        )
+        results.append(metric_df)
+
+    # Calculate grouped metrics
+    for metric_name in config.get(&#39;grouped_by_attribute_metrics&#39;, {}).keys():
+        metric_df = calculate_single_grouped_metric(
+            ifc_path=ifc_path,
+            config=config,
+            metric_name=metric_name,
+            file_info=file_info
+        )
+        results.append(metric_df)
+
+    # Combine all metrics
+    metrics_df = pd.concat(results, ignore_index=True) if results else pd.DataFrame(
+        columns=[&#34;metric_name&#34;, &#34;value&#34;, &#34;unit&#34;, &#34;category&#34;, &#34;description&#34;, 
+                &#34;calculation_time&#34;, &#34;status&#34;] + (list(file_info.keys()) if file_info else [])
+    )
+    
+    # Calculate derived metrics in order, updating the DataFrame after each calculation
+    for metric_name, metric_config in config.get(&#39;derived_metrics&#39;, {}).items():
+        metric_df = calculate_single_derived_metric(
+            metric_name=metric_name,
+            unit=metric_config.get(&#39;unit&#39;, &#39;unknown&#39;),
+            formula=metric_config[&#39;formula&#39;],
+            df_metrics=metrics_df,
+            file_info=file_info
+        )
+        # Update the metrics DataFrame with the new derived metric
+        metrics_df = pd.concat([metrics_df, metric_df], ignore_index=True)
+    
+    return metrics_df</code></pre>
+</details>
+<div class="desc"><p>Calculate all metrics (base, relationship-based, derived, space-based, and grouped) defined in the configuration.</p>
+<p>This function processes an IFC file and calculates all metrics defined in the configuration file. It handles:
+- Standard metrics (single values for the entire project)
+- Room-based metrics (calculations grouped by room)
+- Grouped-by-attribute metrics (calculations grouped by specific attributes)
+- Derived metrics (calculated from other metrics using formulas)</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>config</code></strong> :&ensp;<code>Dict</code></dt>
+<dd>Configuration dictionary containing metric definitions.
+Usually loaded from metrics_config_abstractBIM.yaml</dd>
+<dt><strong><code>ifc_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the IFC file to analyze</dd>
+<dt><strong><code>file_info</code></strong> :&ensp;<code>Optional[dict]</code></dt>
+<dd>Additional file metadata. Defaults to None.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>DataFrame containing calculated metrics with columns:
+- metric_name: Name of the metric
+- value: Calculated numeric value
+- unit: Unit of measurement (m², m³, ratio, etc.)
+- category: Type of measurement (area, volume, ratio, count)
+- description: Description of what is being measured
+- calculation_time: When the metric was calculated
+- status: Calculation status (success/error)</dd>
+</dl>
+<h2 id="example">Example</h2>
+<pre><code class="language-python">from qto_buccaneer.utils.config import load_config
+from qto_buccaneer.metrics import calculate_all_metrics
+
+# Load configuration
+config = load_config(&quot;src/qto_buccaneer/configs/metrics_config_abstractBIM.yaml&quot;)
+
+# Calculate metrics
+ifc_path = &quot;path/to/your/model.ifc&quot;
+results = calculate_all_metrics(config, ifc_path)
+
+# View results
+print(results[[&quot;metric_name&quot;, &quot;value&quot;, &quot;unit&quot;]])
+
+# Example output:
+#      metric_name      value  unit
+# 0    gross_floor_area  1500.0   m²
+# 1    gross_volume     4500.0   m³
+# 2    windows_count       25.0    -
+</code></pre>
+<h2 id="note">Note</h2>
+<p>The configuration file must follow the structure defined in metrics_config_abstractBIM.yaml.
+See the configs package documentation for details on metric configuration.</p></div>
+</dd>
+<dt id="qto_buccaneer.metrics.calculate_single_derived_metric"><code class="name flex">
+<span>def <span class="ident">calculate_single_derived_metric</span></span>(<span>metric_name: str,<br>unit: str,<br>formula: str,<br>df_metrics: pandas.core.frame.DataFrame,<br>file_info: dict | None = None) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_single_derived_metric(
+    metric_name: str, 
+    unit: str, 
+    formula: str, 
+    df_metrics: pd.DataFrame, 
+    file_info: Optional[dict] = None
+) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Calculate a single derived metric based on existing metrics.
+
+    This function evaluates a formula using values from previously calculated metrics
+    to generate a new derived metric. The formula can reference any metric name
+    present in the input DataFrame.
+
+    Args:
+        metric_name (str): Name of the derived metric to calculate
+        unit (str): Unit of measurement for the result (from config)
+        formula (str): Formula to calculate the derived metric using metric names
+                      as variables (e.g., &#34;gross_volume / gross_floor_area&#34;)
+        df_metrics (pd.DataFrame): DataFrame containing the metrics to use in the calculation.
+                                 Must include columns: metric_name, value
+        file_info (Optional[dict]): Additional file information to include in results
+
+    Returns:
+        pd.DataFrame: DataFrame containing the calculated derived metric with columns:
+            - metric_name: Name of the derived metric
+            - value: Calculated numeric value
+            - unit: Unit of measurement
+            - category: &#34;derived&#34;
+            - description: Description of the metric
+            - calculation_time: Timestamp of calculation
+            - status: &#34;success&#34; or error message
+
+    Example:
+        ```python
+        # Example metrics DataFrame
+        df_metrics = pd.DataFrame({
+            &#39;metric_name&#39;: [&#39;gross_volume&#39;, &#39;gross_floor_area&#39;],
+            &#39;value&#39;: [4500.0, 1500.0],
+            &#39;unit&#39;: [&#39;m³&#39;, &#39;m²&#39;]
+        })
+
+        # Calculate average height
+        result = calculate_single_derived_metric(
+            metric_name=&#34;average_height&#34;,
+            unit=&#34;m&#34;,
+            formula=&#34;gross_volume / gross_floor_area&#34;,
+            df_metrics=df_metrics
+        )
+
+        print(result[[&#34;metric_name&#34;, &#34;value&#34;, &#34;unit&#34;]])
+        # Output:
+        #   metric_name  value unit
+        # 0 average_height  3.0    m
+        ```
+
+    Note:
+        - The formula must use metric names exactly as they appear in df_metrics
+        - All metrics referenced in the formula must exist in df_metrics
+        - Division by zero and other mathematical errors are handled gracefully
+    &#34;&#34;&#34;
+    try:
+        # Create a dict of variables for formula evaluation
+        metric_values = df_metrics.set_index(&#39;metric_name&#39;)[&#39;value&#39;].to_dict()
+        
+        # Get units of input metrics
+        input_metrics = [m for m in metric_values.keys() if m in formula]
+        input_units = df_metrics[df_metrics[&#39;metric_name&#39;].isin(input_metrics)][&#39;unit&#39;].unique()
+        
+        # Evaluate the formula using the metric values
+        value = eval(formula, {&#34;__builtins__&#34;: {}}, metric_values)
+        
+        # Determine unit and category based on formula and input units
+        if &#34;/&#34; in formula:
+            unit = &#34;ratio&#34;
+            category = &#34;ratio&#34;
+        elif all(u == &#34;m²&#34; for u in input_units):
+            unit = &#34;m²&#34;
+            category = &#34;area&#34;
+        elif all(u == &#34;m³&#34; for u in input_units):
+            unit = &#34;m³&#34;
+            category = &#34;volume&#34;
+        elif all(u == &#34;count&#34; for u in input_units):
+            unit = &#34;count&#34;
+            category = &#34;count&#34;
+            value = int(value) if value is not None else None
+        else:
+            # Use the unit from config as fallback
+            category = &#34;derived&#34;
+        
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            value=round(value, 2) if value is not None and unit != &#34;count&#34; else value,
+            unit=unit,
+            category=category,
+            description=formula,  # Use formula as description for transparency
+            **file_info or {}
+        )])
+        
+    except NameError as e:
+        # Handle case where a required metric is missing
+        missing_metric = str(e).split(&#34;&#39;&#34;)[1]
+        error_msg = f&#34;Required metric &#39;{missing_metric}&#39; not found in calculated metrics&#34;
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            error_message=error_msg,
+            **file_info or {}
+        )])
+    except Exception as e:
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            error_message=str(e),
+            **file_info or {}
+        )])</code></pre>
+</details>
+<div class="desc"><p>Calculate a single derived metric based on existing metrics.</p>
+<p>This function evaluates a formula using values from previously calculated metrics
+to generate a new derived metric. The formula can reference any metric name
+present in the input DataFrame.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>metric_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the derived metric to calculate</dd>
+<dt><strong><code>unit</code></strong> :&ensp;<code>str</code></dt>
+<dd>Unit of measurement for the result (from config)</dd>
+<dt><strong><code>formula</code></strong> :&ensp;<code>str</code></dt>
+<dd>Formula to calculate the derived metric using metric names
+as variables (e.g., "gross_volume / gross_floor_area")</dd>
+<dt><strong><code>df_metrics</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
+<dd>DataFrame containing the metrics to use in the calculation.
+Must include columns: metric_name, value</dd>
+<dt><strong><code>file_info</code></strong> :&ensp;<code>Optional[dict]</code></dt>
+<dd>Additional file information to include in results</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>DataFrame containing the calculated derived metric with columns:
+- metric_name: Name of the derived metric
+- value: Calculated numeric value
+- unit: Unit of measurement
+- category: "derived"
+- description: Description of the metric
+- calculation_time: Timestamp of calculation
+- status: "success" or error message</dd>
+</dl>
+<h2 id="example">Example</h2>
+<pre><code class="language-python"># Example metrics DataFrame
+df_metrics = pd.DataFrame({
+    'metric_name': ['gross_volume', 'gross_floor_area'],
+    'value': [4500.0, 1500.0],
+    'unit': ['m³', 'm²']
+})
+
+# Calculate average height
+result = calculate_single_derived_metric(
+    metric_name=&quot;average_height&quot;,
+    unit=&quot;m&quot;,
+    formula=&quot;gross_volume / gross_floor_area&quot;,
+    df_metrics=df_metrics
+)
+
+print(result[[&quot;metric_name&quot;, &quot;value&quot;, &quot;unit&quot;]])
+# Output:
+#   metric_name  value unit
+# 0 average_height  3.0    m
+</code></pre>
+<h2 id="note">Note</h2>
+<ul>
+<li>The formula must use metric names exactly as they appear in df_metrics</li>
+<li>All metrics referenced in the formula must exist in df_metrics</li>
+<li>Division by zero and other mathematical errors are handled gracefully</li>
+</ul></div>
+</dd>
+<dt id="qto_buccaneer.metrics.calculate_single_grouped_metric"><code class="name flex">
+<span>def <span class="ident">calculate_single_grouped_metric</span></span>(<span>ifc_path: str, config: dict, metric_name: str, file_info: dict | None = None) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_single_grouped_metric(
+    ifc_path: str,
+    config: dict,
+    metric_name: str,
+    file_info: Optional[dict] = None,
+) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;Calculate a single grouped metric.&#34;&#34;&#34;
+    if metric_name not in config.get(&#39;grouped_by_attribute_metrics&#39;, {}):
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            error_message=&#34;Metric not found in grouped metrics configuration&#34;,
+            **file_info or {}
+        )])
+    
+    loader = IfcLoader(ifc_path)
+    qto = QtoCalculator(loader)
+    metric_config = config[&#39;grouped_by_attribute_metrics&#39;][metric_name]
+    
+    try:
+        ifc_entity = metric_config[&#34;ifc_entity&#34;]
+        grouping_attribute = metric_config.get(&#34;grouping_attribute&#34;)
+        grouping_pset = metric_config.get(&#34;grouping_pset&#34;)
+        pset_name = metric_config.get(&#34;pset_name&#34;)
+        prop_name = metric_config.get(&#34;prop_name&#34;)
+        include_filter = metric_config.get(&#34;include_filter&#34;)
+        include_filter_logic = metric_config.get(&#34;include_filter_logic&#34;, &#34;AND&#34;)
+        subtract_filter = metric_config.get(&#34;subtract_filter&#34;)
+        subtract_filter_logic = metric_config.get(&#34;subtract_filter_logic&#34;, &#34;AND&#34;)
+        quantity_type = metric_config.get(&#34;quantity_type&#34;, &#34;area&#34;)
+
+        # Get grouped values
+        grouped_values = qto._get_elements_by_attribute(
+            ifc_entity=ifc_entity,
+            grouping_attribute=grouping_attribute,
+            grouping_pset=grouping_pset,
+            include_filter=include_filter,
+            include_filter_logic=include_filter_logic,
+            subtract_filter=subtract_filter,
+            subtract_filter_logic=subtract_filter_logic,
+            pset_name=pset_name,
+            prop_name=prop_name,
+        )
+
+        # Create results for each group
+        results = []
+        for group_value, value in grouped_values.items():
+            # Clean up the group value for use in metric name
+            clean_group_value = str(group_value).replace(&#34; &#34;, &#34;_&#34;).lower()
+            # Create the metric name with the group value appended
+            full_metric_name = f&#34;{metric_name}_{clean_group_value}&#34;
+            
+            results.append({
+                &#34;metric_name&#34;: full_metric_name,
+                &#34;value&#34;: value,
+                &#34;unit&#34;: &#34;m²&#34; if quantity_type == &#34;area&#34; else &#34;m³&#34; if quantity_type == &#34;volume&#34; else &#34;count&#34;,
+                &#34;category&#34;: quantity_type,
+                &#34;description&#34;: metric_config[&#34;description&#34;],
+                &#34;calculation_time&#34;: datetime.now(),
+                &#34;status&#34;: &#34;success&#34;,
+                **(file_info or {})
+            })
+
+        if not results:
+            return pd.DataFrame([create_result_dict(
+                metric_name=metric_name,
+                error_message=&#34;No results calculated&#34;,
+                **file_info or {}
+            )])
+
+        return pd.DataFrame(results)
+
+    except Exception as e:
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            error_message=str(e),
+            **file_info or {}
+        )])</code></pre>
+</details>
+<div class="desc"><p>Calculate a single grouped metric.</p></div>
+</dd>
+<dt id="qto_buccaneer.metrics.calculate_single_metric"><code class="name flex">
+<span>def <span class="ident">calculate_single_metric</span></span>(<span>ifc_path: str, config: dict, metric_name: str, file_info: dict | None = None) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_single_metric(ifc_path: str, config: dict, metric_name: str, file_info: Optional[dict] = None) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Calculate a single metric from an IFC file based on the provided configuration.
+
+    Args:
+        ifc_path (str): Path to the IFC file to analyze
+        config (dict): Configuration dictionary containing metric definitions.
+            Expected format:
+            {
+                &#34;metrics&#34;: {
+                    &#34;metric_name&#34;: {
+                        &#34;description&#34;: str,
+                        &#34;quantity_type&#34;: str,
+                        &#34;ifc_entity&#34;: str,
+                        ...
+                    }
+                }
+            }
+        metric_name (str): Name of the metric to calculate (must exist in config)
+        file_info (Optional[dict], optional): Additional file information to include in results. Defaults to None.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the calculated metric with columns:
+            - metric_name: Name of the metric
+            - value: Calculated value
+            - unit: Unit of measurement
+            - description: Metric description
+            - error: Error message if calculation failed
+
+    Raises:
+        None: Errors are caught and returned in the DataFrame with error information
+
+    Example:
+        &gt;&gt;&gt; config = {
+        ...     &#34;metrics&#34;: {
+        ...         &#34;gross_floor_area&#34;: {
+        ...             &#34;description&#34;: &#34;Total floor area&#34;,
+        ...             &#34;quantity_type&#34;: &#34;area&#34;,
+        ...             &#34;ifc_entity&#34;: &#34;IfcSpace&#34;
+        ...         }
+        ...     }
+        ... }
+        &gt;&gt;&gt; df = calculate_single_metric(&#34;model.ifc&#34;, config, &#34;gross_floor_area&#34;)
+    &#34;&#34;&#34;
+    
+    if metric_name not in config.get(&#39;metrics&#39;, {}):
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            error_message=&#34;Metric not found in standard metrics configuration&#34;,
+            **file_info or {}
+        )])
+    
+    loader = IfcLoader(ifc_path)
+    qto = QtoCalculator(loader)
+    metric_config = config[&#39;metrics&#39;][metric_name]
+    
+    try:
+        result = _process_quantity_calculation(qto, metric_name, metric_config, file_info)
+        return pd.DataFrame([result])
+    except Exception as e:
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            error_message=str(e),
+            **file_info or {}
+        )])</code></pre>
+</details>
+<div class="desc"><p>Calculate a single metric from an IFC file based on the provided configuration.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ifc_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the IFC file to analyze</dd>
+<dt><strong><code>config</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Configuration dictionary containing metric definitions.
+Expected format:
+{
+"metrics": {
+"metric_name": {
+"description": str,
+"quantity_type": str,
+"ifc_entity": str,
+&hellip;
+}
+}
+}</dd>
+<dt><strong><code>metric_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the metric to calculate (must exist in config)</dd>
+<dt><strong><code>file_info</code></strong> :&ensp;<code>Optional[dict]</code>, optional</dt>
+<dd>Additional file information to include in results. Defaults to None.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>DataFrame containing the calculated metric with columns:
+- metric_name: Name of the metric
+- value: Calculated value
+- unit: Unit of measurement
+- description: Metric description
+- error: Error message if calculation failed</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>None</code></dt>
+<dd>Errors are caught and returned in the DataFrame with error information</dd>
+</dl>
+<h2 id="example">Example</h2>
+<pre><code class="language-python-repl">&gt;&gt;&gt; config = {
+...     &quot;metrics&quot;: {
+...         &quot;gross_floor_area&quot;: {
+...             &quot;description&quot;: &quot;Total floor area&quot;,
+...             &quot;quantity_type&quot;: &quot;area&quot;,
+...             &quot;ifc_entity&quot;: &quot;IfcSpace&quot;
+...         }
+...     }
+... }
+&gt;&gt;&gt; df = calculate_single_metric(&quot;model.ifc&quot;, config, &quot;gross_floor_area&quot;)
+</code></pre></div>
+</dd>
+<dt id="qto_buccaneer.metrics.calculate_single_metric_by_space"><code class="name flex">
+<span>def <span class="ident">calculate_single_metric_by_space</span></span>(<span>ifc_path: str, config: dict, metric_name: str, file_info: dict) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_single_metric_by_space(ifc_path: str, config: dict, metric_name: str, file_info: dict) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Calculate a single room-based metric, grouping results by space/room attributes.
+
+    This function calculates quantities for building elements (like windows, doors, etc.)
+    and groups them based on the spaces they&#39;re associated with. It&#39;s useful for analyzing
+    how elements are distributed across different room types or spaces.
+
+    Args:
+        ifc_path (str): Path to the IFC file to analyze
+        config (dict): Configuration dictionary containing the metric definition.
+                      Must include room_based_metrics section.
+        metric_name (str): Name of the room-based metric to calculate
+        file_info (dict): Dictionary containing file metadata
+
+    Returns:
+        pd.DataFrame: DataFrame containing the calculated metrics grouped by space,
+                     with columns:
+            - metric_name: Name of the metric
+            - space_name: Name or identifier of the space
+            - value: Calculated numeric value
+            - unit: Unit of measurement (m², m³, count)
+            - category: Type of measurement
+            - description: Description of what is being measured
+            - calculation_time: When the metric was calculated
+            - status: Calculation status (success/error)
+    &#34;&#34;&#34;
+    
+    if metric_name not in config.get(&#39;room_based_metrics&#39;, {}):
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            error_message=&#34;Metric not found in room-based metrics configuration&#34;,
+            **file_info
+        )])
+
+    loader = IfcLoader(ifc_path)
+    qto = QtoCalculator(loader)
+    metric_config = config[&#39;room_based_metrics&#39;][metric_name]
+
+    try:
+        # Use the relationship calculation method for room-based metrics
+        results = _process_space_relationship_calculation(qto, metric_name, metric_config, file_info)
+        return pd.DataFrame(results)
+    except Exception as e:
+        return pd.DataFrame([create_result_dict(
+            metric_name=metric_name,
+            error_message=str(e),
+            **file_info
+        )])</code></pre>
+</details>
+<div class="desc"><p>Calculate a single room-based metric, grouping results by space/room attributes.</p>
+<p>This function calculates quantities for building elements (like windows, doors, etc.)
+and groups them based on the spaces they're associated with. It's useful for analyzing
+how elements are distributed across different room types or spaces.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ifc_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the IFC file to analyze</dd>
+<dt><strong><code>config</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Configuration dictionary containing the metric definition.
+Must include room_based_metrics section.</dd>
+<dt><strong><code>metric_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the room-based metric to calculate</dd>
+<dt><strong><code>file_info</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary containing file metadata</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>DataFrame containing the calculated metrics grouped by space,
+with columns:
+- metric_name: Name of the metric
+- space_name: Name or identifier of the space
+- value: Calculated numeric value
+- unit: Unit of measurement (m², m³, count)
+- category: Type of measurement
+- description: Description of what is being measured
+- calculation_time: When the metric was calculated
+- status: Calculation status (success/error)</dd>
+</dl></div>
+</dd>
+<dt id="qto_buccaneer.metrics.calculate_single_room_metric"><code class="name flex">
+<span>def <span class="ident">calculate_single_room_metric</span></span>(<span>ifc_path: str, config: dict, metric_name: str, file_info: dict) ‑> pandas.core.frame.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_single_room_metric(ifc_path: str, config: dict, metric_name: str, file_info: dict) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;
+    Calculate a single room-based metric for analyzing room/space properties.
+
+    This function calculates quantities specifically for rooms/spaces in the IFC model.
+    Unlike calculate_single_metric_by_space which groups other elements by space,
+    this function directly measures properties of the spaces themselves.
+
+    Args:
+        ifc_path (str): Path to the IFC file to analyze
+        config (dict): Configuration dictionary containing the metric definition.
+                      Must include room_based_metrics section.
+        metric_name (str): Name of the room metric to calculate
+        file_info (dict): Dictionary containing file metadata
+
+    Returns:
+        pd.DataFrame: DataFrame containing the calculated room metrics with columns:
+            - metric_name: Name of the metric
+            - room_type: Type or category of the room
+            - room_name: Name or number of the room
+            - value: Calculated numeric value
+            - unit: Unit of measurement (m², m³)
+            - category: Type of measurement
+            - description: Description of what is being measured
+            - calculation_time: When the metric was calculated
+            - status: Calculation status (success/error)
+    &#34;&#34;&#34;
+    
+    if metric_name not in config.get(&#39;room_based_metrics&#39;, {}):
+        return _create_error_df(metric_name, &#34;Metric not found in room-based metrics configuration&#34;, file_info)
+    
+    loader = IfcLoader(ifc_path)
+    qto = QtoCalculator(loader)
+    metric_config = config[&#39;room_based_metrics&#39;][metric_name]
+    
+    try:
+        # Get the room values using _get_elements_by_space
+        room_values = qto._get_elements_by_space(
+            ifc_entity=metric_config[&#34;ifc_entity&#34;],
+            pset_name=metric_config[&#34;pset_name&#34;],
+            prop_name=metric_config[&#34;prop_name&#34;],
+            grouping_attribute=metric_config[&#34;grouping_attribute&#34;],
+            room_reference_attribute_guid=metric_config[&#34;room_reference_attribute_guid&#34;],
+            include_filter=metric_config.get(&#34;include_filter&#34;),
+            include_filter_logic=metric_config.get(&#34;include_filter_logic&#34;, &#34;AND&#34;)
+        )
+        
+        # Create results for each room/space
+        results = []
+        for room_name, value in room_values.items():
+            results.append({
+                &#34;metric_name&#34;: metric_name,
+                &#34;room_name&#34;: room_name,
+                &#34;value&#34;: round(value, 2) if value is not None else None,
+                &#34;unit&#34;: &#34;m³&#34; if metric_config.get(&#34;quantity_type&#34;) == &#34;volume&#34; else &#34;m²&#34;,
+                &#34;category&#34;: metric_config.get(&#34;quantity_type&#34;, &#34;area&#34;),
+                &#34;description&#34;: metric_config.get(&#34;description&#34;, &#34;&#34;),
+                &#34;calculation_time&#34;: datetime.now(),
+                &#34;status&#34;: &#34;success&#34;,
+                **file_info
+            })
+        
+        if results:
+            return pd.DataFrame(results)
+        else:
+            return _create_error_df(metric_name, &#34;No results calculated&#34;, file_info)
+    except Exception as e:
+        return _create_error_df(metric_name, str(e), file_info)</code></pre>
+</details>
+<div class="desc"><p>Calculate a single room-based metric for analyzing room/space properties.</p>
+<p>This function calculates quantities specifically for rooms/spaces in the IFC model.
+Unlike calculate_single_metric_by_space which groups other elements by space,
+this function directly measures properties of the spaces themselves.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ifc_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the IFC file to analyze</dd>
+<dt><strong><code>config</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Configuration dictionary containing the metric definition.
+Must include room_based_metrics section.</dd>
+<dt><strong><code>metric_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the room metric to calculate</dd>
+<dt><strong><code>file_info</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary containing file metadata</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>DataFrame containing the calculated room metrics with columns:
+- metric_name: Name of the metric
+- room_type: Type or category of the room
+- room_name: Name or number of the room
+- value: Calculated numeric value
+- unit: Unit of measurement (m², m³)
+- category: Type of measurement
+- description: Description of what is being measured
+- calculation_time: When the metric was calculated
+- status: Calculation status (success/error)</dd>
+</dl></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="qto_buccaneer" href="index.html">qto_buccaneer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="qto_buccaneer.metrics.calculate_all_metrics" href="#qto_buccaneer.metrics.calculate_all_metrics">calculate_all_metrics</a></code></li>
+<li><code><a title="qto_buccaneer.metrics.calculate_single_derived_metric" href="#qto_buccaneer.metrics.calculate_single_derived_metric">calculate_single_derived_metric</a></code></li>
+<li><code><a title="qto_buccaneer.metrics.calculate_single_grouped_metric" href="#qto_buccaneer.metrics.calculate_single_grouped_metric">calculate_single_grouped_metric</a></code></li>
+<li><code><a title="qto_buccaneer.metrics.calculate_single_metric" href="#qto_buccaneer.metrics.calculate_single_metric">calculate_single_metric</a></code></li>
+<li><code><a title="qto_buccaneer.metrics.calculate_single_metric_by_space" href="#qto_buccaneer.metrics.calculate_single_metric_by_space">calculate_single_metric_by_space</a></code></li>
+<li><code><a title="qto_buccaneer.metrics.calculate_single_room_metric" href="#qto_buccaneer.metrics.calculate_single_room_metric">calculate_single_room_metric</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>
