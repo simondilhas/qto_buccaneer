@@ -185,35 +185,13 @@ def process_building(building, blob_service_client, container_name, src_base):
     # Collect all files to upload
     files_to_upload = []
     
-    # --- Collect metrics Excel files ---
-    src_metrics_dir = os.path.join(src_building, "07_metrics")
-    if os.path.isdir(src_metrics_dir):
-        for file in os.listdir(src_metrics_dir):
-            if file.endswith(('.xlsx', '.xls')):
-                local_file_path = os.path.join(src_metrics_dir, file)
-                blob_name = f"buildings/{building}/07_metrics/{file}"
-                files_to_upload.append((local_file_path, blob_name))
-    
-    # --- Collect graph files ---
-    src_graph_dir = os.path.join(src_building, "11_abstractbim_plots")
-    if os.path.isdir(src_graph_dir):
-        for root, _, files in os.walk(src_graph_dir):
-            for file in files:
-                local_file_path = os.path.join(root, file)
-                rel_path = os.path.relpath(local_file_path, src_building)
-                blob_name = f"buildings/{building}/{rel_path}"
-                files_to_upload.append((local_file_path, blob_name))
-    
-    # --- Collect check files ---
-    for check_folder in ["09_building_inside_envelope", "09_check_building_inside_envelop"]:
-        src_check_dir = os.path.join(src_building, check_folder)
-        if os.path.isdir(src_check_dir):
-            for root, _, files in os.walk(src_check_dir):
-                for file in files:
-                    local_file_path = os.path.join(root, file)
-                    rel_path = os.path.relpath(local_file_path, src_building)
-                    blob_name = f"buildings/{building}/{rel_path}"
-                    files_to_upload.append((local_file_path, blob_name))
+    # Collect all files and directories within the building folder
+    for root, _, files in os.walk(src_building):
+        for file in files:
+            local_file_path = os.path.join(root, file)
+            rel_path = os.path.relpath(local_file_path, src_base)
+            blob_name = f"buildings/{rel_path}"
+            files_to_upload.append((local_file_path, blob_name))
     
     # Upload files in parallel
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
