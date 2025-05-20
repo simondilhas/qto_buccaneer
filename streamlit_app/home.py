@@ -320,7 +320,7 @@ def display_index():
                         st.image(title_picture, use_container_width=True)
                 else:
                     # Create a transparent placeholder image with the same dimensions
-                    placeholder = Image.new('RGBA', (800, 600), (255, 255, 255, 0))
+                    placeholder = Image.new('RGBA', (1123, 794), (255, 255, 255, 0)) #1123 × 794
                     st.image(placeholder, use_container_width=True)
             
             # Button will always be at the bottom of the column
