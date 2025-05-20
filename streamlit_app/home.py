@@ -307,14 +307,22 @@ def display_index():
     for idx, building in enumerate(buildings_with_content):
         with cols[idx % 3]:
             st.subheader(building)
-            paths = get_project_paths(building)
-            title_picture = load_title_picture(paths['graph'])
-            if title_picture:
-                if is_azure_environment():
-                    image_data = read_file(BASE_PROJECT_FOLDER, title_picture)
-                    st.image(image_data, use_container_width=True)
+            # Create a container with fixed height for the image
+            image_container = st.container()
+            with image_container:
+                paths = get_project_paths(building)
+                title_picture = load_title_picture(paths['graph'])
+                if title_picture:
+                    if is_azure_environment():
+                        image_data = read_file(BASE_PROJECT_FOLDER, title_picture)
+                        st.image(image_data, use_container_width=True)
+                    else:
+                        st.image(title_picture, use_container_width=True)
                 else:
-                    st.image(title_picture, use_container_width=True)
+                    # Add empty space to maintain consistent height
+                    st.markdown("<br>" * 10, unsafe_allow_html=True)
+            
+            # Button will always be at the bottom of the column
             if st.button(f"View {building}", key=f"btn_{building}", type="primary", use_container_width=True):
                 st.session_state['selected_building'] = building
                 st.switch_page("pages/1_Metrics.py")
