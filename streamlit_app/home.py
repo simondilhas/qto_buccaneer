@@ -319,8 +319,9 @@ def display_index():
                     else:
                         st.image(title_picture, use_container_width=True)
                 else:
-                    # Add empty space to maintain consistent height
-                    st.markdown("<br>" * 10, unsafe_allow_html=True)
+                    # Create a transparent placeholder image with the same dimensions
+                    placeholder = Image.new('RGBA', (800, 600), (255, 255, 255, 0))
+                    st.image(placeholder, use_container_width=True)
             
             # Button will always be at the bottom of the column
             if st.button(f"View {building}", key=f"btn_{building}", type="primary", use_container_width=True):
