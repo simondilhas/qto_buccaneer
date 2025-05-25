@@ -48,8 +48,12 @@ def add_element_to_metadata_json(json_path: Path, excel_path: Path, output_json_
                     print(f"Updating existing element {obj_id}")
                     for column in df.columns:
                         if pd.notna(row[column]):
-                            # Convert NaN to None for JSON compatibility
-                            value = None if pd.isna(row[column]) else row[column]
+                            # Special handling for Pset_SpatialData.ElevationOfStory
+                            if column == "Pset_SpatialData.ElevationOfStory":
+                                value = str(row[column])
+                            else:
+                                # Convert NaN to None for JSON compatibility
+                                value = None if pd.isna(row[column]) else row[column]
                             metadata['elements'][obj_id][column] = value
                 else:
                     print(f"Adding new element {obj_id}")
@@ -67,8 +71,12 @@ def add_element_to_metadata_json(json_path: Path, excel_path: Path, output_json_
                     # Add any additional columns from the Excel
                     for column in df.columns:
                         if pd.notna(row[column]):
-                            # Convert NaN to None for JSON compatibility
-                            value = None if pd.isna(row[column]) else row[column]
+                            # Special handling for Pset_SpatialData.ElevationOfStory
+                            if column == "Pset_SpatialData.ElevationOfStory":
+                                value = str(row[column])
+                            else:
+                                # Convert NaN to None for JSON compatibility
+                                value = None if pd.isna(row[column]) else row[column]
                             new_element[column] = value
                     
                     metadata['elements'][obj_id] = new_element
