@@ -11,6 +11,7 @@ from qto_buccaneer._utils._result_bundle import BaseResultBundle
 from qto_buccaneer._utils._general_tool_utils import unpack_dataframe, validate_df, validate_config
 from qto_buccaneer.utils.metadata_filter import MetadataFilter
 import numpy as np
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -447,6 +448,11 @@ def aggregate_grouped_data_custom(
     pd.DataFrame
         Aggregated DataFrame
     """
+    print("\nStarting aggregation with custom function:")
+    print(f"Input DataFrame shape: {df.shape}")
+    print(f"Key columns: {key_columns}")
+    print(f"Numerical column: {numerical_column}")
+    
     if isinstance(key_columns, str):
         key_columns = [key_columns]
 
@@ -455,22 +461,65 @@ def aggregate_grouped_data_custom(
     if missing_cols:
         raise KeyError(f"Missing required columns: {missing_cols}")
 
+    # Create aggregation dictionary
     agg_dict = {
         'count': (numerical_column, lambda x: x.notna().sum()),
         f'sum_{numerical_column}': (numerical_column, lambda x: x.sum(skipna=True) if x.notna().any() else None)
     }
 
+    # Process each column for aggregation
     for col in df.columns:
         if col in key_columns or col == numerical_column:
             continue
         elif col.startswith("__pivot_"):
+            # For pivot columns, sum the values
             agg_dict[col] = (col, lambda x: x.sum(skipna=True))
         else:
-            agg_dict[col] = (col, lambda x: ', '.join(map(str, pd.unique(x.dropna()))))
+            # For other columns, handle both list and non-list values
+            def make_agg_func(current_col):
+                def agg_func(x):
+                    try:
+                        # Convert to list first to avoid array operations
+                        values = x.tolist() if hasattr(x, 'tolist') else list(x)
+                        if not values:  # Check if list is empty
+                            return ''
+                        
+                        # Flatten lists if they exist
+                        flattened_values = []
+                        for v in values:
+                            if isinstance(v, list):
+                                flattened_values.extend(v)
+                            else:
+                                flattened_values.append(v)
+                        
+                        # Filter out None and NaN values
+                        valid_values = [str(v) for v in flattened_values if v is not None and not pd.isna(v)]
+                        return ', '.join(sorted(set(valid_values))) if valid_values else ''
+                    except Exception as e:
+                        print(f"Error processing column {current_col}:")
+                        print(f"Error type: {type(e).__name__}")
+                        print(f"Error message: {str(e)}")
+                        print(f"Sample values: {values[:5] if 'values' in locals() else 'No values'}")
+                        return ''
+                return agg_func
+            agg_dict[col] = (col, make_agg_func(col))
 
-    grouped = df.groupby(key_columns).agg(**agg_dict).reset_index()
+    print("\nAggregation dictionary created:")
+    print(json.dumps({k: str(v) for k, v in agg_dict.items()}, indent=2))
 
-    return grouped
+    # Perform the aggregation
+    try:
+        grouped = df.groupby(key_columns).agg(**agg_dict).reset_index()
+        print(f"\nAggregation successful. Output shape: {grouped.shape}")
+        print("Output columns:", grouped.columns.tolist())
+        return grouped
+    except Exception as e:
+        print(f"\nError during aggregation:")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        print("\nSample of problematic data:")
+        print(df.head())
+        raise
 
 def _create_key_column_old(df, config, data_type='target'):
     """
@@ -638,19 +687,62 @@ def _create_pivot_columns(df, pivot_column, quantity_column):
     containing `quantity_column` where pivot == value, and 0 elsewhere.
     Returns (new_df, list_of_new_column_names).
     """
+    print(f"\nCreating pivot columns:")
+    print(f"Pivot column: {pivot_column}")
+    print(f"Quantity column: {quantity_column}")
+    print(f"Available columns: {df.columns.tolist()}")
+    
     result = df.copy()
+    
+    # Check if pivot column exists
+    if pivot_column not in df.columns:
+        print(f"Error: Pivot column '{pivot_column}' not found in DataFrame")
+        print(f"Available columns: {df.columns.tolist()}")
+        raise KeyError(f"Pivot column '{pivot_column}' not found in DataFrame")
+    
+    # Check if quantity column exists
+    if quantity_column not in df.columns:
+        print(f"Error: Quantity column '{quantity_column}' not found in DataFrame")
+        print(f"Available columns: {df.columns.tolist()}")
+        raise KeyError(f"Quantity column '{quantity_column}' not found in DataFrame")
+    
+    # Print unique values in pivot column
+    print(f"\nUnique values in pivot column:")
+    print(df[pivot_column].unique())
+    
     # 1) find and sort all unique pivot values (drop NaN if you don't want a column for it)
     uniques = sorted(result[pivot_column].dropna().unique())
+    print(f"\nSorted unique values (excluding NaN): {uniques}")
+    
     new_cols = []
     # 2) for each pivot value, create one new column
     for val in uniques:
-        col_name = "__pivot_" + str(val)
-        result[col_name] = (
-            result[quantity_column]
-            .where(result[pivot_column] == val, 0)
-            .astype(float)
-        )
-        new_cols.append(col_name)
+        try:
+            col_name = "__pivot_" + str(val)
+            print(f"\nCreating pivot column for value: {val}")
+            print(f"Column name: {col_name}")
+            
+            # Print sample of data for this value
+            mask = result[pivot_column] == val
+            print(f"Number of rows matching this value: {mask.sum()}")
+            print(f"Sample of quantity values for this pivot:")
+            print(result.loc[mask, quantity_column].head())
+            
+            result[col_name] = (
+                result[quantity_column]
+                .where(result[pivot_column] == val, 0)
+                .astype(float)
+            )
+            new_cols.append(col_name)
+            print(f"Successfully created column {col_name}")
+        except Exception as e:
+            print(f"Error creating pivot column for value {val}:")
+            print(f"Error type: {type(e).__name__}")
+            print(f"Error message: {str(e)}")
+            raise
+    
+    print(f"\nCreated {len(new_cols)} pivot columns:")
+    print(new_cols)
     return result, new_cols
 
 def _prepare_actual_data_old(df, config, data_type='actual'):
@@ -710,7 +802,7 @@ def _prepare_actual_data_old(df, config, data_type='actual'):
         grouped_data['total'] = grouped_data[pivot_columns].sum(axis=1)
     else:
         # If no expand column, just aggregate normally
-        grouped_data = _aggregate_grouped_data(df_for_aggregation, 'key', numerical_column)
+        grouped_data = _aggregate_grouped_data_new(df_for_aggregation, 'key', numerical_column)
         grouped_data = grouped_data.reset_index()
 
     logger.info(f"Columns after aggregation: {grouped_data.columns.tolist()}")
@@ -739,66 +831,85 @@ def _prepare_actual_data_old(df, config, data_type='actual'):
 def _prepare_actual_data(df, config, data_type='actual'):
     """
     Prepare actual data for comparison by creating a key column and aggregating data.
+    """
+    print(f"\nPreparing actual data:")
+    print(f"Initial DataFrame shape: {df.shape}")
+    print(f"Initial columns: {df.columns.tolist()}")
     
-    Parameters:
-    -----------
-    df : pandas.DataFrame
-        Input DataFrame containing actual data
-    config : dict
-        Configuration dictionary containing key information
-    data_type : str, optional
-        Type of data being processed ('actual' or 'target'), defaults to 'actual'
-
-    Returns:
-    --------
-    pandas.DataFrame
-        DataFrame with key column and aggregated data
-    """ 
     # Use the passed config directly instead of loading it again
     key_columns = config['config']['keys'][data_type]
+    print(f"\nKey columns from config: {key_columns}")
+    
     # Convert single string to list for consistent handling
     if isinstance(key_columns, str):
         key_columns = [key_columns]
         
     numerical_column = config['config']['numerical_columns'][data_type]
+    print(f"Numerical column: {numerical_column}")
+    
     columns_to_keep = config['config']['return_values'][data_type]
+    print(f"Columns to keep: {columns_to_keep}")
+    
     expand_column = config['config']['numerical_columns']['expand_column']
-    print(expand_column)
+    print(f"Expand column: {expand_column}")
 
     # Create key column first
+    print("\nCreating key column...")
     df_for_aggregation = _create_key_column(df, config, data_type)
+    print(f"Shape after creating key: {df_for_aggregation.shape}")
+    print(f"Columns after creating key: {df_for_aggregation.columns.tolist()}")
+    
+    # Save intermediate results for debugging
     df_for_aggregation.to_excel('df_for_aggregation.xlsx', index=False)
+    print("Saved df_for_aggregation.xlsx")
 
     # Create pivot columns and get the list of created columns
-    df_pivot, pivot_columns = _create_pivot_columns(df_for_aggregation, expand_column, numerical_column)
+    print("\nCreating pivot columns...")
+    try:
+        df_pivot, pivot_columns = _create_pivot_columns(df_for_aggregation, expand_column, numerical_column)
+        print(f"Successfully created pivot columns: {pivot_columns}")
+    except Exception as e:
+        print(f"Error creating pivot columns:")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        raise
+    
     df_pivot.to_excel('df_pivot.xlsx', index=False)
-
+    print("Saved df_pivot.xlsx")
     
     # Then aggregate the data
-    grouped_data = aggregate_grouped_data_custom(df_pivot, 'key', numerical_column)
+    print("\nAggregating data...")
+    try:
+        grouped_data = aggregate_grouped_data_custom(df_pivot, 'key', numerical_column)
+        print(f"Successfully aggregated data. Shape: {grouped_data.shape}")
+    except Exception as e:
+        print(f"Error aggregating data:")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        raise
+    
     grouped_data.to_excel('grouped_data.xlsx', index=False)
+    print("Saved grouped_data.xlsx")
+    
     # Reset index to make 'key' a regular column
     grouped_data = grouped_data.reset_index()
     
-    #if pivot_columns is not None:
-    #    for col in pivot_columns:
-    #       # Group by key and sum the values
-    #        sums = df_for_aggregation.groupby('key')[col].sum()
-    #        # Map the sums back to the grouped_data
-    #        grouped_data[col] = grouped_data['key'].map(sums)
-
-    #    numerical_sums = df_for_aggregation.groupby('key')[numerical_column].sum()
-    #    grouped_data[numerical_column] = grouped_data['key'].map(numerical_sums)
-
     # Add count and key to columns to keep
-    columns_to_keep = columns_to_keep + ['count'] + ['key'] + [numerical_column] +[f"sum_{numerical_column}"]
+    columns_to_keep = columns_to_keep + ['count'] + ['key'] + [numerical_column] + [f"sum_{numerical_column}"]
+    print(f"\nFinal columns to keep: {columns_to_keep}")
     
     # Combine the filtered columns with the pivot columns
     final_columns = columns_to_keep + pivot_columns
+    print(f"Final columns including pivot columns: {final_columns}")
     
     # Select the combined columns, but only those that exist in grouped_data
     available_columns = [col for col in final_columns if col in grouped_data.columns]
+    print(f"Available columns in grouped data: {grouped_data.columns.tolist()}")
+    print(f"Selected columns for final output: {available_columns}")
+    
     df_filtered = grouped_data[available_columns]
+    print(f"\nFinal filtered DataFrame shape: {df_filtered.shape}")
+    print(f"Final columns: {df_filtered.columns.tolist()}")
 
     return df_filtered
 
