@@ -1,3 +1,40 @@
+"""
+Azure Blob Storage Upload Script
+
+This script uploads building data from a local project to Azure Blob Storage.
+It supports uploading specific buildings or all buildings within a project.
+
+Environment Variables Required:
+    AZURE_STORAGE_CONNECTION_STRING: Connection string for Azure Blob Storage
+    AZURE_CONTAINER_NAME: Name of the container (default: 'projects')
+    AZURE_ENVIRONMENT: Set to 'true' to enable uploads (default: 'false')
+    PROJECT_NAME: Name of the project to process (default: 'Seefeld__private')
+
+Usage:
+    # List all available buildings in the current project
+    python copy_data_to_azure.py --list
+
+    # Upload specific buildings
+    python copy_data_to_azure.py --buildings Building1 Building2
+
+    # Upload all buildings in the project
+    python copy_data_to_azure.py
+
+Features:
+    - Parallel processing of buildings and files
+    - Automatic compression of Excel files
+    - Incremental uploads (only newer files)
+    - Detailed upload statistics
+    - System sleep prevention during upload
+    - Progress logging
+
+Example .env file:
+    AZURE_STORAGE_CONNECTION_STRING=your_connection_string
+    AZURE_CONTAINER_NAME=projects
+    AZURE_ENVIRONMENT=true
+    PROJECT_NAME=your_project_name
+"""
+
 import os
 import shutil
 import subprocess
@@ -10,6 +47,7 @@ import concurrent.futures
 import zipfile
 import tempfile
 import io
+import argparse
 
 # Configure logging
 logging.basicConfig(
@@ -222,7 +260,28 @@ def process_building(building, blob_service_client, container_name, src_base):
     
     return upload_stats
 
+def get_available_buildings(project_name):
+    """Get list of available buildings for a project"""
+    buildings_dir = os.path.join(WORKSPACE_ROOT, "projects", project_name, "buildings")
+    if not os.path.exists(buildings_dir):
+        return []
+    return [d for d in os.listdir(buildings_dir) if os.path.isdir(os.path.join(buildings_dir, d))]
+
 def main():
+    # Add argument parser
+    parser = argparse.ArgumentParser(description='Upload building data to Azure Blob Storage')
+    parser.add_argument('--buildings', nargs='+', help='List of buildings to process. If not specified, processes all buildings.')
+    parser.add_argument('--list', action='store_true', help='List all available buildings')
+    args = parser.parse_args()
+
+    # List available buildings if requested
+    if args.list:
+        buildings = get_available_buildings(PROJECT_NAME)
+        print(f"\nAvailable buildings in project '{PROJECT_NAME}':")
+        for building in sorted(buildings):
+            print(f"  - {building}")
+        return
+
     logger.info(f"Starting data upload process. Azure environment: {AZURE_ENVIRONMENT}")
     
     if not AZURE_ENVIRONMENT:
@@ -241,7 +300,6 @@ def main():
             raise ValueError("AZURE_STORAGE_CONNECTION_STRING environment variable is not set")
         
         logger.info("Initializing BlobServiceClient")
-        # Initialize BlobServiceClient
         blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
 
         # Process project files first
@@ -249,8 +307,19 @@ def main():
         project_stats = process_project_files(blob_service_client, AZURE_CONTAINER_NAME, project_path)
         upload_stats['project_files'] = project_stats
         
-        # Find all building folders in the source
-        building_names = [name for name in os.listdir(SRC_BASE) if os.path.isdir(os.path.join(SRC_BASE, name))]
+        # Get buildings to process
+        if args.buildings:
+            building_names = args.buildings
+            # Validate that all specified buildings exist
+            available_buildings = get_available_buildings(PROJECT_NAME)
+            invalid_buildings = [b for b in building_names if b not in available_buildings]
+            if invalid_buildings:
+                print(f"Error: The following buildings were not found: {', '.join(invalid_buildings)}")
+                print("Available buildings:", ', '.join(available_buildings))
+                return
+        else:
+            building_names = get_available_buildings(PROJECT_NAME)
+
         logger.info(f"Found {len(building_names)} building folders to process")
 
         # Process buildings in parallel
@@ -277,29 +346,29 @@ def main():
 
         # Print summary
         logger.info("\n=== Upload Summary ===")
-        successful_projects = []
-        failed_projects = []
+        successful_buildings = []
+        failed_buildings = []
         for building, stats in upload_stats.items():
             if stats['total'] > 0:
                 if stats['failed'] == 0:
-                    successful_projects.append(building)
+                    successful_buildings.append(building)
                 else:
-                    failed_projects.append(building)
+                    failed_buildings.append(building)
                 logger.info(f"\nBuilding: {building}")
                 logger.info(f"  Total files: {stats['total']}")
                 logger.info(f"  Successful uploads: {stats['successful']}")
                 logger.info(f"  Failed uploads: {stats['failed']}")
         
-        logger.info("\n=== Project Status ===")
-        if successful_projects:
-            logger.info("\nSuccessfully uploaded projects:")
-            for project in sorted(successful_projects):
-                logger.info(f"  ✓ {project}")
+        logger.info("\n=== Building Status ===")
+        if successful_buildings:
+            logger.info("\nSuccessfully uploaded buildings:")
+            for building in sorted(successful_buildings):
+                logger.info(f"  ✓ {building}")
         
-        if failed_projects:
-            logger.info("\nProjects with failed uploads:")
-            for project in sorted(failed_projects):
-                logger.info(f"  ✗ {project}")
+        if failed_buildings:
+            logger.info("\nBuildings with failed uploads:")
+            for building in sorted(failed_buildings):
+                logger.info(f"  ✗ {building}")
 
     except Exception as e:
         logger.error(f"An error occurred during the upload process: {str(e)}")
