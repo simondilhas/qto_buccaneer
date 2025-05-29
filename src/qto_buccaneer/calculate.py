@@ -3,7 +3,7 @@ import pandas as pd
 from qto_buccaneer._utils._result_bundle import BaseResultBundle, MetricsResultBundle
 from qto_buccaneer._utils.calculate.calculate_metrics import calculate_metrics_internal
 import logging
-
+import json
 logger = logging.getLogger(__name__)
 
 def calculate_metrics(
@@ -110,6 +110,20 @@ def calculate_all_metrics(
         # Store the results
         if result.dataframe is not None and not result.dataframe.empty:
             all_metrics_dfs.append(result.dataframe)
+        else:
+            # Add a row with value 0 for this metric
+            empty_row = pd.DataFrame([{
+                'metric_name': metric_name,
+                'value': 0,
+                'unit': metric_config['config'].get('unit', ''),
+                'success': True,
+                'calculation_time': None,
+                'building': config.get('building_name', 'Example Building'),
+                'description': metric_config.get('description', ''),
+                'formula': metric_config['config'].get('formula', ''),
+                'components': list(metric_config['config'].get('components', {}).keys())
+            }])
+            all_metrics_dfs.append(empty_row)
         if result.json is not None:
             all_summaries.append(result.json)
     
@@ -146,3 +160,79 @@ def calculate_all_metrics(
         dataframe=combined_df,
         json=combined_summary
     )
+
+# Example usage
+
+"""
+
+import os
+
+print("Current working directory:", os.getcwd())
+with open("/home/simondilhas/Programmierung/qto_buccaneer/projects/Seefeld__private/buildings/09_hornbi/05_abstractbim_geometry_json/ifc_model_metadata.json", "r") as f:
+    json_data = json.load(f)
+
+input_data = json_data["elements"]
+print(input_data)
+
+config = {
+    "hnf_total": {
+        "name": "HNF Total",
+        "description": "Die Fläche aller Räume die nach SIA416 als HNF klassifiziert sind",
+        "config": {
+            "quantity_type": "area",
+            "unit": "m2",
+            "formula": "HNF",
+            "components": {
+                "HNF": {
+                    "filter": "IfcEntity=IfcSpace AND PredefinedType=INTERNAL AND Pset_Enrichment.SiA-2016=HNF",
+                    "base_quantity": "Qto_SpaceBaseQuantities.NetFloorArea"
+                }
+            }
+        }
+    },
+    "E2": {
+        "name": "E2 Fläche Aussenwand über Terrain",
+        "description": "Die Fläche aller Aussenwände über Terrain inkl. Fenster und Türen",
+        "config": {
+            "quantity_type": "area",
+            "unit": "m2",
+            "formula": "E2",
+            "components": {
+                "E2": {
+                    "filter": "IfcEntity=IfcCovering AND PredefinedType=CLADDING AND Pset_CoveringCommon.IsExternal=true AND Pset_SpatialData.ElevationOfStory>=-0.2",
+                    "base_quantity": "Qto_CoveringBaseQuantities.GrossArea"
+                }
+            }
+        }
+    },
+    "E3": {
+        "name": "E3 Fläche Einbauten zu Aussenwand",
+        "description": "Die Fläche aller Fenster und Türen",
+        "config": {
+            "quantity_type": "area",
+            "unit": "m2",
+            "formula": "Fenster + Türen",
+            "components": {
+                "Fenster": {
+                    "filter": "IfcEntity=IfcWindow AND Pset_WindowCommon.IsExternal=true",
+                    "base_quantity": "Qto_WindowBaseQuantities.Area"
+                },
+                "Türen": {
+                    "filter": "IfcEntity=IfcDoor AND Pset_DoorCommon.IsExternal=true",
+                    "base_quantity": "Qto_DoorBaseQuantities.Area"
+                }
+            }
+        }
+    }
+}
+
+from qto_buccaneer.utils._config_loader import load_config
+from pathlib import Path
+metrics_config = load_config(Path("/home/simondilhas/Programmierung/qto_buccaneer/projects/Seefeld__private/00_workflow_config.yaml"))
+print(metrics_config)
+
+metrics_result = calculate_all_metrics(input_data, metrics_config)
+
+print(metrics_result.dataframe)
+
+"""

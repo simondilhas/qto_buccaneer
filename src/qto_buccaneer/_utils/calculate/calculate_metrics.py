@@ -127,29 +127,52 @@ def calculate_metrics_internal(
                 component_values = {}
                 if 'formula' in metric_config['config']:
                     for component_name, component_config in metric_config['config']['components'].items():
-                        # Filter the DataFrame for this component
-                        filtered_df = MetadataFilter.filter_df_from_str(df, component_config['filter'])
-                        if filtered_df.empty:
-                            logger.warning(f"No elements found for component {component_name} with filter {component_config['filter']}")
-                        # Calculate the sum of the specified quantity
-                        component_values[component_name] = filtered_df[component_config['base_quantity']].sum()
+                        try:
+                            # Filter the DataFrame for this component
+                            filtered_df = MetadataFilter.filter_df_from_str(df, component_config['filter'])
+                            if filtered_df.empty:
+                                logger.warning(f"No elements found for component {component_name} with filter {component_config['filter']}")
+                                component_values[component_name] = 0
+                            else:
+                                # Calculate the sum of the specified quantity
+                                component_values[component_name] = filtered_df[component_config['base_quantity']].sum()
+                                logger.info(f"Component {component_name} value: {component_values[component_name]}")
+                        except KeyError as e:
+                            logger.warning(f"Column not found for component {component_name}: {str(e)}")
+                            component_values[component_name] = 0
+                        except Exception as e:
+                            logger.error(f"Error calculating component {component_name}: {str(e)}")
+                            component_values[component_name] = 0
                     
                     # Evaluate the formula
                     formula = metric_config['config']['formula']
+                    logger.info(f"Original formula: {formula}")
                     # Replace component names with their values
                     for component_name, value in component_values.items():
                         formula = formula.replace(component_name, str(value))
+                    logger.info(f"Formula after replacement: {formula}")
                     # Evaluate the formula safely
                     try:
                         value = eval(formula)
+                        logger.info(f"Evaluated value: {value}")
+                        # If the result is None or division by zero, set it to 0
+                        if value is None or (isinstance(value, float) and (value == float('inf') or value == float('-inf'))):
+                            value = 0
+                            logger.warning("Formula evaluation returned None or division by zero, setting to 0")
+                        # Add validation for final value
+                        if value == 0:
+                            logger.warning(f"Final value is 0 for metric {metric_name}. Component values: {component_values}")
                     except Exception as e:
+                        logger.error(f"Error evaluating formula: {str(e)}")
                         raise ValueError(f"Error evaluating formula '{formula}': {str(e)}")
                 else:
                     # Simple calculation without formula
                     filtered_df = MetadataFilter.filter_df_from_str(df, metric_config['config']['filter'])
                     if filtered_df.empty:
                         logger.warning(f"No elements found for metric {metric_name} with filter {metric_config['config']['filter']}")
-                    value = filtered_df[metric_config['config']['base_quantity']].sum()
+                        value = 0
+                    else:
+                        value = filtered_df[metric_config['config']['base_quantity']].sum()
 
                 # Create result DataFrame for this metric
                 metric_result = pd.DataFrame({
@@ -168,6 +191,19 @@ def calculate_metrics_internal(
 
             except Exception as e:
                 logger.error(f"Failed to calculate metric {metric_name}: {str(e)}")
+                # Create a result entry for the failed metric
+                failed_metric_result = pd.DataFrame({
+                    'metric_name': [metric_config['name']],
+                    'value': [0],
+                    'unit': [metric_config['config']['unit']],
+                    'success': [False],
+                    'calculation_time': [time.time() - start_time],
+                    'building': [building_name],
+                    'description': [metric_config['description']],
+                    'formula': [metric_config['config'].get('formula', '')],
+                    'components': [str(metric_config['config'].get('components', {}))]
+                })
+                all_results.append(failed_metric_result)
                 failed_metrics.append({
                     'metric_name': metric_name,
                     'error': str(e)

@@ -1,0 +1,2 @@
+Workflow started at: 2025-05-28 05:26:51
+23_tete-a-tete: Failed - Error: 'NoneType' object has no attribute 'get'
