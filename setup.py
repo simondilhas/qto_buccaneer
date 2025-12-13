@@ -9,10 +9,19 @@ setup(
         include=["qto_buccaneer*"]
     ),
     install_requires=[
-        "ifcopenshell",
-        "pandas",
-        "pyyaml",
-        "pdoc3",
+        "ifcopenshell>=0.8.1",
+        "pandas>=2.2.3",
+        "pyyaml>=6.0.2",
+        "numpy>=2.2.4",
+        "python-dotenv>=1.1.0",
+        "openpyxl>=3.1.5",
+        "shapely>=2.0.7",
+        "plotly>=6.0.1",
+        "trimesh>=4.8.3",
+        "manifold3d>=3.2.1",
+        "scipy>=1.15.0",
+        "requests>=2.32.0",
+        "pyarrow>=10.0.0",
     ],
     extras_require={
         "docs": [

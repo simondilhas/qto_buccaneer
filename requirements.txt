@@ -7,6 +7,13 @@ python-dotenv>=1.1.0
 openpyxl>=3.1.5
 shapely>=2.0.7
 
+# Visualization dependencies
+trimesh>=4.8.3
+manifold3d>=3.2.1
+scipy>=1.15.0
+requests>=2.32.0
+pyarrow>=10.0.0
+
 # Documentation dependencies
 pdoc3>=0.11.6
 sphinx>=8.2.3
