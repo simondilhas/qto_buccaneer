@@ -167,22 +167,48 @@ el.replaceWith(d);
         if not filters:
             return df
             
-        masks = []
+        field_masks = {}
+        
+        # Process each filter field
         for key, value in filters.items():
+            if key not in field_masks:
+                field_masks[key] = []
+                
             if isinstance(value, list):
-                if isinstance(value[0], tuple):  # Comparison operators
-                    op, val = value[0]
-                    mask = df[key].apply(lambda x: MetadataFilter._compare_values(x, op, val))
-                else:  # List of values
+                if len(value) &gt; 0 and isinstance(value[0], tuple):  # Comparison operators
+                    # Handle each comparison operator separately
+                    for op, val in value:
+                        mask = df[key].apply(lambda x: MetadataFilter._compare_values(x, op, val))
+                        field_masks[key].append(mask)
+                else:  # List of values (OR condition)
                     mask = df[key].isin(value)
+                    field_masks[key].append(mask)
             else:  # Single value
                 mask = df[key] == value
-            masks.append(mask)
+                field_masks[key].append(mask)
+        
+        # Combine masks for each field with AND logic
+        field_combined_masks = []
+        for field, masks in field_masks.items():
+            if masks:
+                # Combine all masks for this field with AND logic
+                field_mask = masks[0]
+                for mask in masks[1:]:
+                    field_mask = field_mask &amp; mask
+                field_combined_masks.append(field_mask)
+        
+        # Combine field masks according to the specified logic
+        if not field_combined_masks:
+            return df
             
         if logic == &#34;AND&#34;:
-            final_mask = pd.concat(masks, axis=1).all(axis=1)
+            final_mask = field_combined_masks[0]
+            for mask in field_combined_masks[1:]:
+                final_mask = final_mask &amp; mask
         else:  # OR
-            final_mask = pd.concat(masks, axis=1).any(axis=1)
+            final_mask = field_combined_masks[0]
+            for mask in field_combined_masks[1:]:
+                final_mask = final_mask | mask
             
         return df[final_mask]
 
@@ -192,8 +218,8 @@ el.replaceWith(d);
         Filter a DataFrame using a string expression.
         
         Args:
-            df: DataFrame containing metadata
-            filter_str: String expression containing filter criteria
+            df: DataFrame to filter
+            filter_str: Filter expression string
             
         Returns:
             Filtered DataFrame
@@ -207,18 +233,151 @@ el.replaceWith(d);
             &gt;&gt;&gt; 
             &gt;&gt;&gt; # Simple filter
             &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office&#34;)
+            &gt;&gt;&gt; print(filtered_df)
+            &gt;&gt;&gt; # Output:
+            &gt;&gt;&gt; #      Name  Area    Type
+            &gt;&gt;&gt; # 0  Room 101  20.0  Office
+            &gt;&gt;&gt; # 2  Room 103  30.0  Office
             &gt;&gt;&gt; 
             &gt;&gt;&gt; # Complex filter
             &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office AND Area&gt;20.0&#34;)
-            &gt;&gt;&gt; 
-            &gt;&gt;&gt; # Filter with OR condition
-            &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office AND (Area&gt;25.0 OR Area&lt;15.0)&#34;)
+            &gt;&gt;&gt; print(filtered_df)
+            &gt;&gt;&gt; # Output:
+            &gt;&gt;&gt; #      Name  Area    Type
+            &gt;&gt;&gt; # 2  Room 103  30.0  Office
         &#34;&#34;&#34;
-        filters = MetadataFilter._parse_filter_expression(filter_str)
-        return MetadataFilter.filter_df(df, filters)
+        if not filter_str:
+            return df
+            
+        # Start with the full DataFrame
+        result_df = df.copy()
+        
+        # Verificăm dacă avem un OR la nivel superior (nu în paranteze)
+        if &#34; OR &#34; in filter_str and &#34;(&#34; not in filter_str:
+            # Împărțim expresia în părți separate prin OR
+            or_parts = filter_str.split(&#34; OR &#34;)
+            or_dfs = []
+            
+            # Aplicăm fiecare parte separat și combinăm rezultatele
+            for part in or_parts:
+                part = part.strip()
+                if part:
+                    filtered = MetadataFilter.filter_df_from_str(df, part)
+                    or_dfs.append(filtered)
+            
+            # Combinăm toate rezultatele OR
+            if or_dfs:
+                return pd.concat(or_dfs).drop_duplicates()
+            return result_df
+        
+        # Split by AND operators
+        parts = filter_str.split(&#39; AND &#39;)
+        
+        for part in parts:
+            part = part.strip()
+            
+            # Handle parenthesized OR expressions
+            if part.startswith(&#34;(&#34;) and part.endswith(&#34;)&#34;):
+                inner_expr = part[1:-1].strip()
+                or_parts = inner_expr.split(&#34; OR &#34;)
+                
+                # Create a temporary DataFrame for each OR condition
+                or_dfs = []
+                for or_part in or_parts:
+                    or_part = or_part.strip()
+                    # Parse the simple condition
+                    if &#34;=&#34; in or_part:
+                        key, value = or_part.split(&#34;=&#34;, 1)
+                        key = key.strip()
+                        value = value.strip()
+                        try:
+                            value = float(value)
+                        except ValueError:
+                            pass
+                        # Map &#39;type&#39; to &#39;IfcEntity&#39;
+                        if key.lower() == &#39;type&#39;:
+                            key = &#39;IfcEntity&#39;
+                        or_dfs.append(df[df[key] == value])
+                    elif &#34;&gt;&#34; in or_part:
+                        key, value = or_part.split(&#34;&gt;&#34;, 1)
+                        key = key.strip()
+                        value = float(value.strip())
+                        or_dfs.append(df[df[key] &gt; value])
+                    elif &#34;&lt;&#34; in or_part:
+                        key, value = or_part.split(&#34;&lt;&#34;, 1)
+                        key = key.strip()
+                        value = float(value.strip())
+                        or_dfs.append(df[df[key] &lt; value])
+                
+                # Combine all OR conditions
+                if or_dfs:
+                    or_combined = pd.concat(or_dfs).drop_duplicates()
+                    # Intersect with the current result
+                    result_df = pd.merge(result_df, or_combined, how=&#39;inner&#39;)
+            else:
+                # Handle simple conditions
+                simple_filter = MetadataFilter._parse_filter_expression(part)
+                result_df = MetadataFilter.filter_df(result_df, simple_filter)
+        
+        return result_df
 
     @staticmethod
-    def _parse_filter_expression(filter_str: str) -&gt; dict:
+    def _handle_complex_expression(df: pd.DataFrame, filter_str: str) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;Handle complex filter expressions with AND, OR, and parentheses.&#34;&#34;&#34;
+        # Split by AND
+        and_parts = filter_str.split(&#34; AND &#34;)
+        result_df = df.copy()
+        
+        for part in and_parts:
+            part = part.strip()
+            
+            # Handle parenthesized OR expressions
+            if part.startswith(&#34;(&#34;) and part.endswith(&#34;)&#34;):
+                inner_expr = part[1:-1].strip()
+                or_parts = inner_expr.split(&#34; OR &#34;)
+                
+                # Create a temporary DataFrame for each OR condition
+                or_dfs = []
+                for or_part in or_parts:
+                    or_part = or_part.strip()
+                    # Parse the simple condition
+                    if &#34;=&#34; in or_part:
+                        key, value = or_part.split(&#34;=&#34;, 1)
+                        key = key.strip()
+                        value = value.strip()
+                        try:
+                            value = float(value)
+                        except ValueError:
+                            pass
+                        # Map &#39;type&#39; to &#39;IfcEntity&#39;
+                        if key.lower() == &#39;type&#39;:
+                            key = &#39;IfcEntity&#39;
+                        or_dfs.append(df[df[key] == value])
+                    elif &#34;&gt;&#34; in or_part:
+                        key, value = or_part.split(&#34;&gt;&#34;, 1)
+                        key = key.strip()
+                        value = float(value.strip())
+                        or_dfs.append(df[df[key] &gt; value])
+                    elif &#34;&lt;&#34; in or_part:
+                        key, value = or_part.split(&#34;&lt;&#34;, 1)
+                        key = key.strip()
+                        value = float(value.strip())
+                        or_dfs.append(df[df[key] &lt; value])
+                
+                # Combine all OR conditions
+                if or_dfs:
+                    or_combined = pd.concat(or_dfs).drop_duplicates()
+                    # Intersect with the current result
+                    result_df = pd.merge(result_df, or_combined, how=&#39;inner&#39;)
+            else:
+                # Handle simple conditions
+                simple_filter = MetadataFilter._parse_filter_expression(part)
+                result_df = MetadataFilter.filter_df(result_df, simple_filter)
+        
+        return result_df
+
+    @staticmethod
+    def _parse_filter_expression(filter_str: str) -&gt; Dict[str, Union[str, List[Tuple[str, float]]]]:
         &#34;&#34;&#34;Parse a filter expression string into a filter dictionary.
         
         Examples:
@@ -242,6 +401,7 @@ el.replaceWith(d);
                 values = []
                 
                 for inner_part in inner_parts:
+                    inner_part = inner_part.strip()
                     if &#39;=&#39; in inner_part:
                         k, v = inner_part.split(&#39;=&#39;, 1)
                         k = k.strip()
@@ -252,10 +412,10 @@ el.replaceWith(d);
                 
                 if key and values:
                     # Map &#39;type&#39; to &#39;IfcEntity&#39;
-                    if key == &#39;type&#39;:
+                    if key.lower() == &#39;type&#39;:
                         key = &#39;IfcEntity&#39;
                     filters[key] = values
-                    
+            
             # Handle comparison operators
             elif any(op in part for op in [&#39;&gt;&#39;, &#39;&lt;&#39;, &#39;&gt;=&#39;, &#39;&lt;=&#39;, &#39;=&#39;]):
                 for op in [&#39;&gt;=&#39;, &#39;&lt;=&#39;, &#39;&gt;&#39;, &#39;&lt;&#39;, &#39;=&#39;]:
@@ -263,34 +423,49 @@ el.replaceWith(d);
                         key, value = part.split(op, 1)
                         key = key.strip()
                         value = value.strip()
-                        try:
-                            value = float(value)
-                            # Map &#39;type&#39; to &#39;IfcEntity&#39;
-                            if key == &#39;type&#39;:
-                                key = &#39;IfcEntity&#39;
-                            filters[key] = [(op, value)]
-                        except ValueError:
-                            # Map &#39;type&#39; to &#39;IfcEntity&#39;
-                            if key == &#39;type&#39;:
-                                key = &#39;IfcEntity&#39;
-                            filters[key] = value
-                        break
                         
-            # Handle simple equality
-            elif &#39;=&#39; in part:
-                key, value = part.split(&#39;=&#39;, 1)
-                key = key.strip()
-                value = value.strip()
-                # Map &#39;type&#39; to &#39;IfcEntity&#39;
-                if key == &#39;type&#39;:
-                    key = &#39;IfcEntity&#39;
-                filters[key] = value
+                        # Map &#39;type&#39; to &#39;IfcEntity&#39;
+                        if key.lower() == &#39;type&#39;:
+                            key = &#39;IfcEntity&#39;
+                            
+                        if op == &#39;=&#39;:
+                            # Handle equality
+                            try:
+                                value = float(value)
+                            except ValueError:
+                                pass
+                            filters[key] = value
+                        else:
+                            # Handle comparison operators
+                            try:
+                                value = float(value)
+                                if key not in filters:
+                                    filters[key] = []
+                                if isinstance(filters[key], list):
+                                    filters[key].append((op, value))
+                                else:
+                                    # Convert existing value to list if needed
+                                    filters[key] = [(op, value)]
+                            except ValueError:
+                                # For non-numeric values, treat as equality
+                                filters[key] = value
+                        break
         
         return filters
 
     @staticmethod
     def _compare_values(x: Any, op: str, val: Any) -&gt; bool:
         &#34;&#34;&#34;Compare values based on operator.&#34;&#34;&#34;
+        if x is None:
+            return False
+            
+        try:
+            # Try to convert to numeric for comparison
+            if isinstance(x, str) and x.replace(&#39;.&#39;, &#39;&#39;, 1).isdigit():
+                x = float(x)
+        except (ValueError, TypeError):
+            pass
+            
         if op == &#34;&gt;&#34;: return x &gt; val
         elif op == &#34;&gt;=&#34;: return x &gt;= val
         elif op == &#34;&lt;&#34;: return x &lt; val
@@ -418,22 +593,48 @@ def filter_df(df: pd.DataFrame,
     if not filters:
         return df
         
-    masks = []
+    field_masks = {}
+    
+    # Process each filter field
     for key, value in filters.items():
+        if key not in field_masks:
+            field_masks[key] = []
+            
         if isinstance(value, list):
-            if isinstance(value[0], tuple):  # Comparison operators
-                op, val = value[0]
-                mask = df[key].apply(lambda x: MetadataFilter._compare_values(x, op, val))
-            else:  # List of values
+            if len(value) &gt; 0 and isinstance(value[0], tuple):  # Comparison operators
+                # Handle each comparison operator separately
+                for op, val in value:
+                    mask = df[key].apply(lambda x: MetadataFilter._compare_values(x, op, val))
+                    field_masks[key].append(mask)
+            else:  # List of values (OR condition)
                 mask = df[key].isin(value)
+                field_masks[key].append(mask)
         else:  # Single value
             mask = df[key] == value
-        masks.append(mask)
+            field_masks[key].append(mask)
+    
+    # Combine masks for each field with AND logic
+    field_combined_masks = []
+    for field, masks in field_masks.items():
+        if masks:
+            # Combine all masks for this field with AND logic
+            field_mask = masks[0]
+            for mask in masks[1:]:
+                field_mask = field_mask &amp; mask
+            field_combined_masks.append(field_mask)
+    
+    # Combine field masks according to the specified logic
+    if not field_combined_masks:
+        return df
         
     if logic == &#34;AND&#34;:
-        final_mask = pd.concat(masks, axis=1).all(axis=1)
+        final_mask = field_combined_masks[0]
+        for mask in field_combined_masks[1:]:
+            final_mask = final_mask &amp; mask
     else:  # OR
-        final_mask = pd.concat(masks, axis=1).any(axis=1)
+        final_mask = field_combined_masks[0]
+        for mask in field_combined_masks[1:]:
+            final_mask = final_mask | mask
         
     return df[final_mask]</code></pre>
 </details>
@@ -490,8 +691,8 @@ def filter_df_from_str(df: pd.DataFrame, filter_str: str) -&gt; pd.DataFrame:
     Filter a DataFrame using a string expression.
     
     Args:
-        df: DataFrame containing metadata
-        filter_str: String expression containing filter criteria
+        df: DataFrame to filter
+        filter_str: Filter expression string
         
     Returns:
         Filtered DataFrame
@@ -505,23 +706,101 @@ def filter_df_from_str(df: pd.DataFrame, filter_str: str) -&gt; pd.DataFrame:
         &gt;&gt;&gt; 
         &gt;&gt;&gt; # Simple filter
         &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office&#34;)
+        &gt;&gt;&gt; print(filtered_df)
+        &gt;&gt;&gt; # Output:
+        &gt;&gt;&gt; #      Name  Area    Type
+        &gt;&gt;&gt; # 0  Room 101  20.0  Office
+        &gt;&gt;&gt; # 2  Room 103  30.0  Office
         &gt;&gt;&gt; 
         &gt;&gt;&gt; # Complex filter
         &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office AND Area&gt;20.0&#34;)
-        &gt;&gt;&gt; 
-        &gt;&gt;&gt; # Filter with OR condition
-        &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &#34;Type=Office AND (Area&gt;25.0 OR Area&lt;15.0)&#34;)
+        &gt;&gt;&gt; print(filtered_df)
+        &gt;&gt;&gt; # Output:
+        &gt;&gt;&gt; #      Name  Area    Type
+        &gt;&gt;&gt; # 2  Room 103  30.0  Office
     &#34;&#34;&#34;
-    filters = MetadataFilter._parse_filter_expression(filter_str)
-    return MetadataFilter.filter_df(df, filters)</code></pre>
+    if not filter_str:
+        return df
+        
+    # Start with the full DataFrame
+    result_df = df.copy()
+    
+    # Verificăm dacă avem un OR la nivel superior (nu în paranteze)
+    if &#34; OR &#34; in filter_str and &#34;(&#34; not in filter_str:
+        # Împărțim expresia în părți separate prin OR
+        or_parts = filter_str.split(&#34; OR &#34;)
+        or_dfs = []
+        
+        # Aplicăm fiecare parte separat și combinăm rezultatele
+        for part in or_parts:
+            part = part.strip()
+            if part:
+                filtered = MetadataFilter.filter_df_from_str(df, part)
+                or_dfs.append(filtered)
+        
+        # Combinăm toate rezultatele OR
+        if or_dfs:
+            return pd.concat(or_dfs).drop_duplicates()
+        return result_df
+    
+    # Split by AND operators
+    parts = filter_str.split(&#39; AND &#39;)
+    
+    for part in parts:
+        part = part.strip()
+        
+        # Handle parenthesized OR expressions
+        if part.startswith(&#34;(&#34;) and part.endswith(&#34;)&#34;):
+            inner_expr = part[1:-1].strip()
+            or_parts = inner_expr.split(&#34; OR &#34;)
+            
+            # Create a temporary DataFrame for each OR condition
+            or_dfs = []
+            for or_part in or_parts:
+                or_part = or_part.strip()
+                # Parse the simple condition
+                if &#34;=&#34; in or_part:
+                    key, value = or_part.split(&#34;=&#34;, 1)
+                    key = key.strip()
+                    value = value.strip()
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        pass
+                    # Map &#39;type&#39; to &#39;IfcEntity&#39;
+                    if key.lower() == &#39;type&#39;:
+                        key = &#39;IfcEntity&#39;
+                    or_dfs.append(df[df[key] == value])
+                elif &#34;&gt;&#34; in or_part:
+                    key, value = or_part.split(&#34;&gt;&#34;, 1)
+                    key = key.strip()
+                    value = float(value.strip())
+                    or_dfs.append(df[df[key] &gt; value])
+                elif &#34;&lt;&#34; in or_part:
+                    key, value = or_part.split(&#34;&lt;&#34;, 1)
+                    key = key.strip()
+                    value = float(value.strip())
+                    or_dfs.append(df[df[key] &lt; value])
+            
+            # Combine all OR conditions
+            if or_dfs:
+                or_combined = pd.concat(or_dfs).drop_duplicates()
+                # Intersect with the current result
+                result_df = pd.merge(result_df, or_combined, how=&#39;inner&#39;)
+        else:
+            # Handle simple conditions
+            simple_filter = MetadataFilter._parse_filter_expression(part)
+            result_df = MetadataFilter.filter_df(result_df, simple_filter)
+    
+    return result_df</code></pre>
 </details>
 <div class="desc"><p>Filter a DataFrame using a string expression.</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>df</code></strong></dt>
-<dd>DataFrame containing metadata</dd>
+<dd>DataFrame to filter</dd>
 <dt><strong><code>filter_str</code></strong></dt>
-<dd>String expression containing filter criteria</dd>
+<dd>Filter expression string</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>Filtered DataFrame</p>
@@ -534,12 +813,18 @@ def filter_df_from_str(df: pd.DataFrame, filter_str: str) -&gt; pd.DataFrame:
 &gt;&gt;&gt; 
 &gt;&gt;&gt; # Simple filter
 &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &quot;Type=Office&quot;)
+&gt;&gt;&gt; print(filtered_df)
+&gt;&gt;&gt; # Output:
+&gt;&gt;&gt; #      Name  Area    Type
+&gt;&gt;&gt; # 0  Room 101  20.0  Office
+&gt;&gt;&gt; # 2  Room 103  30.0  Office
 &gt;&gt;&gt; 
 &gt;&gt;&gt; # Complex filter
 &gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &quot;Type=Office AND Area&gt;20.0&quot;)
-&gt;&gt;&gt; 
-&gt;&gt;&gt; # Filter with OR condition
-&gt;&gt;&gt; filtered_df = MetadataFilter.filter_df_from_str(df, &quot;Type=Office AND (Area&gt;25.0 OR Area&lt;15.0)&quot;)
+&gt;&gt;&gt; print(filtered_df)
+&gt;&gt;&gt; # Output:
+&gt;&gt;&gt; #      Name  Area    Type
+&gt;&gt;&gt; # 2  Room 103  30.0  Office
 </code></pre></div>
 </dd>
 </dl>
