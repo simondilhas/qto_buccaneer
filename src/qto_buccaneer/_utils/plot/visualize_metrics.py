@@ -8,6 +8,8 @@ from qto_buccaneer.utils.metadata_filter import MetadataFilter
 import mapbox_earcut as earcut
 import numpy as np
 import trimesh
+import webbrowser
+import os
 
 class MetricVisualizer:
     """A class for visualizing BIM metrics in 3D using Plotly.
@@ -208,8 +210,10 @@ class MetricVisualizer:
                         
                         # Add matching elements to the plot
                         for _, element in matching_geometry.iterrows():
-                            mesh = self._create_mesh3d(element, colors.get(component_name, 'gray'))
-                            fig.add_trace(mesh)
+                            traces = self._create_scatter3d_outline(element, colors.get(component_name, 'gray'))
+                            for t in traces:
+                                fig.add_trace(t)
+
                             
                     except FileNotFoundError:
                         print(f"Info: No geometry data available for {ifc_entity}")
@@ -233,6 +237,34 @@ class MetricVisualizer:
         
         return fig
     
+    def _create_scatter3d_outline(self, element: Dict, color: str) -> go.Scatter3d:
+        """Render the outer polygon loop of the element as a 3D outline (no triangulation)."""
+        vertices = element['vertices']
+        polygons = element['polygons']
+
+        traces = []
+
+        for polygon in polygons:
+            outer = polygon['outer']
+            # Close the loop by appending the first index again
+            loop = outer + [outer[0]]
+            x = [vertices[i][0] for i in loop]
+            y = [vertices[i][1] for i in loop]
+            z = [vertices[i][2] for i in loop]
+
+            trace = go.Scatter3d(
+                x=x,
+                y=y,
+                z=z,
+                mode='lines',
+                line=dict(color=color, width=2),
+                hoverinfo='text',
+                hovertext=f"ID: {element['id']}<br>Type: {element.get('ifc_type', '')}"
+            )
+            traces.append(trace)
+
+        return traces
+        
     def visualize_all_metrics(self, config_path: str):
         """Create visualizations for all metrics in the config file"""
         with open(config_path, 'r') as f:
@@ -260,7 +292,193 @@ class MetricVisualizer:
         """
         self.colors = color_scheme
 
+    def _create_trimesh(self, element: Dict, color: List[float]) -> trimesh.Trimesh:
+        """Convert element geometry to trimesh.Trimesh object (triangles + quads only)."""
+        vertices = np.array(element['vertices'])
+        faces = []
+
+        for polygon in element['polygons']:
+            outer = polygon['outer']
+            if len(outer) == 3:
+                faces.append(outer)
+            elif len(outer) == 4:
+                # Simple and safe quad split — only if nearly planar
+                faces.append([outer[0], outer[1], outer[2]])
+                faces.append([outer[0], outer[2], outer[3]])
+            else:
+                continue  # skip non-triangle/quad
+
+        if not faces:
+            return None
+
+        mesh = trimesh.Trimesh(vertices=vertices, faces=faces, process=False)
+        mesh.visual.face_colors = color
+        return mesh
+
+
+    def visualize_metric_trimesh(self, metric_name: str, metric_config: Dict[str, Dict[str, Any]]) -> trimesh.Scene:
+        """Create a 3D visualization for a specific metric using trimesh.Scene"""
+        if 'config' not in metric_config:
+            raise ValueError(f"Metric configuration for '{metric_name}' is missing 'config' key")
+        if 'components' not in metric_config['config']:
+            raise ValueError(f"Metric configuration for '{metric_name}' is missing 'components' key in config")
+        
+        scene = trimesh.Scene()
+        
+        # Define color scheme for different components
+        colors = {
+            'HNF': [0, 0, 1, 1],  # blue
+            'NNF': [0, 1, 0, 1],  # green
+            'VF': [1, 0, 0, 1],   # red
+            'FF': [1, 1, 0, 1],   # yellow
+            'GF': [1, 0, 1, 1],   # purple
+            'LUF': [0.5, 0.5, 0.5, 1]  # gray
+        }
+        
+        # Process each component in the metric
+        for component_name, component_config in metric_config['config']['components'].items():
+            filter_str = component_config['filter']
+            
+            try:
+                filtered_metadata = MetadataFilter.filter_df_from_str(self.metadata, filter_str)
+                print(f"Found {len(filtered_metadata)} elements for component {component_name}")
+                
+                for ifc_entity, group in filtered_metadata.groupby('IfcEntity'):
+                    try:
+                        geometry_data = self._load_geometry(ifc_entity)
+                        print(f"Loaded geometry for {ifc_entity}: {len(geometry_data)} elements")
+                        geometry_df = pd.DataFrame(geometry_data)
+                        geometry_df['id'] = geometry_df['id'].astype(str)
+                        matching_geometry = geometry_df[geometry_df['id'].isin(group.index)]
+                        print(f"Matched {len(matching_geometry)} geometry elements")
+                        
+                        for _, element in matching_geometry.iterrows():
+                            mesh = self._create_trimesh(element, colors.get(component_name, [0.5, 0.5, 0.5, 1]))
+                            if mesh is not None:
+                                scene.add_geometry(mesh)
+                                
+                    except FileNotFoundError:
+                        print(f"Info: No geometry data available for {ifc_entity}")
+                        continue
+                        
+            except KeyError as e:
+                print(f"Info: No elements matching filter for {component_name}")
+                continue
+        
+        print(f"Scene contains {len(scene.geometry)} geometries")
+        
+        # Add these lines before returning the scene
+        if len(scene.geometry) > 0:
+            # Center the scene
+            scene = scene.copy()
+            scene.centered = True
+            
+            # Add a camera that looks at the scene
+            camera = trimesh.scene.Camera(
+                resolution=(1920, 1080),
+                fov=(60, 60)
+            )
+            scene.camera = camera
+            
+            # Add ambient l
+        
+        return scene
+
+    def visualize_all_metrics_trimesh(self, config_path: str):
+        """Create trimesh visualizations for all metrics in the config file"""
+        print(f"Loading config from: {config_path}")
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+        
+        print(f"Found {len(config['metrics'])} metrics in config")
+        
+        # Create visualizations directory in the project root
+        output_dir = Path("projects/Seefeld__private/visualizations")
+        output_dir.mkdir(exist_ok=True, parents=True)
+        
+        for metric_name, metric_config in config['metrics'].items():
+            print(f"\nProcessing metric: {metric_name}")
+            scene = self.visualize_metric_trimesh(metric_name, metric_config)
+            
+            if len(scene.geometry) == 0:
+                print(f"Warning: No geometry was created for metric {metric_name}")
+                continue
+            
+            # Save as GLB file
+            output_file = output_dir / f"{metric_name}.glb"
+            scene.export(str(output_file.absolute()))
+            print(f"Saved visualization to: {output_file.absolute()}")
+            
+            # Show in browser with additional options
+            print("Opening scene in browser...")
+            try:
+                scene.show(
+                    smooth=True,
+                    flags={'cull': True},
+                    resolution=(1920, 1080)
+                )
+            except Exception as e:
+                print(f"Error showing scene: {e}")
+                print("You can still view the GLB file directly in your browser or a 3D viewer")
+
+# Add this to your code to view the GLB files in a different way
+def open_glb_in_browser(file_path):
+    # Create a simple HTML viewer
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>3D Viewer</title>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+        <style>
+            body {{ margin: 0; }}
+            canvas {{ display: block; }}
+        </style>
+    </head>
+    <body>
+        <script>
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            camera.position.z = 5;
+
+            const loader = new THREE.GLTFLoader();
+            loader.load('{os.path.basename(file_path)}', function(gltf) {{
+                scene.add(gltf.scene);
+                camera.position.copy(gltf.scene.position);
+                camera.position.multiplyScalar(2);
+                controls.update();
+            }});
+
+            const light = new THREE.AmbientLight(0xffffff, 1);
+            scene.add(light);
+
+            function animate() {{
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }}
+            animate();
+        </script>
+    </body>
+    </html>
+    """
+    
+    # Save the HTML file
+    html_path = str(file_path).replace('.glb', '.html')
+    with open(html_path, 'w') as f:
+        f.write(html_content)
+    
+    # Open in browser
+    webbrowser.open('file://' + os.path.abspath(html_path))
+
 # Usage example:
 if __name__ == "__main__":
     visualizer = MetricVisualizer("projects/Seefeld__private/buildings/09_hornbi")
-    visualizer.visualize_all_metrics("projects/Seefeld__private/00_workflow_config.yaml")
+    visualizer.visualize_all_metrics_trimesh("projects/Seefeld__private/00_workflow_config.yaml")
